@@ -1,0 +1,76 @@
+@model Source.Models.FastFood
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Chỉnh Sửa Món Ăn #" + Model.Id;
+    var categories = ViewBag.Categories as IEnumerable<Source.Models.Category> ?? new List<Source.Models.Category>();
+}
+
+<div class="mb-4">
+    <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-pen-to-square text-danger me-2"></i>Chỉnh Sửa Món Ăn #@Model.Id</h3>
+    <a asp-action="Foods" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách món</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
+    <form asp-action="FoodEdit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageUrl" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="Name" class="form-label fw-bold small text-muted"></label>
+                <input asp-for="Name" class="form-control form-control-custom" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Price" class="form-label fw-bold small text-muted"></label>
+                <input asp-for="Price" type="number" step="1000" class="form-control form-control-custom" />
+                <span asp-validation-for="Price" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="CategoryId" class="form-label fw-bold small text-muted"></label>
+                <select asp-for="CategoryId" class="form-select form-control-custom">
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat.Id" selected="@(cat.Id == Model.CategoryId)">@cat.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="CategoryId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Theme" class="form-label fw-bold small text-muted"></label>
+                <input asp-for="Theme" class="form-control form-control-custom" />
+                <span asp-validation-for="Theme" class="text-danger small"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3 align-items-center">
+            <div class="col-md-3 text-center">
+                <img src="@Model.ImageUrl" alt="@Model.Name" class="rounded-3 shadow-sm img-fluid" style="max-height: 100px;">
+            </div>
+            <div class="col-md-9">
+                <label class="form-label fw-bold small text-muted">Thay đổi ảnh (Bỏ trống nếu giữ nguyên)</label>
+                <input type="file" name="imageFile" class="form-control form-control-custom" accept="image/*" />
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label asp-for="Description" class="form-label fw-bold small text-muted"></label>
+            <textarea asp-for="Description" class="form-control form-control-custom" rows="3"></textarea>
+            <span asp-validation-for="Description" class="text-danger small"></span>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+            <a asp-action="Foods" class="btn btn-secondary-custom btn-custom">Hủy bỏ</a>
+            <button type="submit" class="btn btn-danger btn-custom rounded-pill px-4">Lưu Thay Đổi</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,7 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Source.Models;
 using Source.Helpers;
+using Source.Models;
 
 namespace Source.Controllers
 {
@@ -15,6 +16,22 @@ namespace Source.Controllers
             _context = context;
         }
 
+        // Helper method to retrieve current user ID from Session or Cookie claims
+        private int? GetCurrentUserId()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
+            {
+                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(claimId, out int parsedId))
+                {
+                    userId = parsedId;
+                    HttpContext.Session.SetInt32("UserId", parsedId);
+                }
+            }
+            return userId;
+        }
+
         // GET: Cart
         public IActionResult Index()
         {
@@ -26,6 +43,8 @@ namespace Source.Controllers
         [HttpPost]
         public async Task<IActionResult> AddToCart(int id, bool isCombo, int quantity = 1)
         {
+            if (quantity <= 0) quantity = 1;
+
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
             string name = "";
             string imageUrl = "";
@@ -69,12 +88,18 @@ namespace Source.Controllers
 
             HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
 
-            // Check if AJAX request
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, cartCount = cart.Sum(i => i.Quantity) });
+                return Json(new
+                {
+                    success = true,
+                    message = $"Đã thêm {name} vào giỏ hàng!",
+                    cartCount = cart.Sum(i => i.Quantity),
+                    cartTotal = cart.Sum(i => i.TotalPrice)
+                });
             }
 
+            TempData["SuccessMessage"] = $"Đã thêm {name} vào giỏ hàng!";
             return RedirectToAction("Index");
         }
 
@@ -82,27 +107,29 @@ namespace Source.Controllers
         [HttpPost]
         public IActionResult UpdateQuantity(int id, bool isCombo, int quantity)
         {
-            if (quantity <= 0)
-            {
-                return RemoveItem(id, isCombo);
-            }
-
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
             var item = cart.FirstOrDefault(i => (isCombo && i.ComboId == id) || (!isCombo && i.FastFoodId == id));
 
-            if (item != null)
+            if (quantity <= 0)
+            {
+                if (item != null) cart.Remove(item);
+            }
+            else if (item != null)
             {
                 item.Quantity = quantity;
-                HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
             }
+
+            HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { 
-                    success = true, 
+                return Json(new
+                {
+                    success = true,
                     cartCount = cart.Sum(i => i.Quantity),
-                    itemTotal = item?.TotalPrice ?? 0,
-                    cartTotal = cart.Sum(i => i.TotalPrice)
+                    itemTotal = item != null && quantity > 0 ? item.TotalPrice : 0,
+                    cartTotal = cart.Sum(i => i.TotalPrice),
+                    isEmpty = cart.Count == 0
                 });
             }
 
@@ -124,13 +151,25 @@ namespace Source.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { 
-                    success = true, 
+                return Json(new
+                {
+                    success = true,
                     cartCount = cart.Sum(i => i.Quantity),
-                    cartTotal = cart.Sum(i => i.TotalPrice)
+                    cartTotal = cart.Sum(i => i.TotalPrice),
+                    isEmpty = cart.Count == 0
                 });
             }
 
+            TempData["SuccessMessage"] = "Đã xóa sản phẩm khỏi giỏ hàng.";
+            return RedirectToAction("Index");
+        }
+
+        // POST: Cart/ClearCart
+        [HttpPost]
+        public IActionResult ClearCart()
+        {
+            HttpContext.Session.Remove(CART_KEY);
+            TempData["SuccessMessage"] = "Đã làm trống giỏ hàng!";
             return RedirectToAction("Index");
         }
 
@@ -138,17 +177,17 @@ namespace Source.Controllers
         [HttpGet]
         public async Task<IActionResult> Checkout()
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            var userId = GetCurrentUserId();
             if (!userId.HasValue)
             {
-                TempData["ErrorMessage"] = "Bạn cần đăng nhập để đặt hàng.";
-                return RedirectToAction("Login", "Account");
+                TempData["ErrorMessage"] = "Bạn cần đăng nhập để thực hiện thanh toán.";
+                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Checkout", "Cart") });
             }
 
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
             if (cart.Count == 0)
             {
-                TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống.";
+                TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống. Vui lòng chọn món ăn trước khi thanh toán.";
                 return RedirectToAction("Index");
             }
 
@@ -164,6 +203,7 @@ namespace Source.Controllers
                 TotalAmount = cart.Sum(i => i.TotalPrice)
             };
 
+            ViewBag.Cart = cart;
             return View(order);
         }
 
@@ -172,7 +212,7 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(Order model)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            var userId = GetCurrentUserId();
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");
@@ -181,12 +221,12 @@ namespace Source.Controllers
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
             if (cart.Count == 0)
             {
-                ModelState.AddModelError("", "Giỏ hàng trống");
-                return View(model);
+                TempData["ErrorMessage"] = "Giỏ hàng đã trống.";
+                return RedirectToAction("Index");
             }
 
-            // Remove user validation (since it is set in controller)
             ModelState.Remove("User");
+            ModelState.Remove("OrderDetails");
 
             if (ModelState.IsValid)
             {
@@ -196,7 +236,7 @@ namespace Source.Controllers
                 model.Status = "Chưa giao";
 
                 _context.Orders.Add(model);
-                await _context.SaveChangesAsync(); // Saves order and generates order ID
+                await _context.SaveChangesAsync();
 
                 foreach (var item in cart)
                 {
@@ -213,13 +253,14 @@ namespace Source.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Clear cart
+                // Clear Cart
                 HttpContext.Session.Remove(CART_KEY);
 
-                TempData["SuccessMessage"] = "Đặt hàng thành công!";
+                TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";
                 return RedirectToAction("OrderTracking", new { id = model.Id });
             }
 
+            ViewBag.Cart = cart;
             return View(model);
         }
 
@@ -227,7 +268,7 @@ namespace Source.Controllers
         [HttpGet]
         public async Task<IActionResult> OrderHistory()
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            var userId = GetCurrentUserId();
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");
@@ -235,17 +276,18 @@ namespace Source.Controllers
 
             var orders = await _context.Orders
                 .Where(o => o.UserId == userId.Value)
+                .Include(o => o.OrderDetails)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
             return View(orders);
         }
 
-        // GET: Cart/OrderTracking
+        // GET: Cart/OrderTracking/5
         [HttpGet]
         public async Task<IActionResult> OrderTracking(int id)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            var userId = GetCurrentUserId();
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");

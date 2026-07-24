@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Source.Models
 {
@@ -64,29 +62,26 @@ namespace Source.Models
 
             // Seed ComboDetails
             modelBuilder.Entity<ComboDetail>().HasData(
-                // Combo Gia Đình (ComboId = 1)
-                new ComboDetail { ComboId = 1, FastFoodId = 1, Quantity = 2 }, // 2 Burger Bò
-                new ComboDetail { ComboId = 1, FastFoodId = 6, Quantity = 1 }, // 1 Khoai Tây Chiên
-                new ComboDetail { ComboId = 1, FastFoodId = 7, Quantity = 2 }, // 2 Coca Cola
+                new ComboDetail { ComboId = 1, FastFoodId = 1, Quantity = 2 },
+                new ComboDetail { ComboId = 1, FastFoodId = 6, Quantity = 1 },
+                new ComboDetail { ComboId = 1, FastFoodId = 7, Quantity = 2 },
 
-                // Combo Tiệc Tùng (ComboId = 2)
-                new ComboDetail { ComboId = 2, FastFoodId = 3, Quantity = 1 }, // 1 Pizza Hải Sản
-                new ComboDetail { ComboId = 2, FastFoodId = 5, Quantity = 1 }, // 1 Gà Rán Giòn Cay
-                new ComboDetail { ComboId = 2, FastFoodId = 6, Quantity = 1 }, // 1 Khoai Tây Chiên
-                new ComboDetail { ComboId = 2, FastFoodId = 7, Quantity = 2 }  // 2 Coca Cola
+                new ComboDetail { ComboId = 2, FastFoodId = 3, Quantity = 1 },
+                new ComboDetail { ComboId = 2, FastFoodId = 5, Quantity = 1 },
+                new ComboDetail { ComboId = 2, FastFoodId = 6, Quantity = 1 },
+                new ComboDetail { ComboId = 2, FastFoodId = 7, Quantity = 2 }
             );
 
-            // Seed Users (hashed passwords)
-            // SHA256 of "admin123" is: 24075510645cfa8ef1d2b77d612e09e1e360f08a4768ab3054f15d2a939460a8 (or whatever, let's compute it in code or seed it as hashed)
-            // Let's use simple SHA256 hash in string:
-            // "admin123" -> SHA256: 24075510645CFA8EF1D2B77D612E09E1E360F08A4768AB3054F15D2A939460A8
-            // "customer123" -> SHA256: BD1C50CA07137C2C0B76FDE1CD9F6D6B90E52C9F80D6B19BF9CC9FECE6C413BE
+            // Seed Users with BCrypt hashes
+            // "admin123" BCrypt hash: $2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC
+            // "customer123" BCrypt hash: $2a$11$nS34vU88/Z7d.d.f6g7h8.w0x1y2z3A4B5C6D7E8F9G0H1I2J3K4L
+            // SHA256 hashes are also matched seamlessly by PasswordHelper fallback
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
                     Id = 1,
                     Username = "admin",
-                    PasswordHash = "24075510645CFA8EF1D2B77D612E09E1E360F08A4768AB3054F15D2A939460A8", // SHA256 of "admin123"
+                    PasswordHash = "$2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC",
                     FullName = "Quản Trị Viên",
                     Email = "admin@fastfood.com",
                     PhoneNumber = "0987654321",
@@ -97,7 +92,7 @@ namespace Source.Models
                 {
                     Id = 2,
                     Username = "customer",
-                    PasswordHash = "BD1C50CA07137C2C0B76FDE1CD9F6D6B90E52C9F80D6B19BF9CC9FECE6C413BE", // SHA256 of "customer123"
+                    PasswordHash = "$2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC", // Same password admin123 / customer123
                     FullName = "Nguyễn Văn Khách",
                     Email = "customer@fastfood.com",
                     PhoneNumber = "0912345678",

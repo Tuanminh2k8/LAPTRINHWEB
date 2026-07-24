@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Giả Lập Đăng Nhập Google";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body p-4 p-md-5 text-center bg-white">
+                    <img src="https://www.google.com/favicon.ico" alt="Google" class="mb-3" width="48" height="48">
+                    <h4 class="fw-bold text-dark mb-2">Đăng Nhập Bằng Google</h4>
+                    <p class="small text-muted mb-4">Giả lập SSO Google OAuth2 cho dự án môn học</p>
+
+                    <form asp-controller="Account" asp-action="GoogleLoginMockSubmit" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3 text-start">
+                            <label class="form-label small fw-bold text-muted">Email Google</label>
+                            <input type="email" name="email" class="form-control form-control-custom" value="google.user@gmail.com" required />
+                        </div>
+
+                        <div class="mb-3 text-start">
+                            <label class="form-label small fw-bold text-muted">Họ và Tên Google</label>
+                            <input type="text" name="name" class="form-control form-control-custom" value="Google User Demo" required />
+                        </div>
+
+                        <input type="hidden" name="subId" value="google_sub_123456789" />
+
+                        <button type="submit" class="btn btn-outline-dark w-100 py-3 rounded-pill fw-bold mb-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="fa-brands fa-google text-danger fs-5"></i> Tiếp tục với Google Demo
+                        </button>
+
+                        <a asp-action="Login" class="small text-muted text-decoration-none">Hủy và quay lại trang Đăng nhập</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

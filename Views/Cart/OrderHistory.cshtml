@@ -1,0 +1,78 @@
+@model IEnumerable<Source.Models.Order>
+@{
+    ViewData["Title"] = "Lịch Sử Đặt Hàng";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Lịch Sử Đặt Hàng
+        </h2>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="fa-solid fa-utensils me-1"></i> Đặt thêm món
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-4">
+            <i class="fa-solid fa-receipt fa-4x text-muted mb-3 opacity-50"></i>
+            <h4 class="fw-bold text-muted">Bạn chưa có đơn hàng nào!</h4>
+            <p class="text-secondary small mb-4">Hãy đặt món đầu tiên trên PolyFood Store ngay hôm nay.</p>
+            <div>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-danger btn-custom rounded-pill px-4 py-2">
+                    Khám phá Menu ngay
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var order in Model)
+            {
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                        <div class="card-header bg-light p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-0">
+                            <div>
+                                <span class="fw-bold text-dark me-3">Mã đơn hàng: #@order.Id</span>
+                                <span class="text-muted small"><i class="fa-solid fa-calendar me-1"></i>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div>
+                                @if (order.Status == "Chưa giao")
+                                {
+                                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-hourglass-start me-1"></i>@order.Status</span>
+                                }
+                                else if (order.Status == "Đang giao")
+                                {
+                                    <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-truck-fast me-1"></i>@order.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>@order.Status</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <p class="mb-1 text-muted small"><i class="fa-solid fa-user me-2"></i>Người nhận: <strong>@order.ReceiverName</strong></p>
+                                    <p class="mb-1 text-muted small"><i class="fa-solid fa-phone me-2"></i>SĐT: <strong>@order.ReceiverPhone</strong></p>
+                                    <p class="mb-0 text-muted small"><i class="fa-solid fa-location-dot me-2"></i>Địa chỉ: <strong>@order.ReceiverAddress</strong></p>
+                                </div>
+                                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                    <div class="text-muted small">Tổng tiền đơn hàng:</div>
+                                    <div class="fs-4 fw-800 text-danger mb-2">@order.TotalAmount.ToString("N0") ₫</div>
+                                    <a asp-action="OrderTracking" asp-route-id="@order.Id" class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-600">
+                                        <i class="fa-solid fa-eye me-1"></i> Theo dõi đơn hàng
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

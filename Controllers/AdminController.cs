@@ -1,8 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
-using Source.Models;
 using Source.Helpers;
+using Source.Models;
 
 namespace Source.Controllers
 {
@@ -15,11 +16,13 @@ namespace Source.Controllers
             _context = context;
         }
 
-        // Restrict all actions in this controller to Admin role in session
+        // Restrict all actions in this controller to Admin role in session or Claims
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            var role = HttpContext.Session.GetString("Role");
-            if (role != "Admin")
+            var sessionRole = HttpContext.Session.GetString("Role");
+            var isClaimAdmin = User.IsInRole("Admin") || User.FindFirstValue(ClaimTypes.Role) == "Admin";
+
+            if (sessionRole != "Admin" && !isClaimAdmin)
             {
                 TempData["ErrorMessage"] = "Bạn không có quyền truy cập trang quản trị.";
                 context.Result = new RedirectToActionResult("Login", "Account", null);
@@ -34,17 +37,16 @@ namespace Source.Controllers
             ViewBag.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Chưa giao");
             ViewBag.DeliveringOrders = await _context.Orders.CountAsync(o => o.Status == "Đang giao");
             ViewBag.DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == "Đã giao");
-            ViewBag.TotalRevenue = await _context.Orders.Where(o => o.Status == "Đã giao").SumAsync(o => o.TotalAmount);
+            ViewBag.TotalRevenue = await _context.Orders.Where(o => o.Status == "Đã giao").SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
             
             ViewBag.TotalFoods = await _context.FastFoods.CountAsync();
             ViewBag.TotalCombos = await _context.Combos.CountAsync();
             ViewBag.TotalUsers = await _context.Users.CountAsync();
 
-            // Recent orders
             var recentOrders = await _context.Orders
                 .Include(o => o.User)
                 .OrderByDescending(o => o.OrderDate)
-                .Take(5)
+                .Take(6)
                 .ToListAsync();
 
             return View(recentOrders);
@@ -71,10 +73,16 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UserCreate(User user)
         {
-            var existingUser = await _context.Users.AnyAsync(u => u.Username == user.Username);
+            var existingUser = await _context.Users.AnyAsync(u => u.Username.ToLower() == user.Username.ToLower());
             if (existingUser)
             {
                 ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
+            }
+
+            var existingEmail = await _context.Users.AnyAsync(u => u.Email.ToLower() == user.Email.ToLower());
+            if (existingEmail)
+            {
+                ModelState.AddModelError("Email", "Email đã tồn tại");
             }
 
             if (ModelState.IsValid)
@@ -107,17 +115,25 @@ namespace Source.Controllers
             var dbUser = await _context.Users.FindAsync(id);
             if (dbUser == null) return NotFound();
 
-            // Check if username changed and is unique
-            if (dbUser.Username != updatedUser.Username)
+            if (dbUser.Username.ToLower() != updatedUser.Username.ToLower())
             {
-                var existingUser = await _context.Users.AnyAsync(u => u.Username == updatedUser.Username);
+                var existingUser = await _context.Users.AnyAsync(u => u.Username.ToLower() == updatedUser.Username.ToLower());
                 if (existingUser)
                 {
                     ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
                 }
             }
 
-            ModelState.Remove("PasswordHash"); // Password is field updated optionally
+            if (dbUser.Email.ToLower() != updatedUser.Email.ToLower())
+            {
+                var existingEmail = await _context.Users.AnyAsync(u => u.Email.ToLower() == updatedUser.Email.ToLower());
+                if (existingEmail)
+                {
+                    ModelState.AddModelError("Email", "Email đã tồn tại");
+                }
+            }
+
+            ModelState.Remove("PasswordHash");
 
             if (ModelState.IsValid)
             {
@@ -128,7 +144,7 @@ namespace Source.Controllers
                 dbUser.Address = updatedUser.Address;
                 dbUser.Role = updatedUser.Role;
 
-                if (!string.IsNullOrEmpty(newPassword))
+                if (!string.IsNullOrWhiteSpace(newPassword))
                 {
                     dbUser.PasswordHash = PasswordHelper.HashPassword(newPassword);
                 }
@@ -196,7 +212,6 @@ namespace Source.Controllers
                     var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
                     
-                    // Create directory if not exists
                     var dir = Path.GetDirectoryName(filePath);
                     if (!Directory.Exists(dir)) Directory.CreateDirectory(dir!);
 
@@ -328,15 +343,14 @@ namespace Source.Controllers
                 }
 
                 _context.Combos.Add(combo);
-                await _context.SaveChangesAsync(); // Saves combo to generate ID
+                await _context.SaveChangesAsync();
 
-                // Save combo details
                 if (selectedFoods != null)
                 {
                     for (int i = 0; i < selectedFoods.Length; i++)
                     {
                         var foodId = selectedFoods[i];
-                        var quantity = foodQuantities[i];
+                        var quantity = i < foodQuantities.Length ? foodQuantities[i] : 1;
 
                         _context.ComboDetails.Add(new ComboDetail
                         {
@@ -404,16 +418,14 @@ namespace Source.Controllers
                     dbCombo.ImageUrl = "/images/" + fileName;
                 }
 
-                // Remove existing details
                 _context.ComboDetails.RemoveRange(dbCombo.ComboDetails);
 
-                // Add new details
                 if (selectedFoods != null)
                 {
                     for (int i = 0; i < selectedFoods.Length; i++)
                     {
                         var foodId = selectedFoods[i];
-                        var quantity = foodQuantities[i];
+                        var quantity = i < foodQuantities.Length ? foodQuantities[i] : 1;
 
                         _context.ComboDetails.Add(new ComboDetail
                         {
@@ -473,6 +485,7 @@ namespace Source.Controllers
 
         // POST: Admin/UpdateOrderStatus (AJAX friendly)
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateOrderStatus(int id, string status)
         {
             var order = await _context.Orders.FindAsync(id);

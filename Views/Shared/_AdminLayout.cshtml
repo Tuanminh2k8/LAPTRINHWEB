@@ -1,6 +1,6 @@
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 @{
-    var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName");
+    var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName") ?? HttpContextAccessor.HttpContext?.User.FindFirst("FullName")?.Value ?? "Admin";
 }
 
 <!DOCTYPE html>
@@ -8,7 +8,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Quản Trị Hệ Thống - PolyFood</title>
+    <title>@ViewData["Title"] - Quản Trị Hệ Thống PolyFood</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Bootstrap and Icons -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -16,75 +21,91 @@
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Source.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="bg-light">
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
             <div class="container-fluid px-4">
-                <a class="navbar-brand text-danger fw-bold" asp-controller="Home" asp-action="Index">
-                    <i class="fa-solid fa-hamburger"></i> PolyFood Admin
+                <a class="navbar-brand text-danger fw-bold d-flex align-items-center gap-2" asp-controller="Admin" asp-action="Index">
+                    <i class="fa-solid fa-shield-halved fs-4"></i>
+                    <span>PolyFood <span class="badge bg-danger text-white fs-6">Admin</span></span>
                 </a>
-                <div class="d-flex align-items-center text-white">
-                    <i class="fa-solid fa-user-shield me-2 text-warning"></i>
-                    <span class="me-3">Admin: <strong>@fullName</strong></span>
-                    <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
-                    </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbarContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="adminNavbarContent">
+                    <div class="ms-auto d-flex align-items-center gap-3 text-white">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-user-circle text-warning fs-5"></i>
+                            <span class="small">Xin chào, <strong class="text-white">@fullName</strong></span>
+                        </div>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-globe me-1"></i> Trang khách
+                        </a>
+                        <a asp-controller="Account" asp-action="Logout" class="btn btn-danger btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container-fluid" style="margin-top: 56px;">
+    <div class="container-fluid" style="margin-top: 60px;">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 p-0">
-                <div class="admin-sidebar">
-                    <div class="text-center mb-4">
-                        <i class="fa-solid fa-user-gear fa-3x text-warning"></i>
-                        <h6 class="mt-2 text-white">QUẢN TRỊ VIÊN</h6>
-                        <hr class="text-white-50">
+            <div class="col-md-3 col-lg-2 p-0 bg-dark min-vh-100 position-fixed" style="z-index: 100;">
+                <div class="admin-sidebar py-4 px-3">
+                    <div class="text-center mb-4 pb-3 border-bottom border-secondary">
+                        <div class="avatar-circle mx-auto mb-2 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fa-solid fa-user-tie fs-4"></i>
+                        </div>
+                        <h6 class="mt-2 text-white fw-bold mb-0">HỆ THỐNG QUẢN TRỊ</h6>
+                        <span class="badge bg-warning text-dark mt-1">Administrator</span>
                     </div>
                     
-                    <nav class="nav flex-column">
+                    <nav class="nav flex-column gap-1">
                         <a class="nav-link-admin @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index">
-                            <i class="fa-solid fa-chart-line"></i> Bảng điều khiển
+                            <i class="fa-solid fa-chart-line me-2"></i> Bảng điều khiển
                         </a>
                         <a class="nav-link-admin @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" || ViewContext.RouteData.Values["action"]?.ToString()?.Contains("User") == true ? "active" : "")" asp-controller="Admin" asp-action="Users">
-                            <i class="fa-solid fa-users"></i> Quản lý người dùng
+                            <i class="fa-solid fa-users me-2"></i> Quản lý người dùng
                         </a>
                         <a class="nav-link-admin @(ViewContext.RouteData.Values["action"]?.ToString() == "Foods" || ViewContext.RouteData.Values["action"]?.ToString()?.Contains("Food") == true ? "active" : "")" asp-controller="Admin" asp-action="Foods">
-                            <i class="fa-solid fa-bowl-food"></i> Quản lý món ăn
+                            <i class="fa-solid fa-burger me-2"></i> Quản lý món ăn
                         </a>
                         <a class="nav-link-admin @(ViewContext.RouteData.Values["action"]?.ToString() == "Combos" || ViewContext.RouteData.Values["action"]?.ToString()?.Contains("Combo") == true ? "active" : "")" asp-controller="Admin" asp-action="Combos">
-                            <i class="fa-solid fa-boxes-packing"></i> Quản lý Combo
+                            <i class="fa-solid fa-boxes-packing me-2"></i> Quản lý Combo
                         </a>
                         <a class="nav-link-admin @(ViewContext.RouteData.Values["action"]?.ToString() == "Orders" || ViewContext.RouteData.Values["action"]?.ToString()?.Contains("Order") == true ? "active" : "")" asp-controller="Admin" asp-action="Orders">
-                            <i class="fa-solid fa-receipt"></i> Quản lý đơn hàng
+                            <i class="fa-solid fa-receipt me-2"></i> Quản lý đơn hàng
                         </a>
-                        <hr class="text-white-50 my-3">
-                        <a class="nav-link-admin" asp-controller="Home" asp-action="Index">
-                            <i class="fa-solid fa-arrow-left-long"></i> Về trang khách
+                        <hr class="border-secondary my-3">
+                        <a class="nav-link-admin text-muted" asp-controller="Home" asp-action="Index">
+                            <i class="fa-solid fa-arrow-left-long me-2"></i> Về trang khách
                         </a>
                     </nav>
                 </div>
             </div>
 
-            <!-- Content Area -->
-            <div class="col-md-9 col-lg-10 p-4">
+            <!-- Main Content Area -->
+            <div class="col-md-9 col-lg-10 offset-md-3 offset-lg-2 p-4 min-vh-100">
                 @if (TempData["SuccessMessage"] != null)
                 {
-                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                        <i class="fa-solid fa-circle-check me-2"></i> @TempData["SuccessMessage"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                        <i class="fa-solid fa-circle-check fs-5 me-2 text-success"></i>
+                        <div>@TempData["SuccessMessage"]</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
                 @if (TempData["ErrorMessage"] != null)
                 {
-                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                        <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["ErrorMessage"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                        <i class="fa-solid fa-circle-exclamation fs-5 me-2 text-danger"></i>
+                        <div>@TempData["ErrorMessage"]</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
                 

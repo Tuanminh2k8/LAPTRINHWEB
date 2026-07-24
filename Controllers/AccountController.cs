@@ -1,7 +1,11 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Source.Models;
 using Source.Helpers;
+using Source.Models;
+using Source.ViewModels;
 
 namespace Source.Controllers
 {
@@ -18,7 +22,7 @@ namespace Source.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            if (HttpContext.Session.GetInt32("UserId").HasValue)
+            if (User.Identity?.IsAuthenticated == true || HttpContext.Session.GetInt32("UserId").HasValue)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -28,78 +32,122 @@ namespace Source.Controllers
         // POST: Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(User user, string confirmPassword)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (user.PasswordHash != confirmPassword)
-            {
-                ModelState.AddModelError("confirmPassword", "Mật khẩu xác nhận không khớp");
-            }
-
-            var existingUser = await _context.Users.AnyAsync(u => u.Username == user.Username);
-            if (existingUser)
-            {
-                ModelState.AddModelError("Username", "Tên đăng nhập đã tồn tại");
-            }
-
             if (ModelState.IsValid)
             {
-                user.PasswordHash = PasswordHelper.HashPassword(user.PasswordHash);
-                user.Role = "Customer"; // Guest registers as Customer
+                // Check duplicate Username
+                var isUsernameTaken = await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower());
+                if (isUsernameTaken)
+                {
+                    ModelState.AddModelError("Username", "Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác.");
+                }
 
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                // Check duplicate Email
+                var isEmailTaken = await _context.Users.AnyAsync(u => u.Email.ToLower() == model.Email.ToLower());
+                if (isEmailTaken)
+                {
+                    ModelState.AddModelError("Email", "Địa chỉ Email này đã được đăng ký tài khoản khác.");
+                }
 
-                TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập.";
-                return RedirectToAction("Login");
+                if (ModelState.IsValid)
+                {
+                    var newUser = new User
+                    {
+                        Username = model.Username.Trim(),
+                        FullName = model.FullName.Trim(),
+                        Email = model.Email.Trim(),
+                        PhoneNumber = model.PhoneNumber.Trim(),
+                        Address = model.Address.Trim(),
+                        PasswordHash = PasswordHelper.HashPassword(model.Password),
+                        Role = "Customer"
+                    };
+
+                    _context.Users.Add(newUser);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Vui lòng đăng nhập với thông tin vừa tạo.";
+                    return RedirectToAction("Login");
+                }
             }
 
-            return View(user);
+            return View(model);
         }
 
         // GET: Account/Login
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
-            if (HttpContext.Session.GetInt32("UserId").HasValue)
+            if (User.Identity?.IsAuthenticated == true || HttpContext.Session.GetInt32("UserId").HasValue)
             {
                 return RedirectToAction("Index", "Home");
             }
-            return View();
+            ViewBag.ReturnUrl = returnUrl;
+            return View(new LoginViewModel());
         }
 
         // POST: Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (!ModelState.IsValid)
             {
-                ViewBag.Error = "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu";
-                return View();
+                return View(model);
             }
 
-            var hashedPassword = PasswordHelper.HashPassword(password);
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == hashedPassword);
+            string identifier = model.UsernameOrEmail.Trim().ToLower();
 
-            if (user != null)
+            var user = await _context.Users.FirstOrDefaultAsync(u => 
+                u.Username.ToLower() == identifier || u.Email.ToLower() == identifier);
+
+            if (user == null || !PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
             {
-                // Store in session
-                HttpContext.Session.SetInt32("UserId", user.Id);
-                HttpContext.Session.SetString("Username", user.Username);
-                HttpContext.Session.SetString("FullName", user.FullName);
-                HttpContext.Session.SetString("Role", user.Role);
-
-                TempData["SuccessMessage"] = $"Chào mừng {user.FullName} quay trở lại!";
-
-                if (user.Role == "Admin")
-                {
-                    return RedirectToAction("Index", "Admin");
-                }
-                return RedirectToAction("Index", "Home");
+                ModelState.AddModelError(string.Empty, "Tên đăng nhập / Email hoặc mật khẩu không chính xác.");
+                return View(model);
             }
 
-            ViewBag.Error = "Tên đăng nhập hoặc mật khẩu không chính xác";
-            return View();
+            // Create Authentication Claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("FullName", user.FullName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(2)
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            // Store user details in Session
+            HttpContext.Session.SetInt32("UserId", user.Id);
+            HttpContext.Session.SetString("Username", user.Username);
+            HttpContext.Session.SetString("FullName", user.FullName);
+            HttpContext.Session.SetString("Role", user.Role);
+
+            TempData["SuccessMessage"] = $"Chào mừng {user.FullName} đã đăng nhập thành công!";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            if (user.Role == "Admin")
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         // GET: Account/GoogleLoginMock
@@ -111,22 +159,22 @@ namespace Source.Controllers
 
         // POST: Account/GoogleLoginMockSubmit
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> GoogleLoginMockSubmit(string email, string name, string subId)
         {
             if (string.IsNullOrEmpty(email))
             {
+                TempData["ErrorMessage"] = "Không thể lấy thông tin Email từ Google.";
                 return RedirectToAction("Login");
             }
 
-            // Find or create user
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == subId || u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == subId || u.Email.ToLower() == email.ToLower());
             if (user == null)
             {
-                // Create user
                 user = new User
                 {
-                    Username = "google_" + subId.Substring(0, Math.Min(subId.Length, 8)),
-                    PasswordHash = PasswordHelper.HashPassword(Guid.NewGuid().ToString()), // Random password
+                    Username = "google_" + Guid.NewGuid().ToString("N").Substring(0, 8),
+                    PasswordHash = PasswordHelper.HashPassword(Guid.NewGuid().ToString()),
                     FullName = name,
                     Email = email,
                     PhoneNumber = "0900000000",
@@ -144,13 +192,24 @@ namespace Source.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // Log user in
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("FullName", user.FullName),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("FullName", user.FullName);
             HttpContext.Session.SetString("Role", user.Role);
 
-            TempData["SuccessMessage"] = $"Đăng nhập bằng Google thành công! Chào {user.FullName}.";
+            TempData["SuccessMessage"] = $"Đăng nhập Google thành công! Chào {user.FullName}.";
             return RedirectToAction("Index", "Home");
         }
 
@@ -158,7 +217,13 @@ namespace Source.Controllers
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
+            {
+                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
+            }
+
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login");
@@ -178,35 +243,37 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(User updatedUser)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
+            {
+                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
+            }
+
             if (!userId.HasValue || userId.Value != updatedUser.Id)
             {
                 return RedirectToAction("Login");
             }
 
-            // Load user from DB
             var dbUser = await _context.Users.FindAsync(updatedUser.Id);
             if (dbUser == null)
             {
                 return NotFound();
             }
 
-            // Update fields (excluding password, username, role, googleid unless admin edit)
-            dbUser.FullName = updatedUser.FullName;
-            dbUser.Email = updatedUser.Email;
-            dbUser.PhoneNumber = updatedUser.PhoneNumber;
-            dbUser.Address = updatedUser.Address;
-
-            // Remove model state validations for unchanged/un-editable fields in user profile edit
             ModelState.Remove("Username");
             ModelState.Remove("PasswordHash");
 
             if (ModelState.IsValid)
             {
+                dbUser.FullName = updatedUser.FullName.Trim();
+                dbUser.Email = updatedUser.Email.Trim();
+                dbUser.PhoneNumber = updatedUser.PhoneNumber.Trim();
+                dbUser.Address = updatedUser.Address.Trim();
+
                 _context.Update(dbUser);
                 await _context.SaveChangesAsync();
 
-                // Update session
                 HttpContext.Session.SetString("FullName", dbUser.FullName);
 
                 TempData["SuccessMessage"] = "Cập nhật thông tin cá nhân thành công!";
@@ -216,11 +283,12 @@ namespace Source.Controllers
             return View(updatedUser);
         }
 
-        // GET: Account/Logout
-        [HttpGet]
-        public IActionResult Logout()
+        // GET/POST: Account/Logout
+        public async Task<IActionResult> Logout()
         {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
+            TempData["SuccessMessage"] = "Bạn đã đăng xuất thành công.";
             return RedirectToAction("Index", "Home");
         }
     }
