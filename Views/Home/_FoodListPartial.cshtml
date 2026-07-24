@@ -1,0 +1,42 @@
+@model IEnumerable<Source.Models.FastFood>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @if (!Model.Any())
+    {
+        <div class="col-12 text-center py-5">
+            <i class="fa-solid fa-face-frown fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Không tìm thấy món ăn nào phù hợp với yêu cầu của bạn.</h5>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <div class="col">
+                <div class="card-food">
+                    <div class="card-img-container">
+                        <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
+                        <span class="food-badge">@item.Category?.Name</span>
+                        @if (!string.IsNullOrEmpty(item.Theme))
+                        {
+                            <span class="food-theme"><i class="fa-solid fa-tags me-1"></i>@item.Theme</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Name</h5>
+                        <p class="card-description">@item.Description</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <span class="price-tag">@item.Price.ToString("N0") ₫</span>
+                            <div class="d-flex gap-2">
+                                <a asp-action="FoodDetails" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Chi tiết</a>
+                                <button onclick="addToCart(@item.Id, false)" class="btn btn-sm btn-danger rounded-pill px-3">
+                                    <i class="fa-solid fa-cart-plus"></i> Thêm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -1,0 +1,277 @@
+@model IEnumerable<Source.Models.FastFood>
+@{
+    ViewData["Title"] = "Trang Chủ";
+    var categories = ViewBag.Categories as IEnumerable<Source.Models.Category> ?? new List<Source.Models.Category>();
+    var combos = ViewBag.Combos as IEnumerable<Source.Models.Combo> ?? new List<Source.Models.Combo>();
+    var selectedCategory = ViewBag.SelectedCategory as int?;
+    var searchName = ViewBag.SearchName as string;
+}
+
+<!-- Hero Banner -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title">Đặt Thức Ăn Nhanh<br>Giao Hàng <span>Siêu Tốc</span></h1>
+                <p class="hero-subtitle">Thưởng thức những món ăn nóng hổi, thơm ngon chuẩn vị nhà làm chỉ với vài click chuột. Giao hàng miễn phí trong 30 phút!</p>
+                <div class="d-flex gap-3">
+                    <a href="#foods-section" class="btn btn-custom btn-primary-custom">Khám phá Menu</a>
+                    <a href="#combos-section" class="btn btn-custom btn-secondary-custom">Combo Khuyến Mãi</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center mt-5 mt-lg-0">
+                <!-- Illustrated SVG Banner instead of placeholder -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="320">
+                    <defs>
+                        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000000" flood-opacity="0.1"/>
+                        </filter>
+                    </defs>
+                    <!-- Background circle decoration -->
+                    <circle cx="250" cy="200" r="150" fill="#ff4757" opacity="0.1"/>
+                    <!-- Large Burger representation -->
+                    <g transform="translate(130, 80)" filter="url(#shadow)">
+                        <path d="M 50,150 C 50,60 250,60 250,150 Z" fill="#eccc68"/>
+                        <!-- Sesame seeds -->
+                        <circle cx="110" cy="100" r="3" fill="#ffffff"/>
+                        <circle cx="150" cy="90" r="3" fill="#ffffff"/>
+                        <circle cx="190" cy="110" r="3" fill="#ffffff"/>
+                        <!-- Cheese -->
+                        <polygon points="40,160 260,160 240,185 200,170 160,195 120,170 80,185" fill="#ffa502"/>
+                        <!-- Lettuce -->
+                        <path d="M 30,150 Q 70,170 110,150 Q 150,170 190,150 Q 230,170 270,150" stroke="#2ed573" stroke-width="12" stroke-linecap="round" fill="none"/>
+                        <!-- Beef -->
+                        <rect x="40" y="180" width="220" height="25" rx="12" fill="#747d8c"/>
+                        <!-- Bun Bottom -->
+                        <path d="M 50,205 L 250,205 C 250,240 50,240 50,205 Z" fill="#ffa502" opacity="0.85"/>
+                    </g>
+                    <!-- Drink Cup -->
+                    <g transform="translate(320, 180) scale(0.7)" filter="url(#shadow)">
+                        <rect x="200" y="50" width="12" height="150" fill="#ff4757" transform="rotate(20 200 50)"/>
+                        <ellipse cx="150" cy="120" rx="60" ry="12" fill="#ced6e0"/>
+                        <path d="M 95,120 L 205,120 L 180,280 L 120,280 Z" fill="#ee5253"/>
+                        <path d="M 100,200 Q 150,230 200,200 L 195,220 Q 150,250 105,220 Z" fill="#ffffff"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Bar & Filters -->
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Search bar -->
+            <form asp-controller="Home" asp-action="Index" method="get">
+                <div class="search-bar-container">
+                    <i class="fa-solid fa-magnifying-glass ms-3 text-muted"></i>
+                    <input type="text" class="search-input" name="searchName" value="@searchName" placeholder="Tìm kiếm món ăn yêu thích..." aria-label="Tìm kiếm">
+                    @if (selectedCategory.HasValue)
+                    {
+                        <input type="hidden" name="categoryId" value="@selectedCategory.Value">
+                    }
+                    <button type="submit" class="search-btn">Tìm kiếm</button>
+                </div>
+            </form>
+            
+            <div class="text-center mt-3">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSearchPanel" aria-expanded="false" aria-controls="advancedSearchPanel">
+                    <i class="fa-solid fa-sliders me-1"></i> Tìm kiếm nâng cao
+                </button>
+            </div>
+            
+            <!-- Collapsible Advanced Search Panel -->
+            <div class="collapse mt-4" id="advancedSearchPanel">
+                <div class="glass-panel">
+                    <h5 class="fw-bold mb-3 text-danger"><i class="fa-solid fa-search-plus me-2"></i>Bộ lọc tìm kiếm nâng cao</h5>
+                    <form id="advSearchForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Tên món ăn</label>
+                                <input type="text" name="name" class="form-control form-control-custom" placeholder="Ví dụ: Burger, Pizza...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-600">Chủng loại</label>
+                                <select name="categoryId" class="form-select form-control-custom">
+                                    <option value="">Tất cả chủng loại</option>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <option value="@cat.Id">@cat.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-600">Giá tối thiểu (₫)</label>
+                                <input type="number" name="minPrice" class="form-control form-control-custom" placeholder="0">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-600">Giá tối đa (₫)</label>
+                                <input type="number" name="maxPrice" class="form-control form-control-custom" placeholder="500000">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-600">Chủ đề</label>
+                                <input type="text" name="theme" class="form-control form-control-custom" placeholder="Ví dụ: Gia đình, Ăn vặt...">
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label fw-600">Thông tin món ăn</label>
+                                <input type="text" name="description" class="form-control form-control-custom" placeholder="Từ khóa trong mô tả...">
+                            </div>
+                            <div class="col-12 d-flex justify-content-end gap-2 mt-4">
+                                <button type="button" id="btnResetAdv" class="btn btn-secondary-custom btn-custom py-2">Đặt lại</button>
+                                <button type="button" id="btnSearchAdv" class="btn btn-primary-custom btn-custom py-2">Tìm kiếm ngay</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category list slider -->
+<div class="container mb-5">
+    <h4 class="fw-bold mb-3"><i class="fa-solid fa-list-ul text-danger me-2"></i>Danh mục món ăn</h4>
+    <div class="category-filter">
+        <a asp-action="Index" asp-route-searchName="@searchName" class="btn btn-category @(selectedCategory == null ? "active" : "")">Tất cả món lẻ</a>
+        @foreach (var cat in categories)
+        {
+            <a asp-action="Index" asp-route-categoryId="@cat.Id" asp-route-searchName="@searchName" class="btn btn-category @(selectedCategory == cat.Id ? "active" : "")">@cat.Name</a>
+        }
+    </div>
+</div>
+
+<!-- Combos Section -->
+@if (combos.Any() && selectedCategory == null)
+{
+    <section id="combos-section" class="container mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold m-0 text-danger"><i class="fa-solid fa-tags me-2"></i>Gói Combo Tiết Kiệm</h3>
+            <span class="badge bg-danger rounded-pill px-3 py-2">Combo đặc biệt</span>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            @foreach (var combo in combos)
+            {
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100" style="background: linear-gradient(135deg, #fff 60%, #fffbf0 100%);">
+                        <div class="row g-0 h-100">
+                            <div class="col-sm-5 position-relative bg-light" style="min-height: 200px;">
+                                <img src="@combo.ImageUrl" alt="@combo.Name" class="w-100 h-100 position-absolute start-0 top-0" style="object-fit: cover;">
+                            </div>
+                            <div class="col-sm-7">
+                                <div class="card-body p-4 d-flex flex-column h-100">
+                                    <h4 class="fw-bold text-dark">@combo.Name</h4>
+                                    <p class="text-muted small flex-grow-1">@combo.Description</p>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold text-muted mb-2">Thực đơn gồm:</h6>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var detail in combo.ComboDetails)
+                                            {
+                                                <span class="badge bg-light text-dark border">@detail.FastFood?.Name x @detail.Quantity</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                        <span class="fs-4 fw-800 text-danger">@combo.Price.ToString("N0") ₫</span>
+                                        <div class="d-flex gap-2">
+                                            <a asp-action="ComboDetails" asp-route-id="@combo.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Chi tiết</a>
+                                            <button onclick="addToCart(@combo.Id, true)" class="btn btn-sm btn-danger rounded-pill px-3">Đặt Combo</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<!-- Foods Section -->
+<section id="foods-section" class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold m-0"><i class="fa-solid fa-fire text-danger me-2"></i>Danh sách món lẻ</h3>
+        @if (selectedCategory.HasValue)
+        {
+            <span class="text-muted">Đang xem các món: <strong>@categories.FirstOrDefault(c => c.Id == selectedCategory)?.Name</strong></span>
+        }
+    </div>
+    
+    <div id="food-list-container">
+        <!-- Render Partial View of Food List -->
+        <partial name="_FoodListPartial" model="Model" />
+    </div>
+</section>
+
+<!-- Custom AJAX Toast and Functions -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="cartToast" class="toast align-items-center text-white bg-success border-0 rounded-3 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fa-solid fa-circle-check me-2"></i> Đã thêm món ăn vào giỏ hàng!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // AJAX Add to Cart
+        function addToCart(id, isCombo) {
+            $.ajax({
+                url: '@Url.Action("AddToCart", "Cart")',
+                type: 'POST',
+                data: { id: id, isCombo: isCombo, quantity: 1 },
+                success: function (response) {
+                    if (response.success) {
+                        // Update cart count badge
+                        var badge = $('#cart-badge');
+                        badge.text(response.cartCount);
+                        badge.removeClass('d-none');
+                        
+                        // Show success toast
+                        var toastEl = document.getElementById('cartToast');
+                        var toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                    }
+                },
+                error: function () {
+                    alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            // Advanced Search AJAX Action
+            $('#btnSearchAdv').click(function () {
+                var formData = $('#advSearchForm').serialize();
+                $.ajax({
+                    url: '@Url.Action("AdvancedSearch", "Home")',
+                    type: 'GET',
+                    data: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function (data) {
+                        // Replace the food list content with search results
+                        $('#food-list-container').html(data);
+                        // Smooth scroll to food list
+                        $('html, body').animate({
+                            scrollTop: $("#foods-section").offset().top - 100
+                        }, 500);
+                    },
+                    error: function () {
+                        alert('Lỗi khi thực hiện tìm kiếm nâng cao.');
+                    }
+                });
+            });
+
+            // Reset advanced search form
+            $('#btnResetAdv').click(function () {
+                $('#advSearchForm')[0].reset();
+            });
+        });
+    </script>
+}

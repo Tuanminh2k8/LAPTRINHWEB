@@ -1,0 +1,72 @@
+@model Source.Models.FastFood
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container my-5">
+    <div class="row g-5">
+        <!-- Food Image -->
+        <div class="col-lg-6">
+            <div class="detail-image-card">
+                <img src="@Model.ImageUrl" alt="@Model.Name" class="img-fluid w-100">
+            </div>
+        </div>
+        
+        <!-- Food Info -->
+        <div class="col-lg-6">
+            <div class="glass-panel h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="badge bg-danger rounded-pill px-3 py-2">@Model.Category?.Name</span>
+                        @if (!string.IsNullOrEmpty(Model.Theme))
+                        {
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-tag me-1"></i>@Model.Theme</span>
+                        }
+                    </div>
+                    
+                    <h1 class="fw-bold text-dark mb-3">@Model.Name</h1>
+                    <h2 class="text-danger fw-800 mb-4">@Model.Price.ToString("N0") ₫</h2>
+                    
+                    <hr>
+                    
+                    <h5 class="fw-bold text-muted mb-2">Thông tin chi tiết:</h5>
+                    <p class="fs-5 text-secondary" style="line-height: 1.6;">@Model.Description</p>
+                </div>
+                
+                <div class="mt-5">
+                    <!-- Order quantity -->
+                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                        <input type="hidden" name="id" value="@Model.Id">
+                        <input type="hidden" name="isCombo" value="false">
+                        
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <span class="fw-bold text-dark">Số lượng:</span>
+                            <div class="quantity-control">
+                                <button type="button" onclick="changeQty(-1)">-</button>
+                                <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="50">
+                                <button type="button" onclick="changeQty(1)">+</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-secondary-custom btn-custom flex-grow-1 text-center">Quay lại Menu</a>
+                            <button type="submit" class="btn btn-primary-custom btn-custom flex-grow-1 py-3"><i class="fa-solid fa-cart-plus me-2"></i>Thêm vào giỏ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changeQty(amount) {
+            var input = $('#quantityInput');
+            var val = parseInt(input.val()) + amount;
+            if (val >= 1 && val <= 50) {
+                input.val(val);
+            }
+        }
+    </script>
+}
