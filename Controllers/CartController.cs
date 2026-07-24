@@ -217,20 +217,8 @@ namespace Source.Controllers
 
             if (ModelState.IsValid)
             {
-<<<<<<< HEAD
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
-=======
-                model.UserId = userId.Value;
-                model.OrderDate = DateTime.Now;
-                model.TotalAmount = cart.Sum(i => i.TotalPrice);
-                model.Status = "Pending";
-
-                _context.Orders.Add(model);
-                await _context.SaveChangesAsync();
-
-                foreach (var item in cart)
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                 {
                     model.UserId = userId.Value;
                     model.OrderDate = DateTime.Now;
@@ -262,6 +250,7 @@ namespace Source.Controllers
                 }
                 catch (Exception ex)
                 {
+                    await transaction.RollbackAsync();
                     _logger.LogError(ex, "Checkout failed for user {UserId}. Cart had {Count} items.", userId.Value, cart.Count);
                     TempData["ErrorMessage"] = "Không thể hoàn tất đặt hàng. Vui lòng thử lại.";
                 }

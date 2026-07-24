@@ -8,7 +8,7 @@
     
     var cart = HttpContextAccessor.HttpContext?.Session.GetObjectFromJson<List<CartItem>>("FastFoodCart") ?? new List<CartItem>();
     var cartCount = cart.Sum(i => i.Quantity);
-
+    
     var pageTitle = (ViewData["Title"]?.ToString() ?? "Trang chủ") + " - PolyFood Store";
     var siteDescription = "PolyFood - Hệ thống đặt thức ăn nhanh hàng đầu. Giao hàng siêu tốc trong 30 phút.";
 }
@@ -42,37 +42,59 @@
     </div>
 
     <header class="site-header">
-        <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
-            <div class="container">
-                <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
-                    <div class="brand-icon"><i class="fa-solid fa-burger"></i></div>
-                    <span class="brand-text">Poly<span class="text-danger">Food</span></span>
+        <nav class="navbar navbar-expand-lg navbar-polyfood fixed-top">
+            <div class="container px-4">
+                <a class="navbar-brand d-flex align-items-center gap-3" asp-controller="Home" asp-action="Index">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-burger fa-xl text-primary"></i>
+                    </div>
+                    <div>
+                        <h1 class="brand-text m-0">Poly<span class="text-danger">Food</span></h1>
+                        <p class="m-0 text-muted small">Đồng Nai, Việt Nam</p>
+                    </div>
                 </a>
-                
+
                 <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                
-                <div class="collapse navbar-collapse justify-content-between" id="navbarContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
+
+                <div class="collapse navbar-collapse justify-content-center" id="navbarContent">
+                    <ul class="navbar-nav mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
-                                <i class="fa-solid fa-house me-1"></i> Trang chủ
+                            <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                                <i class="fa-solid fa-house me-2"></i> Trang chủ
                             </a>
                         </li>
-                        @if (role == "Admin")
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link nav-link-custom text-danger fw-bold" asp-controller="Admin" asp-action="Index">
-                                    <i class="fa-solid fa-gauge-high me-1"></i> Quản trị
-                                </a>
-                            </li>
-                        }
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Menu" ? "active" : "")" asp-controller="Home" asp-action="Menu">
+                                <i class="fa-solid fa-utensils me-2"></i> Thực đơn
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Combos" ? "active" : "")" asp-controller="Home" asp-action="Combos">
+                                <i class="fa-solid fa-box me-2"></i> Combo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Promotions" ? "active" : "")" asp-controller="Home" asp-action="Promotions">
+                                <i class="fa-solid fa-tags me-2"></i> Khuyến mãi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "About" ? "active" : "")" asp-controller="Home" asp-action="About">
+                                <i class="fa-solid fa-info-circle me-2"></i> Về chúng tôi
+                            </a>
+                        </li>
                     </ul>
-                    
-                    <div class="d-flex align-items-center gap-2">
-                        <a asp-controller="Cart" asp-action="Index" class="btn btn-cart-icon position-relative text-dark" aria-label="Giỏ hàng">
-                            <i class="fa-solid fa-cart-shopping fs-5"></i>
+
+                    <div class="d-flex align-items-center gap-3 ms-lg-4">
+                        <button class="btn-location d-none d-lg-flex" onclick="window.location='https://maps.google.com/?q=Ha+Noi'">
+                            <i class="fa-solid fa-location-dot text-danger"></i>
+                            <span>Đồng Nai</span>
+                        </button>
+
+                        <a asp-controller="Cart" asp-action="Index" class="btn btn-cart-polyfood position-relative" aria-label="Giỏ hàng">
+                            <i class="fa-solid fa-cart-shopping fa-lg"></i>
                             <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light @(cartCount > 0 ? "" : "d-none")">
                                 @cartCount
                             </span>
@@ -81,8 +103,8 @@
                         @if (isAuthenticated)
                         {
                             <div class="dropdown">
-                                <button class="btn btn-user-menu dropdown-toggle d-flex align-items-center gap-2" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-circle-user fs-5 text-danger"></i>
+                                <button class="btn btn-user-nav dropdown-toggle d-flex align-items-center gap-2" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-circle-user fa-lg text-danger"></i>
                                     <span class="fw-semibold d-none d-md-inline">@fullName</span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2" aria-labelledby="userMenu">
@@ -95,11 +117,8 @@
                         }
                         else
                         {
-                            <a asp-controller="Account" asp-action="Login" class="btn btn-auth btn-auth-outline">
-                                <i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập
-                            </a>
-                            <a asp-controller="Account" asp-action="Register" class="btn btn-auth btn-auth-solid">
-                                Đăng ký
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-login-nav">
+                                <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập
                             </a>
                         }
                     </div>
@@ -119,6 +138,7 @@
                 </div>
             </div>
         }
+        
         @if (TempData["ErrorMessage"] != null)
         {
             <div class="container mt-3">
@@ -141,59 +161,67 @@
         <i class="fa-solid fa-chevron-up"></i>
     </button>
 
-    <footer class="footer mt-auto py-5 bg-dark text-light">
+    <footer class="footer mt-auto py-5">
         <div class="container">
             <div class="row gy-4">
-                <div class="col-md-5">
+                <div class="col-lg-4 col-md-6">
                     <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
                         <span class="footer-brand-icon"><i class="fa-solid fa-burger"></i></span>
                         PolyFood
                     </h5>
                     <p class="text-white-50 small pe-lg-4 lh-lg">Hệ thống phân phối và đặt hàng thức ăn nhanh hiện đại. Cam kết giao hàng nóng hổi, vệ sinh an toàn thực phẩm 100%.</p>
+                    <div class="d-flex gap-3 mt-3">
+                        <a href="#" class="social-link" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="social-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="social-link" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                        <a href="#" class="social-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-2 col-md-6">
                     <h6 class="fw-bold text-white mb-3">Liên kết nhanh</h6>
                     <ul class="list-unstyled text-white-50 small lh-lg">
-                        <li><a asp-controller="Home" asp-action="Index" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Trang chủ</a></li>
-                        <li><a asp-controller="Cart" asp-action="Index" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Giỏ hàng</a></li>
-                        <li><a asp-controller="Account" asp-action="Login" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Đăng nhập</a></li>
-                        <li><a asp-controller="Account" asp-action="Register" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Đăng ký</a></li>
+                        <li><a asp-controller="Home" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Trang chủ</a></li>
+                        <li><a asp-controller="Home" asp-action="Menu" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Thực đơn</a></li>
+                        <li><a asp-controller="Home" asp-action="Combos" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Combo</a></li>
+                        <li><a asp-controller="Home" asp-action="Promotions" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Khuyến mãi</a></li>
+                        <li><a asp-controller="Home" asp-action="About" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Về chúng tôi</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-<<<<<<< HEAD
+                <div class="col-lg-3 col-md-6">
                     <h6 class="fw-bold text-white mb-3">Liên hệ</h6>
-                    <p class="text-white-50 small mb-2"><i class="fa-solid fa-location-dot me-2 text-danger"></i>123 Tô Ký, Q.12, TP. HCM</p>
-                    <p class="text-white-50 small mb-2"><i class="fa-solid fa-phone me-2 text-danger"></i>Hotline: 1900 6789</p>
-                    <p class="text-white-50 small mb-3"><i class="fa-solid fa-envelope me-2 text-danger"></i>cskh@polyfood.com</p>
-                    <div class="d-flex gap-2">
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                    </div>
-=======
-                    <h6 class="fw-bold text-white mb-3">Thông tin liên hệ</h6>
-                    <p class="text-white-50 small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i>123 Tô Ký, Q.12, TP. Hồ Chí Minh</p>
-                    <p class="text-white-50 small mb-1"><i class="fa-solid fa-phone me-2 text-danger"></i>Hotline: 0908759800</p>
-                    <p class="text-white-50 small"><i class="fa-solid fa-envelope me-2 text-danger"></i>Support: cskh@polyfood.com</p>
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
+                    <ul class="list-unstyled text-white-50 small lh-lg">
+                        <li class="d-flex align-items-start gap-2 mb-2">
+                            <i class="fa-solid fa-location-dot mt-1 flex-shrink-0"></i>
+                            <span>Trụ sở: Tòa nhà Poly, Khu Công Nghệ Cao, Biên Hòa, Đồng Nai</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fa-solid fa-phone flex-shrink-0"></i>
+                            <a href="tel:19001234" class="text-decoration-none">1900 1234</a>
+                        </li>
+                        <li class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fa-solid fa-envelope flex-shrink-0"></i>
+                            <a href="mailto:info@polyfood.vn" class="text-decoration-none">info@polyfood.vn</a>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-clock flex-shrink-0"></i>
+                            <span>7:00 - 22:00 (T2 - CN)</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold text-white mb-3">Chính sách</h6>
+                    <ul class="list-unstyled text-white-50 small lh-lg">
+                        <li><a href="#" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Chính sách đặt hàng</a></li>
+                        <li><a href="#" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Chính sách giao hàng</a></li>
+                        <li><a href="#" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Chính sách đổi trả</a></li>
+                        <li><a href="#" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Chính sách bảo mật</a></li>
+                        <li><a href="#" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Điều khoản sử dụng</a></li>
+                    </ul>
                 </div>
             </div>
-            <hr class="my-4 border-secondary">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center text-white-50 small">
-<<<<<<< HEAD
-                <div>&copy; 2026 <strong class="text-white">PolyFood</strong>. All rights reserved.</div>
-                <div class="mt-2 mt-md-0">SOF2041 - Lập trình Web</div>
-=======
-                <div>&copy; 2026 <strong>PolyFood</strong>. Production standard ASP.NET Core MVC.</div>
-                
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
+            <div class="copyright">
+                &copy; @DateTime.Now.Year PolyFood Store. Tất cả quyền được bảo lưu.
             </div>
-        </div>
-
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay" class="loading-overlay">
-            <div class="loading-spinner"></div>
         </div>
     </footer>
 

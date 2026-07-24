@@ -31,30 +31,6 @@
     };
 }
 
-<<<<<<< HEAD
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold text-dark mb-1">Quản Lý Đơn Hàng</h3>
-        <p class="text-muted small mb-0">Xem và cập nhật trạng thái các đơn hàng</p>
-    </div>
-</div>
-
-@Html.AntiForgeryToken()
-
-<div class="mb-4 d-flex flex-wrap gap-2">
-    <a asp-action="Orders" class="btn @(string.IsNullOrEmpty(selectedStatus) ? "btn-primary-custom" : "btn-secondary-custom") btn-custom rounded-pill px-4 py-2" style="font-size:.85rem;">
-        Tất cả
-    </a>
-    <a asp-action="Orders" asp-route-status="Chưa giao" class="btn @(selectedStatus == "Chưa giao" ? "btn-primary-custom" : "btn-secondary-custom") btn-custom rounded-pill px-4 py-2" style="font-size:.85rem;">
-        Chưa giao
-    </a>
-    <a asp-action="Orders" asp-route-status="Đang giao" class="btn @(selectedStatus == "Đang giao" ? "btn-primary-custom" : "btn-secondary-custom") btn-custom rounded-pill px-4 py-2" style="font-size:.85rem;">
-        Đang giao
-    </a>
-    <a asp-action="Orders" asp-route-status="Đã giao" class="btn @(selectedStatus == "Đã giao" ? "btn-primary-custom" : "btn-secondary-custom") btn-custom rounded-pill px-4 py-2" style="font-size:.85rem;">
-        Đã giao
-    </a>
-=======
 @Html.AntiForgeryToken()
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -106,7 +82,7 @@
             </a>
         }
     </div>
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
+</div>
 </div>
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
@@ -115,13 +91,8 @@
             <thead class="bg-dark text-white">
                 <tr>
                     <th>Mã Đơn</th>
-<<<<<<< HEAD
-                    <th>Người Nhận</th>
-                    <th>Số Điện Thoại</th>
-=======
                     <th>Khách Hàng</th>
                     <th>SĐT</th>
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                     <th>Địa Chỉ</th>
                     <th>Ngày Đặt</th>
                     <th>Thanh Toán</th>
@@ -225,28 +196,6 @@
 
 @section Scripts {
     <script>
-<<<<<<< HEAD
-        $(document).ready(function () {
-            $('.status-select').change(function () {
-                var orderId = $(this).data('id');
-                var newStatus = $(this).val();
-                $.ajax({
-                    url: '@Url.Action("UpdateOrderStatus", "Admin")',
-                    type: 'POST',
-                    data: {
-                        id: orderId,
-                        status: newStatus,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (res) {
-                        if (res.success) {
-                            showToast('Đã cập nhật đơn hàng #' + orderId + ' thành: ' + newStatus, 'success');
-                        }
-                    },
-                    error: function () {
-                        showToast('Cập nhật thất bại. Vui lòng thử lại.', 'danger');
-=======
         function getToken() { return $('input[name="__RequestVerificationToken"]').val(); }
 
         function ajaxPost(url, data, onSuccess) {
@@ -261,7 +210,6 @@
                     if (res.success) {
                         if (onSuccess) onSuccess(res);
                         showToast('Cập nhật thành công!', 'success');
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                     }
                 },
                 error: function () {

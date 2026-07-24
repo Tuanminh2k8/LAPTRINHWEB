@@ -45,19 +45,19 @@ namespace Source.Models
 
             // Seed FastFoods
             modelBuilder.Entity<FastFood>().HasData(
-                new FastFood { Id = 1, Name = "Burger Bò Phô Mai", Price = 55000, Description = "Bánh burger kẹp thịt bò nướng thơm ngon cùng lớp phô mai béo ngậy và rau tươi.", ImageUrl = "/images/burger_cheese.svg", CategoryId = 1, Theme = "Gia đình" },
-                new FastFood { Id = 2, Name = "Burger Gà Giòn", Price = 50000, Description = "Bánh burger kẹp thịt gà chiên giòn tan, sốt mayonnaise và xà lách ngon tuyệt.", ImageUrl = "/images/burger_chicken.svg", CategoryId = 1, Theme = "Trẻ em" },
-                new FastFood { Id = 3, Name = "Pizza Hải Sản", Price = 120000, Description = "Pizza với mực, tôm, thanh cua tươi ngon cùng phô mai Mozzarella thượng hạng.", ImageUrl = "/images/pizza_seafood.svg", CategoryId = 2, Theme = "Tiệc tùng" },
-                new FastFood { Id = 4, Name = "Pizza Thập Cẩm", Price = 110000, Description = "Pizza đầy ắp thịt nguội, xúc xích pepperoni, ớt chuông, nấm và phô mai.", ImageUrl = "/images/pizza_mixed.svg", CategoryId = 2, Theme = "Gia đình" },
-                new FastFood { Id = 5, Name = "Gà Rán Giòn Cay", Price = 35000, Description = "Một miếng gà rán giòn rụm, tẩm ướp gia vị cay nồng đậm đà.", ImageUrl = "/images/chicken_spicy.svg", CategoryId = 3, Theme = "Ăn vặt" },
-                new FastFood { Id = 6, Name = "Khoai Tây Chiên", Price = 25000, Description = "Khoai tây chiên vàng giòn, rắc chút muối thơm ngon.", ImageUrl = "/images/fries.svg", CategoryId = 4, Theme = "Ăn vặt" },
-                new FastFood { Id = 7, Name = "Coca Cola", Price = 15000, Description = "Nước ngọt có ga Coca Cola mát lạnh.", ImageUrl = "/images/coca.svg", CategoryId = 4, Theme = "Ăn uống" }
+                new FastFood { Id = 1, Name = "Burger Bò Phô Mai", Price = 55000, Description = "Bánh burger kẹp thịt bò nướng thơm ngon cùng lớp phô mai béo ngậy và rau tươi.", ImageUrl = "/images/products/burger-cheese-double.jpg", CategoryId = 1, Theme = "Gia đình" },
+                new FastFood { Id = 2, Name = "Burger Gà Giòn", Price = 50000, Description = "Bánh burger kẹp thịt gà chiên giòn tan, sốt mayonnaise và xà lách ngon tuyệt.", ImageUrl = "/images/products/burger-bbq-bacon.jpg", CategoryId = 1, Theme = "Trẻ em" },
+                new FastFood { Id = 3, Name = "Pizza Hải Sản", Price = 120000, Description = "Pizza với mực, tôm, thanh cua tươi ngon cùng phô mai Mozzarella thượng hạng.", ImageUrl = "/images/products/pizza-seafood.jpg", CategoryId = 2, Theme = "Tiệc tùng" },
+                new FastFood { Id = 4, Name = "Pizza Thập Cẩm", Price = 110000, Description = "Pizza đầy ắp thịt nguội, xúc xích pepperoni, ớt chuông, nấm và phô mai.", ImageUrl = "/images/products/pizza-pepperoni.jpg", CategoryId = 2, Theme = "Gia đình" },
+                new FastFood { Id = 5, Name = "Gà Rán Giòn Cay", Price = 35000, Description = "Một miếng gà rán giòn rụm, tẩm ướp gia vị cay nồng đậm đà.", ImageUrl = "/images/products/chicken-crispy.jpg", CategoryId = 3, Theme = "Ăn vặt" },
+                new FastFood { Id = 6, Name = "Khoai Tây Chiên", Price = 25000, Description = "Khoai tây chiên vàng giòn, rắc chút muối thơm ngon.", ImageUrl = "/images/products/chicken-spicy-wings.jpg", CategoryId = 4, Theme = "Ăn vặt" },
+                new FastFood { Id = 7, Name = "Coca Cola", Price = 15000, Description = "Nước ngọt có ga Coca Cola mát lạnh.", ImageUrl = "/images/products/drink-coke.jpg", CategoryId = 4, Theme = "Ăn uống" }
             );
 
             // Seed Combos
             modelBuilder.Entity<Combo>().HasData(
-                new Combo { Id = 1, Name = "Combo Gia Đình", Price = 150000, Description = "2 Burger Bò Phô Mai + 1 Khoai Tây Chiên + 2 Coca Cola. Tiết kiệm hơn!", ImageUrl = "/images/combo_family.svg" },
-                new Combo { Id = 2, Name = "Combo Tiệc Tùng", Price = 200000, Description = "1 Pizza Hải Sản + 1 Gà Rán Giòn Cay + 1 Khoai Tây Chiên + 2 Coca Cola. Cực vui cực đã!", ImageUrl = "/images/combo_party.svg" }
+                new Combo { Id = 1, Name = "Combo Gia Đình", Price = 150000, Description = "2 Burger Bò Phô Mai + 1 Khoai Tây Chiên + 2 Coca Cola. Tiết kiệm hơn!", ImageUrl = "/images/products/burger-cheese-double.jpg" },
+                new Combo { Id = 2, Name = "Combo Tiệc Tùng", Price = 200000, Description = "1 Pizza Hải Sản + 1 Gà Rán Giòn Cay + 1 Khoai Tây Chiên + 2 Coca Cola. Cực vui cực đã!", ImageUrl = "/images/products/pizza-seafood.jpg" }
             );
 
             // Seed ComboDetails

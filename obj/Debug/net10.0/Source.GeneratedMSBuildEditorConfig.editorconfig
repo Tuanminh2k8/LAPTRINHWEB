@@ -31,15 +31,11 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-<<<<<<< HEAD
-[D:/LAPTRINHWEB/Views/Account/GoogleLoginMock.cshtml]
-=======
-[C:/Users/ADMIN/Assignment/Source/Views/Account/ChangePassword.cshtml]
+[D:/LAPTRINHWEB/Views/Account/ChangePassword.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxDaGFuZ2VQYXNzd29yZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ADMIN/Assignment/Source/Views/Account/GoogleLoginMock.cshtml]
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
+[D:/LAPTRINHWEB/Views/Account/GoogleLoginMock.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxHb29nbGVMb2dpbk1vY2suY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
@@ -135,8 +131,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FydFxPcmRlclRyYWNraW5nLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/LAPTRINHWEB/Views/Home/About.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/LAPTRINHWEB/Views/Home/ComboDetails.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb21ib0RldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/LAPTRINHWEB/Views/Home/Combos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb21ib3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/LAPTRINHWEB/Views/Home/FoodDetails.cshtml]
@@ -147,20 +151,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-<<<<<<< HEAD
+[D:/LAPTRINHWEB/Views/Home/Menu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxNZW51LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/LAPTRINHWEB/Views/Home/NotFound.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxOb3RGb3VuZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/LAPTRINHWEB/Views/Home/PageNotFound.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQYWdlTm90Rm91bmQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/LAPTRINHWEB/Views/Home/Privacy.cshtml]
-=======
-[C:/Users/ADMIN/Assignment/Source/Views/Home/NotFound.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxOb3RGb3VuZC5jc2h0bWw=
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ADMIN/Assignment/Source/Views/Home/Privacy.cshtml]
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+[D:/LAPTRINHWEB/Views/Home/Promotions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcm9tb3Rpb25zLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/LAPTRINHWEB/Views/Home/_FoodListPartial.cshtml]

@@ -1,6 +1,6 @@
 @model IEnumerable<Source.Models.FastFood>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
     @if (!Model.Any())
     {
         <div class="col-12">
@@ -19,26 +19,19 @@
         @foreach (var item in Model)
         {
             <div class="col reveal">
-                <div class="card-food">
-                    <div class="card-img-container">
+                <div class="food-card">
+                    <div class="food-img-wrap">
                         <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
-                        <span class="food-badge">@item.Category?.Name</span>
-                        @if (!string.IsNullOrEmpty(item.Theme))
-                        {
-                            <span class="food-theme"><i class="fa-solid fa-tags me-1"></i>@item.Theme</span>
-                        }
+                        <span class="food-category-badge">@item.Category?.Name</span>
                     </div>
-                    <div class="card-body">
-                        <h5 class="card-title">@item.Name</h5>
-                        <p class="card-description">@item.Description</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
-                            <span class="price-tag">@item.Price.ToString("N0") ₫</span>
-                            <div class="d-flex gap-2">
-                                <a asp-action="FoodDetails" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="font-size:.78rem;">Chi tiết</a>
-                                <button onclick="addToCart(@item.Id, false, 1, this)" class="btn btn-sm btn-danger rounded-pill px-3" style="font-size:.78rem;">
-                                    <i class="fa-solid fa-cart-plus"></i> Thêm
-                                </button>
-                            </div>
+                    <div class="food-body">
+                        <h5 class="food-name">@item.Name</h5>
+                        <p class="food-desc">@item.Description</p>
+                        <div class="food-footer">
+                            <span class="food-price">@item.Price.ToString("N0") ₫</span>
+                            <button onclick="addToCart(@item.Id, false, 1, this)" class="btn-add-cart" title="Thêm vào giỏ hàng">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
                         </div>
                     </div>
                 </div>

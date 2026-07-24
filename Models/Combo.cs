@@ -23,6 +23,13 @@ namespace Source.Models
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
 
+        [Display(Name = "Đang giảm giá")]
+        public bool IsOnSale { get; set; } = false;
+
+        [Display(Name = "Giá gốc")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal OriginalPrice { get; set; } = 0;
+
         [Display(Name = "Hình ảnh")]
         public string ImageUrl { get; set; } = "/images/default_combo.jpg";
 

@@ -87,10 +87,16 @@ namespace Source.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsOnSale")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("OriginalPrice")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
@@ -104,16 +110,20 @@ namespace Source.Migrations
                         {
                             Id = 1,
                             Description = "2 Burger Bò Phô Mai + 1 Khoai Tây Chiên + 2 Coca Cola. Tiết kiệm hơn!",
-                            ImageUrl = "/images/combo_family.svg",
+                            ImageUrl = "/images/products/burger-cheese-double.jpg",
+                            IsOnSale = false,
                             Name = "Combo Gia Đình",
+                            OriginalPrice = 0m,
                             Price = 150000m
                         },
                         new
                         {
                             Id = 2,
                             Description = "1 Pizza Hải Sản + 1 Gà Rán Giòn Cay + 1 Khoai Tây Chiên + 2 Coca Cola. Cực vui cực đã!",
-                            ImageUrl = "/images/combo_party.svg",
+                            ImageUrl = "/images/products/pizza-seafood.jpg",
+                            IsOnSale = false,
                             Name = "Combo Tiệc Tùng",
+                            OriginalPrice = 0m,
                             Price = 200000m
                         });
                 });
@@ -224,7 +234,7 @@ namespace Source.Migrations
                             Id = 1,
                             CategoryId = 1,
                             Description = "Bánh burger kẹp thịt bò nướng thơm ngon cùng lớp phô mai béo ngậy và rau tươi.",
-                            ImageUrl = "/images/burger_cheese.svg",
+                            ImageUrl = "/images/products/burger-cheese-double.jpg",
                             Name = "Burger Bò Phô Mai",
                             Price = 55000m,
                             Theme = "Gia đình"
@@ -234,7 +244,7 @@ namespace Source.Migrations
                             Id = 2,
                             CategoryId = 1,
                             Description = "Bánh burger kẹp thịt gà chiên giòn tan, sốt mayonnaise và xà lách ngon tuyệt.",
-                            ImageUrl = "/images/burger_chicken.svg",
+                            ImageUrl = "/images/products/burger-bbq-bacon.jpg",
                             Name = "Burger Gà Giòn",
                             Price = 50000m,
                             Theme = "Trẻ em"
@@ -244,7 +254,7 @@ namespace Source.Migrations
                             Id = 3,
                             CategoryId = 2,
                             Description = "Pizza với mực, tôm, thanh cua tươi ngon cùng phô mai Mozzarella thượng hạng.",
-                            ImageUrl = "/images/pizza_seafood.svg",
+                            ImageUrl = "/images/products/pizza-seafood.jpg",
                             Name = "Pizza Hải Sản",
                             Price = 120000m,
                             Theme = "Tiệc tùng"
@@ -254,7 +264,7 @@ namespace Source.Migrations
                             Id = 4,
                             CategoryId = 2,
                             Description = "Pizza đầy ắp thịt nguội, xúc xích pepperoni, ớt chuông, nấm và phô mai.",
-                            ImageUrl = "/images/pizza_mixed.svg",
+                            ImageUrl = "/images/products/pizza-pepperoni.jpg",
                             Name = "Pizza Thập Cẩm",
                             Price = 110000m,
                             Theme = "Gia đình"
@@ -264,7 +274,7 @@ namespace Source.Migrations
                             Id = 5,
                             CategoryId = 3,
                             Description = "Một miếng gà rán giòn rụm, tẩm ướp gia vị cay nồng đậm đà.",
-                            ImageUrl = "/images/chicken_spicy.svg",
+                            ImageUrl = "/images/products/chicken-crispy.jpg",
                             Name = "Gà Rán Giòn Cay",
                             Price = 35000m,
                             Theme = "Ăn vặt"
@@ -274,7 +284,7 @@ namespace Source.Migrations
                             Id = 6,
                             CategoryId = 4,
                             Description = "Khoai tây chiên vàng giòn, rắc chút muối thơm ngon.",
-                            ImageUrl = "/images/fries.svg",
+                            ImageUrl = "/images/products/chicken-spicy-wings.jpg",
                             Name = "Khoai Tây Chiên",
                             Price = 25000m,
                             Theme = "Ăn vặt"
@@ -284,7 +294,7 @@ namespace Source.Migrations
                             Id = 7,
                             CategoryId = 4,
                             Description = "Nước ngọt có ga Coca Cola mát lạnh.",
-                            ImageUrl = "/images/coca.svg",
+                            ImageUrl = "/images/products/drink-coke.jpg",
                             Name = "Coca Cola",
                             Price = 15000m,
                             Theme = "Ăn uống"

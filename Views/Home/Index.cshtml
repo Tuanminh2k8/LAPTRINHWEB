@@ -8,81 +8,96 @@
     var sortOrder = ViewBag.SortOrder as string;
     var pageNumber = ViewBag.PageNumber as int? ?? 1;
     var totalPages = ViewBag.TotalPages as int? ?? 1;
+
+    var categoryIcons = new Dictionary<string, string>
+    {
+        { "Tat ca", "fa-border-all" },
+        { "Burger", "fa-burger" },
+        { "Pizza", "fa-pizza-slice" },
+        { "Chicken", "fa-drumstick-bite" },
+        { "Ga", "fa-drumstick-bite" },
+        { "Do Uong", "fa-glass-water" },
+        { "Drink", "fa-glass-water" },
+        { "Mon Kem", "fa-french-fries" },
+        { "Side", "fa-french-fries" },
+        { "Salad", "fa-leaf" },
+        { "Trang mieng", "fa-cake-candles" },
+        { "Dessert", "fa-cake-candles" },
+        { "Combo", "fa-box" },
+        { "Pasta", "fa-utensils" }
+    };
+
+    var comboUnsplash = new List<string>
+    {
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600",
+        "https://images.unsplash.com/photo-1544025162-d76694265947?w=600",
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
+    };
+
+    var featuredItems = new List<dynamic>
+    {
+        new { Name = "Burger Bò", Price = 89000, Img = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500", Cat = "Burger" },
+        new { Name = "Burger Gà", Price = 79000, Img = "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500", Cat = "Burger" },
+        new { Name = "Gà Rán Cay", Price = 69000, Img = "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=500", Cat = "Gà Rán" },
+        new { Name = "Pizza Hải Sản", Price = 159000, Img = "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500", Cat = "Pizza" },
+        new { Name = "Khoai Tây Chiên", Price = 35000, Img = "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500", Cat = "Món Kèm" },
+        new { Name = "Đồ Uống Lạnh", Price = 29000, Img = "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500", Cat = "Đồ Uống" }
+    };
 }
 
-<!-- Hero Banner -->
 <section class="hero-section">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6 hero-content">
                 <h1 class="hero-title">Đặt Thức Ăn Nhanh<br>Giao Hàng <span>Siêu Tốc</span></h1>
                 <p class="hero-subtitle">Thưởng thức những món ăn nóng hổi, thơm ngon chuẩn vị nhà làm chỉ với vài click chuột. Giao hàng miễn phí trong 30 phút!</p>
-                <div class="d-flex gap-3 flex-wrap">
-                    <a href="#foods-section" class="btn btn-custom btn-primary-custom">Khám phá Menu</a>
-                    <a href="#combos-section" class="btn btn-custom btn-secondary-custom">Combo Khuyến Mãi</a>
+                <div class="d-flex gap-3 flex-wrap mt-4">
+                    <a href="#foods-section" class="btn btn-primary-custom btn-custom">Đặt món ngay</a>
+                    <a href="#combos-section" class="btn btn-secondary-custom btn-custom">Xem thực đơn</a>
+                </div>
+                <div class="d-flex gap-3 mt-4">
+                    <span class="polyfood-badge-warning d-inline-flex align-items-center gap-2"><i class="fa-solid fa-truck-fast"></i> Giao nhanh 30 phút</span>
+                    <span class="polyfood-badge-warning d-inline-flex align-items-center gap-2"><i class="fa-solid fa-shield"></i> Thanh toán an toàn</span>
                 </div>
             </div>
             <div class="col-lg-6 text-center mt-5 mt-lg-0 hero-visual">
-                <!-- Floating badges -->
-                <div class="floating-badge">
-                    <i class="fa-solid fa-truck-fast text-danger"></i>
-                    <span>Giao trong 30 phút</span>
+                <div class="position-relative d-inline-block">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000&auto=format&fit=crop" alt="PolyFood Hero" class="hero-img" loading="lazy">
+                    <div class="floating-badge star">
+                        <i class="fa-solid fa-star text-warning"></i>
+                        <span>4.9/5 (1.2k+ Đánh giá)</span>
+                    </div>
+                    <div class="floating-badge truck">
+                        <i class="fa-solid fa-truck-fast text-danger"></i>
+                        <span>Giao siêu tốc 30 phút</span>
+                    </div>
                 </div>
-                <div class="floating-badge">
-                    <i class="fa-solid fa-tags text-success"></i>
-                    <span>Giảm đến 20%</span>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="100%" height="320" style="max-width:450px;">
-                    <defs>
-                        <filter id="shadow-hero" x="-10%" y="-10%" width="120%" height="120%">
-                            <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000000" flood-opacity="0.08"/>
-                        </filter>
-                    </defs>
-                    <circle cx="250" cy="200" r="150" fill="#E63946" opacity="0.06"/>
-                    <g transform="translate(130, 80)" filter="url(#shadow-hero)">
-                        <path d="M 50,150 C 50,60 250,60 250,150 Z" fill="#eccc68"/>
-                        <circle cx="110" cy="100" r="3" fill="#ffffff"/>
-                        <circle cx="150" cy="90" r="3" fill="#ffffff"/>
-                        <circle cx="190" cy="110" r="3" fill="#ffffff"/>
-                        <polygon points="40,160 260,160 240,185 200,170 160,195 120,170 80,185" fill="#ffa502"/>
-                        <path d="M 30,150 Q 70,170 110,150 Q 150,170 190,150 Q 230,170 270,150" stroke="#2ed573" stroke-width="12" stroke-linecap="round" fill="none"/>
-                        <rect x="40" y="180" width="220" height="25" rx="12" fill="#747d8c"/>
-                        <path d="M 50,205 L 250,205 C 250,240 50,240 50,205 Z" fill="#ffa502" opacity="0.85"/>
-                    </g>
-                    <g transform="translate(320, 180) scale(0.7)" filter="url(#shadow-hero)">
-                        <rect x="200" y="50" width="12" height="150" fill="#E63946" transform="rotate(20 200 50)"/>
-                        <ellipse cx="150" cy="120" rx="60" ry="12" fill="#ced6e0"/>
-                        <path d="M 95,120 L 205,120 L 180,280 L 120,280 Z" fill="#ee5253"/>
-                        <path d="M 100,200 Q 150,230 200,200 L 195,220 Q 150,250 105,220 Z" fill="#ffffff"/>
-                    </g>
-                </svg>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Search Bar -->
 <div class="container mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <form asp-controller="Home" asp-action="Index" method="get">
-                <div class="search-bar-container">
-                    <i class="fa-solid fa-magnifying-glass ms-3 text-muted"></i>
-                    <input type="text" class="search-input" name="searchName" value="@searchName" placeholder="Tìm kiếm món ăn yêu thích..." aria-label="Tìm kiếm">
+                <div class="search-pill-bar">
+                    <i class="fa-solid fa-magnifying-glass search-pill-icon"></i>
+                    <input type="text" class="search-pill-input" name="searchName" value="@searchName" placeholder="Tìm kiếm món ăn yêu thích..." aria-label="Tìm kiếm">
                     @if (selectedCategory.HasValue)
                     {
                         <input type="hidden" name="categoryId" value="@selectedCategory.Value">
                     }
-                    <button type="submit" class="search-btn">Tìm kiếm</button>
+                    <button type="submit" class="search-pill-btn">Tìm kiếm</button>
                 </div>
             </form>
-            
+
             <div class="text-center mt-3">
                 <button class="btn btn-ghost btn-sm rounded-pill px-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSearchPanel" aria-expanded="false" aria-controls="advancedSearchPanel">
                     <i class="fa-solid fa-sliders me-1"></i> Tìm kiếm nâng cao
                 </button>
             </div>
-            
+
             <div class="collapse mt-4" id="advancedSearchPanel">
                 <div class="glass-panel">
                     <h5 class="fw-bold mb-3 text-danger"><i class="fa-solid fa-search-plus me-2"></i>Bộ lọc tìm kiếm nâng cao</h5>
@@ -130,160 +145,183 @@
     </div>
 </div>
 
-<!-- Category list -->
-<div class="container mb-5">
-    <h4 class="fw-bold mb-3 d-flex align-items-center gap-2">
-        <span class="brand-icon" style="width:32px;height:32px;font-size:.8rem;"><i class="fa-solid fa-list-ul"></i></span>
-        Danh mục món ăn
-    </h4>
-    <div class="category-filter">
-        <a asp-action="Index" asp-route-searchName="@searchName" class="btn btn-category @(selectedCategory == null ? "active" : "")"><i class="fa-solid fa-border-all"></i> Tất cả món lẻ</a>
-        @foreach (var cat in categories)
-        {
-            <a asp-action="Index" asp-route-categoryId="@cat.Id" asp-route-searchName="@searchName" class="btn btn-category @(selectedCategory == cat.Id ? "active" : "")">@cat.Name</a>
-        }
+<section class="polyfood-category-section">
+    <div class="container">
+        <div class="polyfood-section-header">
+            <div class="polyfood-section-icon">
+                <i class="fa-solid fa-list-ul"></i>
+            </div>
+            <h3 class="polyfood-section-title">Danh mục món ăn</h3>
+        </div>
+        <div class="polyfood-category-grid">
+            <a asp-action="Index" asp-route-searchName="@searchName" class="polyfood-category-card @(selectedCategory == null ? "active" : "")">
+                <div class="polyfood-category-icon">
+                    <i class="fa-solid fa-border-all"></i>
+                </div>
+                <span>Tất cả</span>
+            </a>
+            @foreach (var cat in categories)
+            {
+                <a asp-action="Index" asp-route-categoryId="@cat.Id" asp-route-searchName="@searchName" class="polyfood-category-card @(selectedCategory == cat.Id ? "active" : "")">
+                    <div class="polyfood-category-icon">
+                        @{
+                            var iconKey = categoryIcons.Keys.FirstOrDefault(k => cat.Name.Contains(k, StringComparison.OrdinalIgnoreCase) || k.Contains(cat.Name, StringComparison.OrdinalIgnoreCase));
+                            var icon = iconKey != null ? categoryIcons[iconKey] : "fa-utensils";
+                        }
+                        <i class="fa-solid @icon"></i>
+                    </div>
+                    <span>@cat.Name</span>
+                </a>
+            }
+        </div>
     </div>
-</div>
+</section>
 
-<!-- Combos Section -->
 @if (combos.Any() && selectedCategory == null)
 {
-    <section id="combos-section" class="container mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold m-0 d-flex align-items-center gap-2">
-                <span class="brand-icon" style="width:34px;height:34px;font-size:.85rem;background:linear-gradient(135deg,#F4A261,#FFB347);"><i class="fa-solid fa-tags"></i></span>
-                Gói Combo Tiết Kiệm
-            </h3>
-            <span class="badge bg-danger rounded-pill px-3 py-2" style="font-size:.75rem;">Combo đặc biệt</span>
-        </div>
-        <div class="row row-cols-1 row-cols-md-2 g-4">
-            @foreach (var combo in combos)
-            {
-                <div class="col reveal">
-                    <div class="combo-card">
-                        <div class="row g-0 h-100">
-                            <div class="col-sm-5 position-relative bg-light combo-img-wrap">
-                                <img src="@combo.ImageUrl" alt="@combo.Name" loading="lazy">
-                            </div>
-                            <div class="col-sm-7">
-                                <div class="card-body p-4 d-flex flex-column h-100">
-                                    <h4 class="fw-bold text-dark">@combo.Name</h4>
-                                    <p class="text-muted small flex-grow-1">@combo.Description</p>
-                                    
-                                    <div class="mb-3">
-                                        <h6 class="fw-bold text-muted mb-2" style="font-size:.8rem;">Thực đơn gồm:</h6>
-                                        <div class="d-flex flex-wrap gap-1">
-                                            @foreach (var detail in combo.ComboDetails)
-                                            {
-                                                <span class="badge bg-light text-dark border" style="font-size:.72rem;">@detail.FastFood?.Name x @detail.Quantity</span>
-                                            }
-                                        </div>
-                                    </div>
+    <section id="combos-section" class="polyfood-combos-section">
+        <div class="container">
+            <div class="polyfood-section-header">
+                <div class="polyfood-section-icon">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+                <h3 class="polyfood-section-title">Gói Combo Tiết Kiệm</h3>
+                <span class="polyfood-badge-warning">Combo đặc biệt</span>
+            </div>
+            @{
+                var comboList = combos.ToList();
+            }
+            <div class="combo-grid-3">
+                @for (int i = 0; i < Math.Min(comboList.Count, 3); i++)
+                {
+                    var combo = comboList[i];
+                    var cImg = i < comboUnsplash.Count ? comboUnsplash[i] : combo.ImageUrl;
+                    var discount = combo.OriginalPrice > 0 ? (int)Math.Round((1 - combo.Price / combo.OriginalPrice) * 100) : 20;
 
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                        <span class="fs-4 fw-800 text-danger">@combo.Price.ToString("N0") ₫</span>
-                                        <div class="d-flex gap-2">
-                                            <a asp-action="ComboDetails" asp-route-id="@combo.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="font-size:.8rem;">Chi tiết</a>
-                                            <button onclick="addToCart(@combo.Id, true, 1, this)" class="btn btn-sm btn-danger rounded-pill px-3" style="font-size:.8rem;">Đặt Combo</button>
-                                        </div>
+                    <div class="col reveal">
+                        <div class="combo-card-vertical">
+                            <div class="combo-card-img-wrap">
+                                <img src="@cImg" alt="@combo.Name" loading="lazy">
+                                <span class="combo-discount-tag">TIẾT KIỆM @discount%</span>
+                            </div>
+                            <div class="combo-card-body">
+                                <h4 class="combo-card-title">@combo.Name</h4>
+                                <p class="combo-card-desc">@combo.Description</p>
+                                <div class="combo-card-footer">
+                                    <div class="combo-pricing">
+                                        @if (combo.OriginalPrice > 0)
+                                        {
+                                            <span class="combo-original-price">@combo.OriginalPrice.ToString("N0") ₫</span>
+                                        }
+                                        <span class="combo-current-price text-xl font-bold text-red-600">@combo.Price.ToString("N0") ₫</span>
                                     </div>
+                                    <button onclick="addToCart(@combo.Id, true, 1, this)" class="combo-btn-order">Đặt Combo</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </section>
 }
 
-<!-- Foods Section -->
 <section id="foods-section" class="container">
-<<<<<<< HEAD
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold m-0 d-flex align-items-center gap-2">
-            <span class="brand-icon" style="width:34px;height:34px;font-size:.85rem;"><i class="fa-solid fa-fire"></i></span>
-            Danh sách món lẻ
-        </h3>
-=======
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h3 class="fw-bold m-0"><i class="fa-solid fa-fire text-danger me-2"></i>Danh sách món lẻ</h3>
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
-        @if (selectedCategory.HasValue)
-        {
-            <span class="text-muted small">Đang xem: <strong class="text-dark">@categories.FirstOrDefault(c => c.Id == selectedCategory)?.Name</strong></span>
-        }
-        <select id="sortOrder" class="form-select form-select-sm" style="width: auto;">
-            <option value="">Sắp xếp: Mặc định</option>
-            <option value="price_asc" selected="@(sortOrder == "price_asc")">Giá: Thấp đến Cao</option>
-            <option value="price_desc" selected="@(sortOrder == "price_desc")">Giá: Cao đến Thấp</option>
-            <option value="name_asc" selected="@(sortOrder == "name_asc")">Tên: A - Z</option>
-            <option value="name_desc" selected="@(sortOrder == "name_desc")">Tên: Z - A</option>
-            <option value="newest" selected="@(sortOrder == "newest")">Mới nhất</option>
-        </select>
-    </div>
-    
-    <div id="food-list-container">
-        <partial name="_FoodListPartial" model="Model" />
+    <div class="polyfood-section-header">
+        <div class="polyfood-section-icon">
+            <i class="fa-solid fa-fire"></i>
+        </div>
+        <h3 class="polyfood-section-title">Thực đơn Món Lẻ Nổi Bật</h3>
     </div>
 
-    @if (totalPages > 1)
-    {
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
-                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber - 1 })">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </a>
-                </li>
-                @for (int i = 1; i <= totalPages; i++)
-                {
-                    <li class="page-item @(i == pageNumber ? "active" : "")">
-                        <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = i })">@i</a>
-                    </li>
-                }
-                <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
-                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber + 1 })">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    }
+    <div class="food-grid-4">
+        @foreach (var item in featuredItems)
+        {
+            <div class="col reveal">
+                <div class="food-card">
+                    <div class="food-img-wrap">
+                        <img src="@item.Img" alt="@item.Name" loading="lazy">
+                        <span class="food-category-badge">@item.Cat</span>
+                    </div>
+                    <div class="food-body">
+                        <h5 class="food-name">@item.Name</h5>
+                        <p class="food-desc">Món ăn thơm ngon, chế biến từ nguyên liệu tươi sạch, đạt chuẩn vệ sinh an toàn thực phẩm.</p>
+                        <div class="food-footer">
+                            <span class="food-price">@item.Price.ToString("N0") ₫</span>
+                            <button onclick="showToast('Đã thêm @item.Name vào giỏ hàng!', 'success')" class="btn-add-cart" title="Thêm vào giỏ hàng">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Home" asp-action="Menu" class="btn btn-primary-custom btn-custom">Xem toàn bộ thực đơn</a>
+    </div>
+</section>
+
+<section class="container">
+    <div class="promo-banner-gradient">
+        <div class="promo-banner-gradient-content">
+            <div>
+                <h3>Giảm ngay 20% cho đơn hàng đầu tiên!</h3>
+                <p>Nhập mã khuyến mãi để nhận ưu đãi đặc biệt từ PolyFood. Áp dụng cho tất cả các món ăn.</p>
+                <div class="promo-code-box-white">WELCOME20</div>
+            </div>
+            <a href="#foods-section" class="promo-btn-white">Nhận ưu đãi</a>
+        </div>
+    </div>
+</section>
+
+<section class="container">
+    <div class="features-bar">
+        <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
+            <h6>Giao hàng siêu tốc</h6>
+            <p>Trong vòng 30 phút</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-leaf"></i></div>
+            <h6>Nguyên liệu sạch</h6>
+            <p>An toàn vệ sinh</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-headset"></i></div>
+            <h6>Hỗ trợ 24/7</h6>
+            <p>Tư vấn tận tình</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon"><i class="fa-solid fa-wallet"></i></div>
+            <h6>Thanh toán linh hoạt</h6>
+            <p>Tiền mặt & chuyển khoản</p>
+        </div>
+    </div>
 </section>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
             $('#btnSearchAdv').click(function () {
-<<<<<<< HEAD
                 var formData = $('#advSearchForm').serialize();
-                var $container = $('#food-list-container');
-                PolyFood.showFoodSkeleton($container);
-                $('html, body').animate({ scrollTop: $("#foods-section").offset().top - 100 }, 500);
                 $.ajax({
                     url: '@Url.Action("AdvancedSearch", "Home")',
                     type: 'GET',
                     data: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     success: function (data) {
-                        $container.html(data);
+                        $('#food-list-container').html(data);
                     },
                     error: function () {
                         showToast('Lỗi khi thực hiện tìm kiếm nâng cao.', 'danger');
                     }
                 });
-=======
-                performAdvancedSearch();
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
             });
 
             $('#btnResetAdv').click(function () {
                 $('#advSearchForm')[0].reset();
-            });
-
-            $('#sortOrder').change(function () {
-                handleSortChange();
             });
         });
     </script>

@@ -25,7 +25,7 @@ namespace Source.Controllers
         {
             ViewBag.TotalOrders = await _context.Orders.CountAsync();
             ViewBag.PendingOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
-            ViewBag.DeliveringOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivering);
+            ViewBag.DeliveringOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Shipping);
             ViewBag.DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered);
             ViewBag.TotalRevenue = await _context.Orders.Where(o => o.Status == OrderStatus.Delivered).SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
 
@@ -596,39 +596,18 @@ namespace Source.Controllers
 
         #region Order Management
 
-<<<<<<< HEAD
-        public async Task<IActionResult> Orders(string? status, int page = 1)
-        {
-            page = Math.Max(1, page);
-            var query = _context.Orders.Include(o => o.User).AsQueryable();
-=======
         public async Task<IActionResult> Orders(string? status, string? search, string? sort, int? page)
         {
             var query = _context.Orders
                 .Include(o => o.User)
                 .Where(o => !o.IsDeleted)
                 .AsQueryable();
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(o => o.Status == status);
             }
 
-<<<<<<< HEAD
-            var totalItems = await query.CountAsync();
-            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
-
-            ViewBag.SelectedStatus = status;
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
-
-            var orders = await query
-                .OrderByDescending(o => o.OrderDate)
-                .Skip((page - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
-=======
             if (!string.IsNullOrEmpty(search))
             {
                 search = search.Trim().ToLower();
@@ -639,8 +618,8 @@ namespace Source.Controllers
                     (o.User != null && o.User.FullName != null && o.User.FullName.ToLower().Contains(search)));
             }
 
-            ViewBag.SelectedStatus = status;
             ViewBag.Search = search;
+            ViewBag.SelectedStatus = status;
 
             sort = sort?.ToLower();
             query = sort switch
@@ -651,18 +630,18 @@ namespace Source.Controllers
                 _ => query.OrderByDescending(o => o.OrderDate)
             };
 
-            int pageSize = 10;
             int pageNumber = page ?? 1;
             var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
             if (pageNumber > totalPages && totalPages > 0) pageNumber = totalPages;
             if (pageNumber < 1) pageNumber = 1;
 
-            var orders = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            var orders = await query.Skip((pageNumber - 1) * PageSize).Take(PageSize).ToListAsync();
 
             ViewBag.PageNumber = pageNumber;
             ViewBag.TotalPages = totalPages;
             ViewBag.SortOrder = sort;
+            ViewBag.CurrentPage = pageNumber;
 
             ViewBag.StatusCounts = new Dictionary<string, int>
             {
@@ -674,7 +653,6 @@ namespace Source.Controllers
                 { "Cancelled", await _context.Orders.CountAsync(o => o.Status == "Cancelled" && !o.IsDeleted) },
                 { "Refunded", await _context.Orders.CountAsync(o => o.Status == "Refunded" && !o.IsDeleted) }
             };
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
             return View(orders);
         }
@@ -691,15 +669,9 @@ namespace Source.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            var allowed = new[] { "Pending", "Preparing", "Shipping", "Delivered", "Cancelled", "Refunded" };
-            if (!allowed.Contains(status)) return BadRequest();
-
             order.Status = status;
-<<<<<<< HEAD
-=======
             order.UpdatedAt = DateTime.Now;
             _context.Update(order);
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Admin updated order #{OrderId} status to: {Status}", id, status);
@@ -713,8 +685,6 @@ namespace Source.Controllers
             return RedirectToAction(nameof(Orders), new { status });
         }
 
-<<<<<<< HEAD
-=======
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmOrder(int id)
@@ -812,7 +782,6 @@ namespace Source.Controllers
         }
 
         // GET: Admin/OrderDetail/5
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
         public async Task<IActionResult> OrderDetail(int id)
         {
             var order = await _context.Orders

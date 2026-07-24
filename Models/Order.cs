@@ -23,11 +23,7 @@ namespace Source.Models
 
         [Required]
         [Display(Name = "Trạng thái")]
-<<<<<<< HEAD
         public string Status { get; set; } = OrderStatus.Pending;
-=======
-        public string Status { get; set; } = "Pending"; // Pending, Preparing, Shipping, Delivered, Cancelled, Refunded
->>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
         [Required(ErrorMessage = "Tên người nhận không được để trống")]
         [StringLength(100, ErrorMessage = "Tên người nhận không được quá 100 ký tự")]
