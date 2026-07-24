@@ -1,0 +1,50 @@
+@{
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+}
+
+@if (totalPages > 1)
+{
+    <nav aria-label="Phân trang" class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                <a class="page-link border-0 rounded-start-3 shadow-sm fw-600" 
+                   href="@UrlHelper(page: currentPage - 1)" aria-label="Trang trước">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            </li>
+
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link border-0 fw-600 @(i == currentPage ? "bg-danger text-white shadow-sm" : "text-dark")" 
+                       href="@UrlHelper(page: i)">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                <a class="page-link border-0 rounded-end-3 shadow-sm fw-600"
+                   href="@UrlHelper(page: currentPage + 1)" aria-label="Trang sau">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}
+
+@functions {
+    string? UrlHelper(int page)
+    {
+        var q = Context.Request.Query;
+        var items = new List<string>();
+        foreach (var kv in q)
+        {
+            if (kv.Key.Equals("page", StringComparison.OrdinalIgnoreCase)) continue;
+            items.Add($"{kv.Key}={kv.Value}");
+        }
+        items.Add($"page={page}");
+        return Context.Request.Path + "?" + string.Join("&", items);
+    }
+}

@@ -596,16 +596,26 @@ namespace Source.Controllers
 
         #region Order Management
 
+<<<<<<< HEAD
         public async Task<IActionResult> Orders(string? status, int page = 1)
         {
             page = Math.Max(1, page);
             var query = _context.Orders.Include(o => o.User).AsQueryable();
+=======
+        public async Task<IActionResult> Orders(string? status, string? search, string? sort, int? page)
+        {
+            var query = _context.Orders
+                .Include(o => o.User)
+                .Where(o => !o.IsDeleted)
+                .AsQueryable();
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(o => o.Status == status);
             }
 
+<<<<<<< HEAD
             var totalItems = await query.CountAsync();
             var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
 
@@ -618,6 +628,53 @@ namespace Source.Controllers
                 .Skip((page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
+=======
+            if (!string.IsNullOrEmpty(search))
+            {
+                search = search.Trim().ToLower();
+                query = query.Where(o =>
+                    o.Id.ToString().Contains(search) ||
+                    (o.ReceiverName != null && o.ReceiverName.ToLower().Contains(search)) ||
+                    (o.ReceiverPhone != null && o.ReceiverPhone.ToLower().Contains(search)) ||
+                    (o.User != null && o.User.FullName != null && o.User.FullName.ToLower().Contains(search)));
+            }
+
+            ViewBag.SelectedStatus = status;
+            ViewBag.Search = search;
+
+            sort = sort?.ToLower();
+            query = sort switch
+            {
+                "oldest" => query.OrderBy(o => o.OrderDate),
+                "price_high" => query.OrderByDescending(o => o.TotalAmount),
+                "price_low" => query.OrderBy(o => o.TotalAmount),
+                _ => query.OrderByDescending(o => o.OrderDate)
+            };
+
+            int pageSize = 10;
+            int pageNumber = page ?? 1;
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (pageNumber > totalPages && totalPages > 0) pageNumber = totalPages;
+            if (pageNumber < 1) pageNumber = 1;
+
+            var orders = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            ViewBag.PageNumber = pageNumber;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.SortOrder = sort;
+
+            ViewBag.StatusCounts = new Dictionary<string, int>
+            {
+                { "All", await _context.Orders.CountAsync(o => !o.IsDeleted) },
+                { "Pending", await _context.Orders.CountAsync(o => o.Status == "Pending" && !o.IsDeleted) },
+                { "Preparing", await _context.Orders.CountAsync(o => o.Status == "Preparing" && !o.IsDeleted) },
+                { "Shipping", await _context.Orders.CountAsync(o => o.Status == "Shipping" && !o.IsDeleted) },
+                { "Delivered", await _context.Orders.CountAsync(o => o.Status == "Delivered" && !o.IsDeleted) },
+                { "Cancelled", await _context.Orders.CountAsync(o => o.Status == "Cancelled" && !o.IsDeleted) },
+                { "Refunded", await _context.Orders.CountAsync(o => o.Status == "Refunded" && !o.IsDeleted) }
+            };
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
             return View(orders);
         }
@@ -634,20 +691,128 @@ namespace Source.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
+            var allowed = new[] { "Pending", "Preparing", "Shipping", "Delivered", "Cancelled", "Refunded" };
+            if (!allowed.Contains(status)) return BadRequest();
+
             order.Status = status;
+<<<<<<< HEAD
+=======
+            order.UpdatedAt = DateTime.Now;
+            _context.Update(order);
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Admin updated order #{OrderId} status to: {Status}", id, status);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, newStatus = status });
+                return Json(new { success = true, newStatus = status, orderId = id });
             }
 
             TempData["SuccessMessage"] = "Cập nhật trạng thái đơn hàng thành công!";
             return RedirectToAction(nameof(Orders), new { status });
         }
 
+<<<<<<< HEAD
+=======
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmOrder(int id)
+        {
+            return await ChangeStatus(id, "Preparing");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ShipOrder(int id)
+        {
+            return await ChangeStatus(id, "Shipping");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeliverOrder(int id)
+        {
+            return await ChangeStatus(id, "Delivered");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(int id)
+        {
+            return await ChangeStatus(id, "Cancelled");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.IsDeleted = true;
+            order.UpdatedAt = DateTime.Now;
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, orderId = id });
+            }
+
+            TempData["SuccessMessage"] = "Đã xóa đơn hàng thành công!";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        private async Task<IActionResult> ChangeStatus(int id, string status)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = status;
+            order.UpdatedAt = DateTime.Now;
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, newStatus = status, orderId = id });
+            }
+
+            TempData["SuccessMessage"] = $"Đơn hàng #{id} đã chuyển sang trạng thái: {GetStatusLabel(status)}";
+            return RedirectToAction(nameof(Orders));
+        }
+
+        private string GetStatusLabel(string status)
+        {
+            return status switch
+            {
+                "Pending" => "Chờ xác nhận",
+                "Preparing" => "Đang chuẩn bị",
+                "Shipping" => "Đang giao",
+                "Delivered" => "Đã giao",
+                "Cancelled" => "Đã hủy",
+                "Refunded" => "Hoàn tiền",
+                _ => status
+            };
+        }
+
+        private string GetStatusBadgeClass(string status)
+        {
+            return status switch
+            {
+                "Pending" => "bg-warning text-dark",
+                "Preparing" => "bg-info text-dark",
+                "Shipping" => "bg-primary",
+                "Delivered" => "bg-success",
+                "Cancelled" => "bg-danger",
+                "Refunded" => "bg-secondary",
+                _ => "bg-secondary"
+            };
+        }
+
+        // GET: Admin/OrderDetail/5
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
         public async Task<IActionResult> OrderDetail(int id)
         {
             var order = await _context.Orders
@@ -656,9 +821,16 @@ namespace Source.Controllers
                 .ThenInclude(d => d.FastFood)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(d => d.Combo)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
 
             if (order == null) return NotFound();
+
+            ViewBag.StatusBadgeClass = GetStatusBadgeClass(order.Status);
+            ViewBag.StatusLabel = GetStatusLabel(order.Status);
+
+            var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
+            ViewBag.Subtotal = subtotal;
+            ViewBag.GrandTotal = subtotal + order.ShippingFee - order.Discount;
 
             return View(order);
         }

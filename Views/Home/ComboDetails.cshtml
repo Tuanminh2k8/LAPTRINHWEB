@@ -58,9 +58,15 @@
                         <div class="d-flex align-items-center gap-3 mb-4">
                             <span class="fw-bold text-dark">Số lượng Combo:</span>
                             <div class="quantity-control">
+<<<<<<< HEAD
                                 <button type="button" onclick="changeQty(-1, 1, 20)">-</button>
                                 <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="20" readonly>
                                 <button type="button" onclick="changeQty(1, 1, 20)">+</button>
+=======
+                                <button type="button" onclick="changeQty(-1, 20)">-</button>
+                                <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="20">
+                                <button type="button" onclick="changeQty(1, 20)">+</button>
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                             </div>
                         </div>
 
@@ -78,3 +84,45 @@
         </div>
     </div>
 </div>
+<<<<<<< HEAD
+=======
+
+@{
+    var relatedCombos = ViewBag.RelatedCombos as IEnumerable<Source.Models.Combo> ?? new List<Source.Models.Combo>();
+}
+
+@if (relatedCombos.Any())
+{
+    <div class="container my-5">
+        <h4 class="fw-bold mb-4"><i class="fa-solid fa-box-open text-danger me-2"></i>Combo khác bạn có thể thích</h4>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var combo in relatedCombos)
+            {
+                <div class="col">
+                    <div class="card border-0 shadow-sm rounded-3 overflow-hidden h-100" style="background: linear-gradient(135deg, #fff 60%, #fffbf0 100%);">
+                        <div class="row g-0 h-100">
+                            <div class="col-sm-5 position-relative bg-light" style="min-height: 160px;">
+                                <img src="@combo.ImageUrl" alt="@combo.Name" class="w-100 h-100 position-absolute start-0 top-0" style="object-fit: cover;">
+                            </div>
+                            <div class="col-sm-7">
+                                <div class="card-body p-3 d-flex flex-column h-100">
+                                    <h5 class="fw-bold text-dark">@combo.Name</h5>
+                                    <p class="text-muted small flex-grow-1">@combo.Description</p>
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                        <span class="fs-5 fw-800 text-danger">@combo.Price.ToString("N0") ₫</span>
+                                        <a asp-action="ComboDetails" asp-route-id="@combo.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Chi tiết</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed

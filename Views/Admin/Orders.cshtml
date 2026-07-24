@@ -3,8 +3,35 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = "Quản Lý Đơn Hàng";
     var selectedStatus = ViewBag.SelectedStatus as string;
+    var search = ViewBag.Search as string;
+    var sortOrder = ViewBag.SortOrder as string;
+    var pageNumber = ViewBag.PageNumber as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var statusCounts = ViewBag.StatusCounts as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var allStatuses = new[] { "Pending", "Preparing", "Shipping", "Delivered", "Cancelled", "Refunded" };
+    string GetStatusBadgeClass(string s) => s switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "Preparing" => "bg-info text-dark",
+        "Shipping" => "bg-primary",
+        "Delivered" => "bg-success",
+        "Cancelled" => "bg-danger",
+        "Refunded" => "bg-secondary",
+        _ => "bg-secondary"
+    };
+    string GetStatusLabel(string s) => s switch
+    {
+        "Pending" => "Chờ xác nhận",
+        "Preparing" => "Đang chuẩn bị",
+        "Shipping" => "Đang giao",
+        "Delivered" => "Đã giao",
+        "Cancelled" => "Đã hủy",
+        "Refunded" => "Hoàn tiền",
+        _ => s
+    };
 }
 
+<<<<<<< HEAD
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold text-dark mb-1">Quản Lý Đơn Hàng</h3>
@@ -27,6 +54,59 @@
     <a asp-action="Orders" asp-route-status="Đã giao" class="btn @(selectedStatus == "Đã giao" ? "btn-primary-custom" : "btn-secondary-custom") btn-custom rounded-pill px-4 py-2" style="font-size:.85rem;">
         Đã giao
     </a>
+=======
+@Html.AntiForgeryToken()
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-receipt text-danger me-2"></i>Quản Lý Đơn Hàng</h3>
+        <p class="text-muted small mb-0">Theo dõi và xử lý đơn hàng trong hệ thống</p>
+    </div>
+</div>
+
+<!-- Search & Sort -->
+<div class="card border-0 shadow-sm rounded-4 bg-white p-3 mb-4">
+    <form asp-action="Orders" method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm</label>
+            <input type="text" name="search" value="@search" class="form-control form-control-custom" placeholder="Mã đơn, tên KH, SĐT..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted mb-1">Sắp xếp</label>
+            <select name="sort" class="form-select form-control-custom">
+                <option value="">Mới nhất</option>
+                <option value="oldest" selected="@(sortOrder == "oldest")">Cũ nhất</option>
+                <option value="price_high" selected="@(sortOrder == "price_high")">Giá cao → thấp</option>
+                <option value="price_low" selected="@(sortOrder == "price_low")">Giá thấp → cao</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary-custom btn-custom w-100">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Lọc
+            </button>
+        </div>
+        <div class="col-md-2">
+            <a asp-action="Orders" class="btn btn-secondary-custom btn-custom w-100">
+                <i class="fa-solid fa-rotate-right me-1"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Filter Tabs -->
+<div class="mb-4">
+    <div class="btn-group flex-wrap" role="group">
+        <a asp-action="Orders" class="btn @(string.IsNullOrEmpty(selectedStatus) ? "btn-dark" : "btn-outline-dark")">
+            Tất cả <span class="badge bg-white text-dark ms-1">@(statusCounts.ContainsKey("All") ? statusCounts["All"] : 0)</span>
+        </a>
+        @foreach (var s in allStatuses)
+        {
+            <a asp-action="Orders" asp-route-status="@s" class="btn @(selectedStatus == s ? "btn-dark" : "btn-outline-dark")">
+                @GetStatusLabel(s) <span class="badge bg-white text-dark ms-1">@(statusCounts.ContainsKey(s) ? statusCounts[s] : 0)</span>
+            </a>
+        }
+    </div>
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 </div>
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
@@ -35,10 +115,16 @@
             <thead class="bg-dark text-white">
                 <tr>
                     <th>Mã Đơn</th>
+<<<<<<< HEAD
                     <th>Người Nhận</th>
                     <th>Số Điện Thoại</th>
+=======
+                    <th>Khách Hàng</th>
+                    <th>SĐT</th>
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                     <th>Địa Chỉ</th>
                     <th>Ngày Đặt</th>
+                    <th>Thanh Toán</th>
                     <th>Tổng Tiền</th>
                     <th>Trạng Thái</th>
                     <th class="text-center">Thao Tác</th>
@@ -48,7 +134,10 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">Không tìm thấy đơn hàng nào.</td>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-box-open fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0">Không tìm thấy đơn hàng nào.</p>
+                        </td>
                     </tr>
                 }
                 else
@@ -57,22 +146,49 @@
                     {
                         <tr id="order-row-@order.Id">
                             <td class="fw-bold text-muted">#@order.Id</td>
-                            <td class="fw-bold text-dark">@order.ReceiverName</td>
+                            <td class="fw-bold text-dark">@(order.User?.FullName ?? order.ReceiverName)</td>
                             <td class="small">@order.ReceiverPhone</td>
                             <td class="small text-truncate" style="max-width: 200px;">@order.ReceiverAddress</td>
                             <td class="small">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="small">@order.PaymentMethod</td>
                             <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") ₫</td>
                             <td>
-                                <select class="form-select form-select-sm status-select rounded-pill" data-id="@order.Id" style="width: 130px;">
-                                    <option value="Chưa giao" selected="@(order.Status == "Chưa giao")">Chưa giao</option>
-                                    <option value="Đang giao" selected="@(order.Status == "Đang giao")">Đang giao</option>
-                                    <option value="Đã giao" selected="@(order.Status == "Đã giao")">Đã giao</option>
-                                </select>
+                                <span class="badge rounded-pill px-3 py-2 @GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span>
                             </td>
                             <td class="text-center">
-                                <a asp-action="OrderDetail" asp-route-id="@order.Id" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2" title="Chi tiết">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
+                                <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                    <a asp-action="OrderDetail" asp-route-id="@order.Id" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2" title="Chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+
+                                    @if (order.Status == "Pending")
+                                    {
+                                        <button onclick="confirmOrder(@order.Id)" class="btn btn-sm btn-outline-success border-0 rounded-circle p-2" title="Xác nhận">
+                                            <i class="fa-solid fa-check"></i>
+                                        </button>
+                                    }
+                                    @if (order.Status == "Preparing")
+                                    {
+                                        <button onclick="shipOrder(@order.Id)" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2" title="Giao hàng">
+                                            <i class="fa-solid fa-truck"></i>
+                                        </button>
+                                    }
+                                    @if (order.Status == "Shipping")
+                                    {
+                                        <button onclick="deliverOrder(@order.Id)" class="btn btn-sm btn-outline-success border-0 rounded-circle p-2" title="Đã giao">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </button>
+                                    }
+                                    @if (order.Status != "Delivered" && order.Status != "Cancelled" && order.Status != "Refunded")
+                                    {
+                                        <button onclick="cancelOrder(@order.Id)" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" title="Hủy">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    }
+                                    <button onclick="deleteOrder(@order.Id)" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" title="Xóa">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -83,8 +199,33 @@
     <partial name="_Pagination" />
 </div>
 
+@if (totalPages > 1)
+{
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Orders", new { status = selectedStatus, search = search, sort = sortOrder, page = pageNumber - 1 })">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            </li>
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == pageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Orders", new { status = selectedStatus, search = search, sort = sortOrder, page = i })">@i</a>
+                </li>
+            }
+            <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Orders", new { status = selectedStatus, search = search, sort = sortOrder, page = pageNumber + 1 })">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}
+
 @section Scripts {
     <script>
+<<<<<<< HEAD
         $(document).ready(function () {
             $('.status-select').change(function () {
                 var orderId = $(this).data('id');
@@ -105,9 +246,61 @@
                     },
                     error: function () {
                         showToast('Cập nhật thất bại. Vui lòng thử lại.', 'danger');
+=======
+        function getToken() { return $('input[name="__RequestVerificationToken"]').val(); }
+
+        function ajaxPost(url, data, onSuccess) {
+            showLoading();
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: Object.assign(data, { __RequestVerificationToken: getToken() }),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function (res) {
+                    hideLoading();
+                    if (res.success) {
+                        if (onSuccess) onSuccess(res);
+                        showToast('Cập nhật thành công!', 'success');
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                     }
-                });
+                },
+                error: function () {
+                    hideLoading();
+                    showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'danger');
+                }
             });
-        });
+        }
+
+        function confirmOrder(id) { ajaxPost('@Url.Action("ConfirmOrder", "Admin")', { id: id }, removeRow); }
+        function shipOrder(id) { ajaxPost('@Url.Action("ShipOrder", "Admin")', { id: id }, removeRow); }
+        function deliverOrder(id) { ajaxPost('@Url.Action("DeliverOrder", "Admin")', { id: id }, removeRow); }
+        function cancelOrder(id) {
+            if (!confirm('Bạn có chắc muốn hủy đơn hàng #' + id + '?')) return;
+            ajaxPost('@Url.Action("CancelOrder", "Admin")', { id: id }, removeRow);
+        }
+        function deleteOrder(id) {
+            if (!confirm('Bạn có chắc muốn xóa đơn hàng #' + id + '?')) return;
+            ajaxPost('@Url.Action("DeleteOrder", "Admin")', { id: id }, removeRow);
+        }
+
+        function removeRow(res) {
+            if (res && res.orderId) {
+                $('#order-row-' + res.orderId).fadeOut(300, function () { $(this).remove(); });
+            }
+        }
+
+        function showToast(message, type) {
+            var toastHtml = '<div id="ajaxToast" class="toast align-items-center text-white bg-' + type + ' border-0 rounded-3 shadow show" style="z-index:1080">' +
+                '<div class="d-flex">' +
+                '<div class="toast-body">' + message + '</div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+                '</div></div>';
+            if ($('#ajaxToast').length) $('#ajaxToast').remove();
+            $('body').append(toastHtml);
+            var toastEl = document.getElementById('ajaxToast');
+            var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+            toast.show();
+            setTimeout(function () { if ($('#ajaxToast').length) $('#ajaxToast').remove(); }, 3500);
+        }
     </script>
 }

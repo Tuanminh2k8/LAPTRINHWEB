@@ -23,7 +23,11 @@ namespace Source.Models
 
         [Required]
         [Display(Name = "Trạng thái")]
+<<<<<<< HEAD
         public string Status { get; set; } = OrderStatus.Pending;
+=======
+        public string Status { get; set; } = "Pending"; // Pending, Preparing, Shipping, Delivered, Cancelled, Refunded
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 
         [Required(ErrorMessage = "Tên người nhận không được để trống")]
         [StringLength(100, ErrorMessage = "Tên người nhận không được quá 100 ký tự")]
@@ -40,6 +44,28 @@ namespace Source.Models
         [StringLength(200, ErrorMessage = "Địa chỉ nhận hàng không được quá 200 ký tự")]
         [Display(Name = "Địa chỉ nhận")]
         public string ReceiverAddress { get; set; } = string.Empty;
+
+        [Display(Name = "Phương thức thanh toán")]
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } = "COD";
+
+        [Display(Name = "Phí vận chuyển")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ShippingFee { get; set; } = 0;
+
+        [Display(Name = "Giảm giá")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Discount { get; set; } = 0;
+
+        [Display(Name = "Ghi chú")]
+        [StringLength(500)]
+        public string? Note { get; set; }
+
+        [Display(Name = "Đã xóa")]
+        public bool IsDeleted { get; set; } = false;
+
+        [Display(Name = "Cập nhật lần cuối")]
+        public DateTime? UpdatedAt { get; set; }
 
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     }

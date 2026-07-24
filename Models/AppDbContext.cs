@@ -72,6 +72,20 @@ namespace Source.Models
                 new ComboDetail { ComboId = 2, FastFoodId = 7, Quantity = 2 }
             );
 
+            // Indexes for Orders
+            modelBuilder.Entity<Order>()
+                .Property(o => o.Status)
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.Status);
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.IsDeleted);
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.OrderDate);
+
             // Seed Users with BCrypt hashes
             // "admin123" BCrypt hash: $2a$11$ezY8eus712l.J/TErYvnveHybjXijpr.j7gucKR7G0q3xlgK6WCc6
             // "customer123" BCrypt hash: $2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6

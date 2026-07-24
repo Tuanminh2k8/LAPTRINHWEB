@@ -36,7 +36,7 @@
                 <select asp-for="CategoryId" class="form-select form-control-custom">
                     @foreach (var cat in categories)
                     {
-                        <option value="@cat.Id" selected="@(cat.Id == Model.CategoryId)">@cat.Name</option>
+                        <option value="@cat.Id">@cat.Name</option>
                     }
                 </select>
                 <span asp-validation-for="CategoryId" class="text-danger small"></span>

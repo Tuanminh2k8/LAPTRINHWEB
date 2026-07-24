@@ -578,12 +578,57 @@ textarea.form-control-custom { min-height: 100px; resize: vertical; }
   color: var(--white); font-size: 0.95rem;
 }
 
+<<<<<<< HEAD
 /* ─── Skeleton ─── */
 .skeleton {
   background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-150) 50%, var(--gray-100) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
+=======
+/* Loading Spinner */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #e2e8f0;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Custom Table Design */
+.table-custom {
+    background: var(--white);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: none;
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
 }
 
 /* ─── Empty State ─── */

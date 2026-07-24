@@ -47,9 +47,15 @@
                         <div class="d-flex align-items-center gap-3 mb-4">
                             <span class="fw-bold text-dark">Số lượng:</span>
                             <div class="quantity-control">
+<<<<<<< HEAD
                                 <button type="button" onclick="changeQty(-1, 1, 50)">-</button>
                                 <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="50" readonly>
                                 <button type="button" onclick="changeQty(1, 1, 50)">+</button>
+=======
+                                <button type="button" onclick="changeQty(-1, 50)">-</button>
+                                <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="50">
+                                <button type="button" onclick="changeQty(1, 50)">+</button>
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed
                             </div>
                         </div>
                         
@@ -67,3 +73,42 @@
         </div>
     </div>
 </div>
+<<<<<<< HEAD
+=======
+
+@{
+    var relatedFoods = ViewBag.RelatedFoods as IEnumerable<Source.Models.FastFood> ?? new List<Source.Models.FastFood>();
+}
+
+@if (relatedFoods.Any())
+{
+    <div class="container my-5">
+        <h4 class="fw-bold mb-4"><i class="fa-solid fa-star text-warning me-2"></i>Có thể bạn cũng thích</h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            @foreach (var item in relatedFoods)
+            {
+                <div class="col">
+                    <div class="card-food">
+                        <div class="card-img-container">
+                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
+                            <span class="food-badge">@item.Category?.Name</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Name</h5>
+                            <p class="card-description">@item.Description</p>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <span class="price-tag">@item.Price.ToString("N0") ₫</span>
+                                <a asp-action="FoodDetails" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Xem</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+>>>>>>> 77e94ee6c4390ff4e8e3b6c64b60eeee3e2040ed

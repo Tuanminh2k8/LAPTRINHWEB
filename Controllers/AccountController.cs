@@ -302,5 +302,75 @@ namespace Source.Controllers
             TempData["SuccessMessage"] = "Bạn đã đăng xuất thành công.";
             return RedirectToAction("Index", "Home");
         }
+
+        // GET: Account/ChangePassword
+        [HttpGet]
+        public async Task<IActionResult> ChangePassword()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
+            {
+                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
+            }
+
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
+            {
+                return RedirectToAction("Logout");
+            }
+
+            ViewBag.UserName = user.FullName;
+            return View();
+        }
+
+        // POST: Account/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ViewModels.ChangePasswordViewModel model)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
+            {
+                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
+            }
+
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user == null)
+                {
+                    return RedirectToAction("Logout");
+                }
+
+                if (!PasswordHelper.VerifyPassword(model.CurrentPassword, user.PasswordHash))
+                {
+                    ModelState.AddModelError("CurrentPassword", "Mật khẩu hiện tại không chính xác.");
+                    ViewBag.UserName = user.FullName;
+                    return View(model);
+                }
+
+                user.PasswordHash = PasswordHelper.HashPassword(model.NewPassword);
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            ViewBag.UserName = "Người dùng";
+            return View(model);
+        }
     }
 }
