@@ -1,0 +1,92 @@
+@model IEnumerable<Source.Models.Combo>
+@{
+    ViewData["Title"] = "Combo Khuyến Mãi";
+    var comboImages = new Dictionary<int, string>
+    {
+        { 0, "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600" },
+        { 1, "https://images.unsplash.com/photo-1544025162-d76694265947?w=600" },
+        { 2, "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600" },
+        { 3, "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600" },
+        { 4, "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=600" },
+        { 5, "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=600" },
+        { 6, "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600" },
+        { 7, "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600" }
+    };
+}
+
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">Combo Tiết Kiệm</h1>
+        <p class="page-hero-subtitle">Chọn ngay combo ưu đãi với giá siêu hời dành riêng cho bạn!</p>
+    </div>
+</section>
+
+<section class="container mb-5">
+    @{
+        var comboList = Model.ToList();
+    }
+    @if (!comboList.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="fa-solid fa-tags"></i></div>
+            <h5 class="empty-state-title">Chưa có combo nào</h5>
+            <p class="empty-state-text">Hiện tại chưa có combo khuyến mãi. Vui lòng quay lại sau!</p>
+        </div>
+    }
+    else
+    {
+        <div class="combo-grid-3">
+            @for (int i = 0; i < comboList.Count; i++)
+            {
+                var combo = comboList[i];
+                var imgIndex = i % 8;
+                var imgUrl = comboImages.ContainsKey(imgIndex) ? comboImages[imgIndex] : combo.ImageUrl;
+                var discount = combo.OriginalPrice > 0 ? (int)Math.Round((1 - combo.Price / combo.OriginalPrice) * 100) : 0;
+
+                <div class="col reveal">
+                    <div class="combo-card-vertical">
+                        <div class="combo-card-img-wrap">
+                            <img src="@imgUrl" alt="@combo.Name" loading="lazy">
+                            @if (discount > 0)
+                            {
+                                <span class="combo-discount-tag">-@discount%</span>
+                            }
+                            @if (combo.IsOnSale)
+                            {
+                                <span class="combo-sale-tag">BÁN CHẠY</span>
+                            }
+                        </div>
+                        <div class="combo-card-body">
+                            <h4 class="combo-card-title">@combo.Name</h4>
+                            <p class="combo-card-desc">@combo.Description</p>
+
+                            <div class="combo-card-items mb-3">
+                                <h6 class="combo-items-label">Thực đơn gồm:</h6>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var detail in combo.ComboDetails)
+                                    {
+                                        <span class="combo-item-badge">@detail.FastFood?.Name x @detail.Quantity</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="combo-card-footer">
+                                <div class="combo-pricing">
+                                    @if (combo.OriginalPrice > 0)
+                                    {
+                                        <span class="combo-original-price">@combo.OriginalPrice.ToString("N0") ₫</span>
+                                    }
+                                    <span class="combo-current-price">@combo.Price.ToString("N0") ₫</span>
+                                </div>
+                                <div class="combo-card-actions">
+                                    <a asp-action="ComboDetails" asp-route-id="@combo.Id" class="combo-btn-detail">Chi tiết</a>
+                                    <button onclick="addToCart(@combo.Id, true, 1, this)" class="combo-btn-order">Đặt Combo</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>

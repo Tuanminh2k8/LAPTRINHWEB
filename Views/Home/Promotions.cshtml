@@ -1,0 +1,81 @@
+@{
+    ViewData["Title"] = "Khuyến Mãi";
+}
+
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">Khuyến Mãi Hấp Dẫn</h1>
+        <p class="page-hero-subtitle">Cập nhật những ưu đãi và chương trình khuyến mãi mới nhất từ PolyFood.</p>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <div class="promo-grid">
+        <div class="promo-card promo-card-lg">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800" alt="Giảm 20% đơn đầu" loading="lazy">
+            <div class="promo-overlay">
+                <div class="promo-overlay-content">
+                    <span class="promo-badge">MỚI</span>
+                    <h3>Giảm 20% Đơn Hàng Đầu Tiên</h3>
+                    <p>Nhập mã <strong>POLYFOOD20</strong> khi đặt hàng lần đầu để được giảm ngay 20% giá trị đơn hàng.</p>
+                    <div class="promo-code-box">POLYFOOD20</div>
+                    <a asp-controller="Home" asp-action="Menu" class="promo-cta">Đặt hàng ngay</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="promo-card promo-card-sm">
+            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=600" alt="Miễn phí giao hàng" loading="lazy">
+            <div class="promo-overlay">
+                <div class="promo-overlay-content">
+                    <span class="promo-badge promo-badge-green">HOT</span>
+                    <h3>Miễn Phí Giao Hàng</h3>
+                    <p>Miễn phí giao hàng cho đơn từ 100.000₫ trong nội thành Đồng Nai.</p>
+                    <a asp-controller="Home" asp-action="Menu" class="promo-cta">Khám phá</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-4">
+        <div class="col-md-4">
+            <div class="promo-card promo-card-sm">
+                <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=600" alt="Combo tiết kiệm" loading="lazy">
+                <div class="promo-overlay">
+                    <div class="promo-overlay-content">
+                        <span class="promo-badge promo-badge-orange">COMBO</span>
+                        <h3>Combo Tiết Kiệm</h3>
+                        <p>Mua combo tiết kiệm hơn 30% so với mua lẻ.</p>
+                        <a asp-controller="Home" asp-action="Combos" class="promo-cta">Xem combo</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="promo-card promo-card-sm">
+                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600" alt="Burger ngon" loading="lazy">
+                <div class="promo-overlay">
+                    <div class="promo-overlay-content">
+                        <span class="promo-badge promo-badge-pink">BURGER</span>
+                        <h3>Burger Mới</h3>
+                        <p>Thử ngay dòng burger mới với nhân thịt nướng BBQ.</p>
+                        <a asp-controller="Home" asp-action="Menu" class="promo-cta">Khám phá</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="promo-card promo-card-sm">
+                <img src="https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?q=80&w=600" alt="Pizza hải sản" loading="lazy">
+                <div class="promo-overlay">
+                    <div class="promo-overlay-content">
+                        <span class="promo-badge promo-badge-purple">PIZZA</span>
+                        <h3>Pizza Hải Sản</h3>
+                        <p>Pizza hải sản tôm, mực, bạch tuộc - giảm 15%.</p>
+                        <a asp-controller="Home" asp-action="Menu" class="promo-cta">Đặt ngay</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

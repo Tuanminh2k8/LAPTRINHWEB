@@ -1,0 +1,57 @@
+@model IEnumerable<Source.Models.FastFood>
+@{
+    ViewData["Title"] = "Thực Đơn";
+    var categories = ViewBag.Categories as IEnumerable<Source.Models.Category> ?? new List<Source.Models.Category>();
+    var selectedCategory = ViewBag.SelectedCategory as int?;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">Thực Đơn Của Chúng Tôi</h1>
+        <p class="page-hero-subtitle">Khám phá bộ sưu tập các món ăn nóng hổi, thơm ngon được chế biến từ nguyên liệu tươi sạch.</p>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <div class="menu-filter-tabs">
+        <a asp-action="Menu" class="menu-tab @(selectedCategory == null ? "active" : "")">Tất cả</a>
+        @foreach (var cat in categories)
+        {
+            <a asp-action="Menu" asp-route-categoryId="@cat.Id" class="menu-tab @(selectedCategory == cat.Id ? "active" : "")">@cat.Name</a>
+        }
+    </div>
+
+    <div class="food-grid-4">
+        @if (!Model.Any())
+        {
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="fa-solid fa-face-frown"></i></div>
+                    <h5 class="empty-state-title">Không tìm thấy món ăn</h5>
+                    <p class="empty-state-text">Vui lòng chọn danh mục khác.</p>
+                </div>
+            </div>
+        }
+        @foreach (var item in Model)
+        {
+            <div class="col reveal">
+                <div class="food-card">
+                    <div class="food-img-wrap">
+                        <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
+                        <span class="food-category-badge">@item.Category?.Name</span>
+                    </div>
+                    <div class="food-body">
+                        <h5 class="food-name">@item.Name</h5>
+                        <p class="food-desc">@item.Description</p>
+                        <div class="food-footer">
+                            <span class="food-price">@item.Price.ToString("N0") ₫</span>
+                            <button onclick="addToCart(@item.Id, false, 1, this)" class="btn-add-cart" title="Thêm vào giỏ hàng">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
