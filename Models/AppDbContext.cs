@@ -73,15 +73,14 @@ namespace Source.Models
             );
 
             // Seed Users with BCrypt hashes
-            // "admin123" BCrypt hash: $2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC
-            // "customer123" BCrypt hash: $2a$11$nS34vU88/Z7d.d.f6g7h8.w0x1y2z3A4B5C6D7E8F9G0H1I2J3K4L
-            // SHA256 hashes are also matched seamlessly by PasswordHelper fallback
+            // "admin123" BCrypt hash: $2a$11$ezY8eus712l.J/TErYvnveHybjXijpr.j7gucKR7G0q3xlgK6WCc6
+            // "customer123" BCrypt hash: $2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
                     Id = 1,
                     Username = "admin",
-                    PasswordHash = "$2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC",
+                    PasswordHash = "$2a$11$ezY8eus712l.J/TErYvnveHybjXijpr.j7gucKR7G0q3xlgK6WCc6",
                     FullName = "Quản Trị Viên",
                     Email = "admin@fastfood.com",
                     PhoneNumber = "0987654321",
@@ -92,7 +91,7 @@ namespace Source.Models
                 {
                     Id = 2,
                     Username = "customer",
-                    PasswordHash = "$2a$11$91i59m4uL3.j9K53Q5O5o.d7uU5T1hS4P/T402f0/80u34vQ6J1fC", // Same password admin123 / customer123
+                    PasswordHash = "$2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6",
                     FullName = "Nguyễn Văn Khách",
                     Email = "customer@fastfood.com",
                     PhoneNumber = "0912345678",

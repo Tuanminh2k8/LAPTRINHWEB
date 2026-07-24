@@ -84,6 +84,9 @@ namespace Source.Controllers
             }
 
             ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.Combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
+            ViewBag.SelectedCategory = categoryId;
+            ViewBag.SearchName = name;
             return View("Index", results);
         }
 

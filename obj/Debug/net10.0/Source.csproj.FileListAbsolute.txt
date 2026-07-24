@@ -9,6 +9,7 @@ C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Source.dll
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Source.pdb
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Azure.Core.dll
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Azure.Identity.dll
+C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\BCrypt-Net-Next.dll
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Humanizer.dll
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
@@ -135,12 +136,11 @@ C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\runtimes\win-x86\native\Micro
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.csproj.AssemblyReference.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\rpswa.dswa.cache.json
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfoInputs.cache
-C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfo.cs
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.csproj.CoreCompileInputs.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.RazorAssemblyInfo.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.RazorAssemblyInfo.cs
+C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.sourcelink.json
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\rjimswa.dswa.cache.json
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
@@ -233,5 +233,5 @@ C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\refint\Source.dll
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.pdb
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.genruntimeconfig.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\ref\Source.dll
-C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.sourcelink.json
-C:\Users\ADMIN\Assignment\Source\bin\Debug\net10.0\BCrypt-Net-Next.dll
+C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfoInputs.cache
+C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfo.cs
