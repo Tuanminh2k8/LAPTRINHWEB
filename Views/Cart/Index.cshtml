@@ -128,42 +128,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        function updateQuantity(id, isCombo, newQty) {
-            $.ajax({
-                url: '@Url.Action("UpdateQuantity", "Cart")',
-                type: 'POST',
-                data: { id: id, isCombo: isCombo, quantity: newQty },
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                success: function (res) {
-                    if (res.success) {
-                        if (res.isEmpty) {
-                            location.reload();
-                            return;
-                        }
-
-                        if (newQty <= 0) {
-                            $('#cart-row-' + id + '-' + isCombo).fadeOut(300, function() { $(this).remove(); });
-                        } else {
-                            $('#qty-input-' + id + '-' + isCombo).val(newQty);
-                            $('#item-total-' + id + '-' + isCombo).text(res.itemTotal.toLocaleString('vi-VN') + ' ₫');
-                        }
-
-                        $('#cart-total-amount').text(res.cartTotal.toLocaleString('vi-VN') + ' ₫');
-                        $('#cart-total-count').text(res.cartCount + ' món');
-
-                        var badge = $('#cart-badge');
-                        badge.text(res.cartCount);
-                        if (res.cartCount > 0) badge.removeClass('d-none');
-                        else badge.addClass('d-none');
-                    }
-                }
-            });
-        }
-
-        function removeItem(id, isCombo) {
-            if (!confirm('Bạn có chắc muốn xóa món này khỏi giỏ hàng?')) return;
-            updateQuantity(id, isCombo, 0);
-        }
-    </script>
+    <partial name="_ValidationScriptsPartial" />
 }

@@ -233,7 +233,7 @@ namespace Source.Controllers
                 model.UserId = userId.Value;
                 model.OrderDate = DateTime.Now;
                 model.TotalAmount = cart.Sum(i => i.TotalPrice);
-                model.Status = "Chưa giao";
+                model.Status = "Pending";
 
                 _context.Orders.Add(model);
                 await _context.SaveChangesAsync();

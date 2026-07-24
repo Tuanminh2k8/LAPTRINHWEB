@@ -5,6 +5,9 @@
     var combos = ViewBag.Combos as IEnumerable<Source.Models.Combo> ?? new List<Source.Models.Combo>();
     var selectedCategory = ViewBag.SelectedCategory as int?;
     var searchName = ViewBag.SearchName as string;
+    var sortOrder = ViewBag.SortOrder as string;
+    var pageNumber = ViewBag.PageNumber as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
 }
 
 <!-- Hero Banner -->
@@ -192,18 +195,50 @@
 
 <!-- Foods Section -->
 <section id="foods-section" class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h3 class="fw-bold m-0"><i class="fa-solid fa-fire text-danger me-2"></i>Danh sách món lẻ</h3>
         @if (selectedCategory.HasValue)
         {
             <span class="text-muted">Đang xem các món: <strong>@categories.FirstOrDefault(c => c.Id == selectedCategory)?.Name</strong></span>
         }
+        <select id="sortOrder" class="form-select form-select-sm" style="width: auto;">
+            <option value="">Sắp xếp: Mặc định</option>
+            <option value="price_asc" selected="@(sortOrder == "price_asc")">Giá: Thấp đến Cao</option>
+            <option value="price_desc" selected="@(sortOrder == "price_desc")">Giá: Cao đến Thấp</option>
+            <option value="name_asc" selected="@(sortOrder == "name_asc")">Tên: A - Z</option>
+            <option value="name_desc" selected="@(sortOrder == "name_desc")">Tên: Z - A</option>
+            <option value="newest" selected="@(sortOrder == "newest")">Mới nhất</option>
+        </select>
     </div>
     
     <div id="food-list-container">
         <!-- Render Partial View of Food List -->
         <partial name="_FoodListPartial" model="Model" />
     </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber - 1 })">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == pageNumber ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = i })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber + 1 })">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
 </section>
 
 <!-- Custom AJAX Toast and Functions -->
@@ -220,57 +255,17 @@
 
 @section Scripts {
     <script>
-        // AJAX Add to Cart
-        function addToCart(id, isCombo) {
-            $.ajax({
-                url: '@Url.Action("AddToCart", "Cart")',
-                type: 'POST',
-                data: { id: id, isCombo: isCombo, quantity: 1 },
-                success: function (response) {
-                    if (response.success) {
-                        // Update cart count badge
-                        var badge = $('#cart-badge');
-                        badge.text(response.cartCount);
-                        badge.removeClass('d-none');
-                        
-                        // Show success toast
-                        var toastEl = document.getElementById('cartToast');
-                        var toast = new bootstrap.Toast(toastEl);
-                        toast.show();
-                    }
-                },
-                error: function () {
-                    alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
-                }
-            });
-        }
-
         $(document).ready(function () {
-            // Advanced Search AJAX Action
             $('#btnSearchAdv').click(function () {
-                var formData = $('#advSearchForm').serialize();
-                $.ajax({
-                    url: '@Url.Action("AdvancedSearch", "Home")',
-                    type: 'GET',
-                    data: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (data) {
-                        // Replace the food list content with search results
-                        $('#food-list-container').html(data);
-                        // Smooth scroll to food list
-                        $('html, body').animate({
-                            scrollTop: $("#foods-section").offset().top - 100
-                        }, 500);
-                    },
-                    error: function () {
-                        alert('Lỗi khi thực hiện tìm kiếm nâng cao.');
-                    }
-                });
+                performAdvancedSearch();
             });
 
-            // Reset advanced search form
             $('#btnResetAdv').click(function () {
                 $('#advSearchForm')[0].reset();
+            });
+
+            $('#sortOrder').change(function () {
+                handleSortChange();
             });
         });
     </script>

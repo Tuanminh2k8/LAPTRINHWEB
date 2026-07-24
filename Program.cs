@@ -55,6 +55,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Handle 404 errors with custom page
+app.UseStatusCodePagesWithReExecute("/Home/NotFound", "?statusCode={0}");
+
 // Initialize Database & Seed
 using (var scope = app.Services.CreateScope())
 {
@@ -62,7 +65,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        context.Database.EnsureCreated();
+        context.Database.Migrate();
+        DbInitializer.Seed(context);
     }
     catch (Exception ex)
     {

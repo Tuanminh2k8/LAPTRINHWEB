@@ -13,7 +13,7 @@ namespace Source.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string? searchName, int? categoryId)
+        public async Task<IActionResult> Index(string? searchName, int? categoryId, string? sortOrder, int? page)
         {
             var categories = await _context.Categories.ToListAsync();
             ViewBag.Categories = categories;
@@ -23,19 +23,44 @@ namespace Source.Controllers
             if (!string.IsNullOrEmpty(searchName))
             {
                 query = query.Where(f => f.Name.Contains(searchName));
+                ViewBag.SearchName = searchName;
             }
 
             if (categoryId.HasValue)
             {
                 query = query.Where(f => f.CategoryId == categoryId.Value);
+                ViewBag.SelectedCategory = categoryId;
             }
 
-            var foods = await query.ToListAsync();
-            var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
+            // Sorting
+            ViewBag.SortOrder = sortOrder;
+            query = sortOrder switch
+            {
+                "price_asc" => query.OrderBy(f => f.Price),
+                "price_desc" => query.OrderByDescending(f => f.Price),
+                "name_asc" => query.OrderBy(f => f.Name),
+                "name_desc" => query.OrderByDescending(f => f.Name),
+                "newest" => query.OrderByDescending(f => f.Id),
+                _ => query.OrderBy(f => f.Name)
+            };
 
+            // Pagination
+            int pageSize = 6;
+            int pageNumber = page ?? 1;
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            if (pageNumber > totalPages && totalPages > 0) pageNumber = totalPages;
+            if (pageNumber < 1) pageNumber = 1;
+
+            var foods = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            ViewBag.PageNumber = pageNumber;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.PageSize = pageSize;
+
+            var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
             ViewBag.Combos = combos;
-            ViewBag.SelectedCategory = categoryId;
-            ViewBag.SearchName = searchName;
 
             return View(foods);
         }
@@ -102,7 +127,21 @@ namespace Source.Controllers
                 return NotFound();
             }
 
+            ViewBag.RelatedFoods = await _context.FastFoods
+                .Include(f => f.Category)
+                .Where(f => f.CategoryId == food.CategoryId && f.Id != id)
+                .Take(4)
+                .ToListAsync();
+
             return View(food);
+        }
+
+        // GET: Home/NotFound
+        [HttpGet]
+        public IActionResult NotFound(int? statusCode = null)
+        {
+            ViewBag.StatusCode = statusCode ?? 404;
+            return View();
         }
 
         // Combo Details
@@ -118,6 +157,13 @@ namespace Source.Controllers
             {
                 return NotFound();
             }
+
+            ViewBag.RelatedCombos = await _context.Combos
+                .Include(c => c.ComboDetails)
+                .ThenInclude(cd => cd.FastFood)
+                .Where(c => c.Id != id)
+                .Take(3)
+                .ToListAsync();
 
             return View(combo);
         }

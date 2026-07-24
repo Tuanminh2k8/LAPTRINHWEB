@@ -147,7 +147,6 @@ C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\scopedcss\bundle\Source.styles.css
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\scopedcss\projectbundle\Source.bundle.scp.css
-C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-x7cwggz849-x7cwggz849.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\ce2suxiu1l-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\mvo185utkc-{0}-va2kmsvnk9-va2kmsvnk9.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\ydr6mfrte8-{0}-93onpbaq9n-93onpbaq9n.gz
@@ -160,7 +159,6 @@ C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\z1s676om85-{0}-0e0
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\gzn8ba9r9x-{0}-sd5qwkc7p4-sd5qwkc7p4.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\c7dqs7brgb-{0}-bydcjjrm4l-bydcjjrm4l.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\kwly3a6uwd-{0}-4nzq7bjpbe-4nzq7bjpbe.gz
-C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\05gvm3kv41-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\q3g8py5n41-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\txvhsa4uly-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\kgemt50txn-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -235,3 +233,5 @@ C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.genruntimeconfig.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\ref\Source.dll
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfoInputs.cache
 C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\Source.AssemblyInfo.cs
+C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-qd25b4m247-qd25b4m247.gz
+C:\Users\ADMIN\Assignment\Source\obj\Debug\net10.0\compressed\05gvm3kv41-{0}-7bxlyqv130-7bxlyqv130.gz

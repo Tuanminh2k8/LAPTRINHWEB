@@ -52,10 +52,16 @@ CREATE TABLE [Orders] (
     [UserId] int NOT NULL,
     [OrderDate] datetime2 NOT NULL,
     [TotalAmount] decimal(18,2) NOT NULL,
-    [Status] nvarchar(max) NOT NULL,
+    [Status] nvarchar(50) NOT NULL,
     [ReceiverName] nvarchar(100) NOT NULL,
     [ReceiverPhone] nvarchar(max) NOT NULL,
     [ReceiverAddress] nvarchar(200) NOT NULL,
+    [PaymentMethod] nvarchar(50) NOT NULL,
+    [ShippingFee] decimal(18,2) NOT NULL,
+    [Discount] decimal(18,2) NOT NULL,
+    [Note] nvarchar(500) NULL,
+    [IsDeleted] bit NOT NULL,
+    [UpdatedAt] datetime2 NULL,
     CONSTRAINT [PK_Orders] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_Orders_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
 );
@@ -174,3 +180,46 @@ CREATE INDEX [IX_Orders_UserId] ON [Orders] ([UserId]);
 GO
 
 
+CREATE INDEX [IX_Orders_Status] ON [Orders] ([Status]);
+GO
+
+
+CREATE INDEX [IX_Orders_IsDeleted] ON [Orders] ([IsDeleted]);
+GO
+
+
+CREATE INDEX [IX_Orders_OrderDate] ON [Orders] ([OrderDate]);
+GO
+
+
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'Discount', N'IsDeleted', N'Note', N'OrderDate', N'PaymentMethod', N'ReceiverAddress', N'ReceiverName', N'ReceiverPhone', N'ShippingFee', N'Status', N'TotalAmount', N'UpdatedAt', N'UserId') AND [object_id] = OBJECT_ID(N'[Orders]'))
+    SET IDENTITY_INSERT [Orders] ON;
+INSERT INTO [Orders] ([Id], [UserId], [OrderDate], [TotalAmount], [Status], [ReceiverName], [ReceiverPhone], [ReceiverAddress], [PaymentMethod], [ShippingFee], [Discount], [Note], [IsDeleted], [UpdatedAt])
+VALUES (1, 2, N'2026-07-19 00:00:00', 205000.0, N'Delivered', N'Nguyễn Văn Khách', N'0912345678', N'456 Đường Quang Trung, Gò Vấp, TP.HCM', N'COD', 0.0, 0.0, N'Giao hàng giờ hành chính', 0, N'2026-07-21 00:00:00'),
+(2, 2, N'2026-07-22 00:00:00', 150000.0, N'Shipping', N'Nguyễn Văn Khách', N'0912345678', N'456 Đường Quang Trung, Gò Vấp, TP.HCM', N'COD', 15000.0, 10000.0, N'Giao nhanh nếu có thể', 0, N'2026-07-23 00:00:00'),
+(3, 1, N'2026-07-23 00:00:00', 235000.0, N'Preparing', N'Quản Trị Viên', N'0987654321', N'123 Đường Tô Ký, Quận 12, TP.HCM', N'COD', 0.0, 0.0, N'Không hàng sốt', 0, N'2026-07-23 12:00:00'),
+(4, 2, N'2026-07-24 10:00:00', 110000.0, N'Pending', N'Nguyễn Văn Khách', N'0912345678', N'456 Đường Quang Trung, Gò Vấp, TP.HCM', N'COD', 0.0, 5000.0, N'', 0, N'2026-07-24 11:00:00'),
+(5, 2, N'2026-07-14 00:00:00', 35000.0, N'Cancelled', N'Nguyễn Văn Khách', N'0912345678', N'456 Đường Quang Trung, Gò Vấp, TP.HCM', N'COD', 0.0, 0.0, N'Khách hủy do thay đổi ý định', 0, N'2026-07-15 00:00:00');
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'Discount', N'IsDeleted', N'Note', N'OrderDate', N'PaymentMethod', N'ReceiverAddress', N'ReceiverName', N'ReceiverPhone', N'ShippingFee', N'Status', N'TotalAmount', N'UpdatedAt', N'UserId') AND [object_id] = OBJECT_ID(N'[Orders]'))
+    SET IDENTITY_INSERT [Orders] OFF;
+GO
+
+
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'ComboId', N'FastFoodId', N'OrderId', N'Price', N'Quantity') AND [object_id] = OBJECT_ID(N'[OrderDetails]'))
+    SET IDENTITY_INSERT [OrderDetails] ON;
+INSERT INTO [OrderDetails] ([Id], [OrderId], [FastFoodId], [ComboId], [Quantity], [Price])
+VALUES (1, 1, 1, NULL, 2, 55000.0),
+(2, 1, 6, NULL, 1, 25000.0),
+(3, 1, 7, NULL, 2, 15000.0),
+(4, 2, 3, NULL, 1, 120000.0),
+(5, 2, 5, NULL, 2, 35000.0),
+(6, 2, 6, NULL, 1, 25000.0),
+(7, 3, 2, NULL, 1, 50000.0),
+(8, 3, 7, NULL, 2, 15000.0),
+(9, 3, 4, NULL, 1, 110000.0),
+(10, 4, 1, NULL, 1, 55000.0),
+(11, 4, 6, NULL, 1, 25000.0),
+(12, 5, 5, NULL, 1, 35000.0);
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'ComboId', N'FastFoodId', N'OrderId', N'Price', N'Quantity') AND [object_id] = OBJECT_ID(N'[OrderDetails]'))
+    SET IDENTITY_INSERT [OrderDetails] OFF;
+GO
