@@ -1,14 +1,15 @@
 @model List<Source.Models.CartItem>
 @{
-    ViewData["Title"] = "Giỏ Hàng Của Bạn";
+    ViewData["Title"] = "Giỏ Hàng";
 }
 
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark mb-0">
-            <i class="fa-solid fa-cart-shopping text-danger me-2"></i>Giỏ Hàng Của Bạn
+        <h2 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <span class="brand-icon" style="width:36px;height:36px;font-size:.85rem;"><i class="fa-solid fa-cart-shopping"></i></span>
+            Giỏ Hàng
         </h2>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary-custom btn-custom py-2 px-4" style="font-size:.85rem;">
             <i class="fa-solid fa-arrow-left me-1"></i> Tiếp tục mua hàng
         </a>
     </div>
@@ -16,11 +17,11 @@
     @if (Model == null || !Model.Any())
     {
         <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-4">
-            <div class="py-5">
-                <i class="fa-solid fa-basket-shopping fa-4x text-muted mb-3 opacity-50"></i>
-                <h4 class="fw-bold text-muted">Giỏ hàng của bạn đang trống!</h4>
-                <p class="text-secondary small mb-4">Hãy thêm những món ăn vô cùng thơm ngon từ PolyFood vào giỏ nhé.</p>
-                <a asp-controller="Home" asp-action="Index" class="btn btn-danger btn-custom px-4 py-3 rounded-pill shadow-sm">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-basket-shopping"></i></div>
+                <h5 class="empty-state-title">Giỏ hàng của bạn đang trống!</h5>
+                <p class="empty-state-text">Hãy thêm những món ăn vô cùng thơm ngon từ PolyFood vào giỏ nhé.</p>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary-custom btn-custom px-4 py-3 rounded-pill shadow-sm">
                     <i class="fa-solid fa-utensils me-2"></i> Khám phá Menu Ngay
                 </a>
             </div>
@@ -49,34 +50,34 @@
                                     <tr id="cart-row-@itemId-@item.IsCombo">
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
-                                                <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3 shadow-sm" style="width: 65px; height: 65px; object-fit: cover;">
+                                                <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3 shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" loading="lazy">
                                                 <div>
-                                                    <h6 class="fw-bold mb-0 text-dark">@item.Name</h6>
+                                                    <h6 class="fw-bold mb-0 text-dark" style="font-size:.9rem;">@item.Name</h6>
                                                     @if (item.IsCombo)
                                                     {
-                                                        <span class="badge bg-warning text-dark rounded-pill small">Gói Combo</span>
+                                                        <span class="badge bg-warning text-dark rounded-pill small mt-1">Gói Combo</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge bg-light text-muted border rounded-pill small">Món lẻ</span>
+                                                        <span class="badge bg-light text-muted border rounded-pill small mt-1">Món lẻ</span>
                                                     }
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="fw-bold text-secondary">@item.Price.ToString("N0") ₫</td>
+                                        <td class="fw-bold text-secondary" style="font-size:.9rem;">@item.Price.ToString("N0") ₫</td>
                                         <td class="text-center">
-                                            <div class="quantity-control mx-auto">
-                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity - 1))">-</button>
-                                                <input type="number" id="qty-input-@itemId-@item.IsCombo" value="@item.Quantity" readonly>
-                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity + 1))">+</button>
+                                            <div class="quantity-control mx-auto" style="height:34px;">
+                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity - 1))" style="width:34px;height:34px;font-size:.85rem;">-</button>
+                                                <input type="number" id="qty-input-@itemId-@item.IsCombo" value="@item.Quantity" readonly style="width:40px;height:34px;font-size:.85rem;">
+                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity + 1))" style="width:34px;height:34px;font-size:.85rem;">+</button>
                                             </div>
                                         </td>
-                                        <td class="text-end fw-bold text-danger fs-6" id="item-total-@itemId-@item.IsCombo">
+                                        <td class="text-end fw-bold text-danger fs-6" id="item-total-@itemId-@item.IsCombo" style="font-size:1rem;">
                                             @item.TotalPrice.ToString("N0") ₫
                                         </td>
                                         <td class="text-center">
                                             <button onclick="removeItem(@itemId, @item.IsCombo.ToString().ToLower())" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2">
-                                                <i class="fa-solid fa-trash-can fs-6"></i>
+                                                <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -86,39 +87,39 @@
                     </div>
 
                     <div class="p-3 bg-light d-flex justify-content-between align-items-center border-top">
-                        <form asp-controller="Cart" asp-action="ClearCart" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?');">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                                <i class="fa-solid fa-broom me-1"></i> Xóa toàn bộ giỏ hàng
+                        <form asp-controller="Cart" asp-action="ClearCart" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="return confirm('Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?');" style="font-size:.82rem;">
+                                <i class="fa-solid fa-broom me-1"></i> Xóa toàn bộ
                             </button>
                         </form>
-                        <span class="text-muted small">Tự động lưu giỏ hàng khi reload trang</span>
+                        <span class="text-muted small">Tự động lưu giỏ hàng</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Summary -->
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Tóm Tắt Đơn Hàng</h5>
+                    <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">Tóm Tắt Đơn Hàng</h5>
                     
-                    <div class="d-flex justify-content-between mb-2 text-secondary">
-                        <span>Tổng số lượng món:</span>
-                        <strong id="cart-total-count">@Model.Sum(i => i.Quantity) món</strong>
+                    <div class="d-flex justify-content-between mb-2 text-secondary" style="font-size:.9rem;">
+                        <span>Tổng số lượng:</span>
+                        <strong id="cart-total-count" class="text-dark">@Model.Sum(i => i.Quantity) món</strong>
                     </div>
 
-                    <div class="d-flex justify-content-between mb-3 text-secondary">
+                    <div class="d-flex justify-content-between mb-3 text-secondary" style="font-size:.9rem;">
                         <span>Phí giao hàng:</span>
                         <span class="badge bg-success">Miễn Phí</span>
                     </div>
 
-                    <hr>
+                    <hr class="my-3">
 
                     <div class="d-flex justify-content-between mb-4">
-                        <span class="fs-5 fw-bold text-dark">Tổng Tiền:</span>
-                        <span class="fs-4 fw-800 text-danger" id="cart-total-amount">@Model.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
+                        <span class="fw-bold text-dark" style="font-size:1rem;">Tổng Tiền:</span>
+                        <span class="fw-800 text-danger" id="cart-total-amount" style="font-size:1.4rem;">@Model.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
                     </div>
 
-                    <a asp-controller="Cart" asp-action="Checkout" class="btn btn-danger btn-custom w-100 py-3 rounded-pill shadow">
+                    <a asp-controller="Cart" asp-action="Checkout" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
                         <i class="fa-solid fa-credit-card me-2"></i> Tiến Hành Thanh Toán
                     </a>
                 </div>
@@ -127,43 +128,48 @@
     }
 </div>
 
+@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
-        function updateQuantity(id, isCombo, newQty) {
-            $.ajax({
-                url: '@Url.Action("UpdateQuantity", "Cart")',
-                type: 'POST',
-                data: { id: id, isCombo: isCombo, quantity: newQty },
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                success: function (res) {
-                    if (res.success) {
-                        if (res.isEmpty) {
-                            location.reload();
-                            return;
+        $(document).ready(function () {
+            window.updateQuantity = function (id, isCombo, newQty) {
+                $.ajax({
+                    url: '@Url.Action("UpdateQuantity", "Cart")',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        isCombo: isCombo,
+                        quantity: newQty,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function (res) {
+                        if (res.success) {
+                            if (res.isEmpty) { location.reload(); return; }
+                            if (newQty <= 0) {
+                                $('#cart-row-' + id + '-' + isCombo).fadeOut(300, function() { $(this).remove(); });
+                            } else {
+                                $('#qty-input-' + id + '-' + isCombo).val(newQty);
+                                $('#item-total-' + id + '-' + isCombo).text(res.itemTotal.toLocaleString('vi-VN') + ' ₫');
+                            }
+                            $('#cart-total-amount').text(res.cartTotal.toLocaleString('vi-VN') + ' ₫');
+                            $('#cart-total-count').text(res.cartCount + ' món');
+                            var badge = $('#cart-badge');
+                            badge.text(res.cartCount);
+                            if (res.cartCount > 0) badge.removeClass('d-none');
+                            else badge.addClass('d-none');
+                            showToast('Cập nhật giỏ hàng thành công.', 'success');
                         }
+                    },
+                    error: function () { showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'danger'); }
+                });
+            };
 
-                        if (newQty <= 0) {
-                            $('#cart-row-' + id + '-' + isCombo).fadeOut(300, function() { $(this).remove(); });
-                        } else {
-                            $('#qty-input-' + id + '-' + isCombo).val(newQty);
-                            $('#item-total-' + id + '-' + isCombo).text(res.itemTotal.toLocaleString('vi-VN') + ' ₫');
-                        }
-
-                        $('#cart-total-amount').text(res.cartTotal.toLocaleString('vi-VN') + ' ₫');
-                        $('#cart-total-count').text(res.cartCount + ' món');
-
-                        var badge = $('#cart-badge');
-                        badge.text(res.cartCount);
-                        if (res.cartCount > 0) badge.removeClass('d-none');
-                        else badge.addClass('d-none');
-                    }
-                }
-            });
-        }
-
-        function removeItem(id, isCombo) {
-            if (!confirm('Bạn có chắc muốn xóa món này khỏi giỏ hàng?')) return;
-            updateQuantity(id, isCombo, 0);
-        }
+            window.removeItem = function (id, isCombo) {
+                if (!confirm('Bạn có chắc muốn xóa món này khỏi giỏ hàng?')) return;
+                window.updateQuantity(id, isCombo, 0);
+            };
+        });
     </script>
 }

@@ -1,33 +1,36 @@
 @model Source.Models.User
 @{
-    ViewData["Title"] = "Hồ Sơ Cá Nhân";
+    ViewData["Title"] = "Hồ Sơ";
 }
 
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-dark text-white p-4 d-flex align-items-center justify-content-between">
-                    <div>
-                        <h4 class="fw-bold text-white mb-1"><i class="fa-solid fa-id-badge text-danger me-2"></i>Hồ Sơ Thành Viên</h4>
-                        <p class="small text-white-50 mb-0">Quản lý và cập nhật thông tin tài khoản cá nhân của bạn</p>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                <div class="p-4 p-md-5 d-flex align-items-center gap-3" style="background:var(--gradient-primary);">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width:64px;height:64px;">
+                        <i class="fa-solid fa-id-badge fa-2x text-danger"></i>
                     </div>
-                    <span class="badge bg-danger rounded-pill px-3 py-2">@Model.Role</span>
+                    <div>
+                        <h4 class="fw-bold text-white mb-1">@Model.FullName</h4>
+                        <p class="small text-white-50 mb-0"><i class="fa-solid fa-envelope me-1"></i>@Model.Email</p>
+                    </div>
+                    <span class="badge bg-white text-danger rounded-pill px-3 py-2 ms-auto fw-600">@Model.Role</span>
                 </div>
 
-                <div class="card-body p-4 p-md-5 bg-white">
+                <div class="p-4 p-md-5">
                     <form asp-controller="Account" asp-action="Profile" method="post">
                         <input type="hidden" asp-for="Id" />
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">Tên đăng nhập (Username)</label>
+                                <label class="form-label small fw-bold text-muted">Username</label>
                                 <input type="text" class="form-control bg-light" value="@Model.Username" readonly disabled />
-                                <span class="form-text small text-muted">Tên đăng nhập không thể chỉnh sửa.</span>
+                                <span class="form-text small text-muted">Không thể thay đổi tên đăng nhập.</span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="FullName" class="form-label fw-bold small text-muted"></label>
+                                <label asp-for="FullName" class="form-label small fw-bold text-muted"></label>
                                 <input asp-for="FullName" class="form-control form-control-custom" />
                                 <span asp-validation-for="FullName" class="text-danger small"></span>
                             </div>
@@ -35,29 +38,49 @@
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label asp-for="Email" class="form-label fw-bold small text-muted"></label>
+                                <label asp-for="Email" class="form-label small fw-bold text-muted"></label>
                                 <input asp-for="Email" class="form-control form-control-custom" />
                                 <span asp-validation-for="Email" class="text-danger small"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="PhoneNumber" class="form-label fw-bold small text-muted"></label>
+                                <label asp-for="PhoneNumber" class="form-label small fw-bold text-muted"></label>
                                 <input asp-for="PhoneNumber" class="form-control form-control-custom" />
                                 <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="Address" class="form-label fw-bold small text-muted"></label>
+                            <label asp-for="Address" class="form-label small fw-bold text-muted"></label>
                             <textarea asp-for="Address" class="form-control form-control-custom" rows="3"></textarea>
                             <span asp-validation-for="Address" class="text-danger small"></span>
                         </div>
 
+                        <div class="pt-4 border-top mb-4">
+                            <h5 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                                <span class="d-inline-flex align-items-center justify-content-center rounded-2" style="width:28px;height:28px;background:var(--gradient-primary);">
+                                    <i class="fa-solid fa-lock text-white small"></i>
+                                </span>
+                                Đổi Mật Khẩu
+                            </h5>
+                            <p class="small text-muted mb-3 ms-4">Để trống nếu không muốn thay đổi.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="newPassword" class="form-label small fw-bold text-muted">Mật khẩu mới</label>
+                                    <input id="newPassword" name="newPassword" type="password" class="form-control form-control-custom" placeholder="Tối thiểu 6 ký tự..." />
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="confirmNewPassword" class="form-label small fw-bold text-muted">Xác nhận mật khẩu mới</label>
+                                    <input id="confirmNewPassword" name="confirmNewPassword" type="password" class="form-control form-control-custom" placeholder="Nhập lại mật khẩu..." />
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary-custom btn-custom px-4 py-2 rounded-pill" style="font-size:.85rem;">
                                 <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
                             </a>
-                            <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm">
-                                <i class="fa-solid fa-floppy-disk me-2"></i> Lưu thay đổi
+                            <button type="submit" class="btn btn-primary-custom btn-custom px-4 py-2 rounded-pill shadow-sm">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Lưu Thay Đổi
                             </button>
                         </div>
                     </form>

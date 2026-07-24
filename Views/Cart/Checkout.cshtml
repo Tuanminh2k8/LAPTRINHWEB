@@ -1,93 +1,94 @@
 @model Source.Models.Order
 @{
-    ViewData["Title"] = "Thanh Toán Đơn Hàng";
+    ViewData["Title"] = "Thanh Toán";
     var cart = ViewBag.Cart as List<Source.Models.CartItem> ?? new List<Source.Models.CartItem>();
 }
 
 <div class="container py-5">
     <div class="mb-4 text-center">
-        <h2 class="fw-bold text-dark"><i class="fa-solid fa-file-invoice-dollar text-danger me-2"></i>Thanh Toán Đơn Hàng</h2>
-        <p class="text-muted">Vui lòng kiểm tra lại thông tin người nhận và xác nhận đặt hàng</p>
+        <h2 class="fw-bold text-dark d-flex align-items-center justify-content-center gap-2">
+            <span class="brand-icon" style="width:36px;height:36px;font-size:.85rem;"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+            Thanh Toán Đơn Hàng
+        </h2>
+        <p class="text-muted" style="font-size:.92rem;">Vui lòng kiểm tra lại thông tin người nhận và xác nhận đặt hàng</p>
     </div>
 
     <form asp-controller="Cart" asp-action="Checkout" method="post">
         @Html.AntiForgeryToken()
         <div class="row g-4">
-            <!-- Left: Delivery Information -->
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
-                    <h5 class="fw-bold text-dark mb-4 border-bottom pb-2">
-                        <i class="fa-solid fa-truck-ramp-box text-danger me-2"></i>Thông Tin Giao Hàng
+                    <h5 class="fw-bold text-dark mb-4 pb-2 d-flex align-items-center gap-2" style="font-size:1rem;">
+                        <i class="fa-solid fa-truck-ramp-box text-danger"></i> Thông Tin Giao Hàng
                     </h5>
 
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
 
                     <div class="mb-3">
-                        <label asp-for="ReceiverName" class="form-label fw-bold small text-muted"></label>
+                        <label asp-for="ReceiverName" class="form-label"></label>
                         <input asp-for="ReceiverName" class="form-control form-control-custom" placeholder="Nhập tên người nhận..." />
                         <span asp-validation-for="ReceiverName" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="ReceiverPhone" class="form-label fw-bold small text-muted"></label>
+                        <label asp-for="ReceiverPhone" class="form-label"></label>
                         <input asp-for="ReceiverPhone" class="form-control form-control-custom" placeholder="Nhập số điện thoại người nhận..." />
                         <span asp-validation-for="ReceiverPhone" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="ReceiverAddress" class="form-label fw-bold small text-muted"></label>
+                        <label asp-for="ReceiverAddress" class="form-label"></label>
                         <textarea asp-for="ReceiverAddress" class="form-control form-control-custom" rows="3" placeholder="Nhập địa chỉ giao hàng cụ thể..."></textarea>
                         <span asp-validation-for="ReceiverAddress" class="text-danger small"></span>
                     </div>
 
                     <div class="p-3 bg-light rounded-3 border">
-                        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-wallet text-success me-2"></i>Phương Thức Thanh Toán</h6>
+                        <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2" style="font-size:.85rem;"><i class="fa-solid fa-wallet text-success"></i>Phương Thức Thanh Toán</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="paymentMethod" id="cod" checked>
-                            <label class="form-check-label fw-600" for="cod">
-                                Thanh toán khi nhận hàng (COD / Giả lập)
+                            <label class="form-check-label fw-600" for="cod" style="font-size:.88rem;">
+                                Thanh toán khi nhận hàng (COD)
                             </label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Order Items Summary -->
             <div class="col-lg-5">
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Các Món Đã Chọn</h5>
+                    <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">Các Món Đã Chọn</h5>
 
-                    <div class="cart-summary-list pe-1" style="max-height: 320px; overflow-y: auto;">
+                    <div class="pe-1" style="max-height: 300px; overflow-y: auto;">
                         @foreach (var item in cart)
                         {
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                                 <div class="d-flex align-items-center gap-3">
-                                    <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;">
                                     <div>
-                                        <h6 class="fw-bold mb-0 text-dark small">@item.Name</h6>
+                                        <h6 class="fw-bold mb-0 text-dark" style="font-size:.85rem;">@item.Name</h6>
                                         <span class="text-muted small">x @item.Quantity</span>
                                     </div>
                                 </div>
-                                <span class="fw-bold text-danger small">@item.TotalPrice.ToString("N0") ₫</span>
+                                <span class="fw-bold text-danger" style="font-size:.85rem;">@item.TotalPrice.ToString("N0") ₫</span>
                             </div>
                         }
                     </div>
 
                     <div class="d-flex justify-content-between mt-3 pt-2">
-                        <span class="fw-bold text-muted">Phí vận chuyển:</span>
+                        <span class="fw-bold text-muted" style="font-size:.9rem;">Phí vận chuyển:</span>
                         <span class="badge bg-success">FREE</span>
                     </div>
 
                     <div class="d-flex justify-content-between mt-2 pt-2 border-top">
-                        <span class="fs-5 fw-bold text-dark">Tổng cộng:</span>
-                        <span class="fs-4 fw-800 text-danger">@cart.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
+                        <span class="fw-bold text-dark" style="font-size:1rem;">Tổng cộng:</span>
+                        <span class="fw-800 text-danger" style="font-size:1.5rem;">@cart.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-danger btn-custom w-100 py-3 rounded-pill shadow">
+                        <button type="submit" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
                             <i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary w-100 py-2 rounded-pill mt-2">
+                        <a asp-action="Index" class="btn btn-secondary-custom btn-custom w-100 py-2 rounded-pill mt-2">
                             Quay lại giỏ hàng
                         </a>
                     </div>

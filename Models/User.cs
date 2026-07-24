@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Source.Models
 {
@@ -15,6 +16,7 @@ namespace Source.Models
         [Required(ErrorMessage = "Mật khẩu không được để trống")]
         [DataType(DataType.Password)]
         [Display(Name = "Mật khẩu")]
+        [BindNever]
         public string PasswordHash { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Họ và tên không được để trống")]

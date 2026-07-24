@@ -1,51 +1,37 @@
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
 using Source.Models;
+using Source.Services;
 
 namespace Source.Controllers
 {
     public class CartController : Controller
     {
         private readonly AppDbContext _context;
-        private const string CART_KEY = "FastFoodCart";
+        private readonly ICartSessionService _cartService;
+        private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context)
+        public CartController(AppDbContext context, ICartSessionService cartService, ILogger<CartController> logger)
         {
             _context = context;
+            _cartService = cartService;
+            _logger = logger;
         }
 
-        // Helper method to retrieve current user ID from Session or Cookie claims
-        private int? GetCurrentUserId()
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
-            {
-                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(claimId, out int parsedId))
-                {
-                    userId = parsedId;
-                    HttpContext.Session.SetInt32("UserId", parsedId);
-                }
-            }
-            return userId;
-        }
-
-        // GET: Cart
         public IActionResult Index()
         {
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
-            return View(cart);
+            return View(_cartService.GetCart());
         }
 
-        // POST: Cart/AddToCart (AJAX friendly)
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddToCart(int id, bool isCombo, int quantity = 1)
         {
             if (quantity <= 0) quantity = 1;
 
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
+            var cart = _cartService.GetCart();
             string name = "";
             string imageUrl = "";
             decimal price = 0;
@@ -86,7 +72,9 @@ namespace Source.Controllers
                 item.Quantity += quantity;
             }
 
-            HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
+            _cartService.SaveCart(cart);
+
+            _logger.LogInformation("User added to cart: {Name} (ID={Id}, IsCombo={IsCombo}, Qty={Qty})", name, id, isCombo, quantity);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -103,11 +91,11 @@ namespace Source.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Cart/UpdateQuantity (AJAX friendly)
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult UpdateQuantity(int id, bool isCombo, int quantity)
         {
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
+            var cart = _cartService.GetCart();
             var item = cart.FirstOrDefault(i => (isCombo && i.ComboId == id) || (!isCombo && i.FastFoodId == id));
 
             if (quantity <= 0)
@@ -119,7 +107,7 @@ namespace Source.Controllers
                 item.Quantity = quantity;
             }
 
-            HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
+            _cartService.SaveCart(cart);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -136,17 +124,17 @@ namespace Source.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Cart/RemoveItem (AJAX friendly)
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult RemoveItem(int id, bool isCombo)
         {
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
+            var cart = _cartService.GetCart();
             var item = cart.FirstOrDefault(i => (isCombo && i.ComboId == id) || (!isCombo && i.FastFoodId == id));
 
             if (item != null)
             {
                 cart.Remove(item);
-                HttpContext.Session.SetObjectAsJson(CART_KEY, cart);
+                _cartService.SaveCart(cart);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -164,27 +152,26 @@ namespace Source.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: Cart/ClearCart
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult ClearCart()
         {
-            HttpContext.Session.Remove(CART_KEY);
+            _cartService.ClearCart();
             TempData["SuccessMessage"] = "Đã làm trống giỏ hàng!";
             return RedirectToAction("Index");
         }
 
-        // GET: Cart/Checkout
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Checkout()
         {
-            var userId = GetCurrentUserId();
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
-                TempData["ErrorMessage"] = "Bạn cần đăng nhập để thực hiện thanh toán.";
                 return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Checkout", "Cart") });
             }
 
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
+            var cart = _cartService.GetCart();
             if (cart.Count == 0)
             {
                 TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống. Vui lòng chọn món ăn trước khi thanh toán.";
@@ -207,18 +194,18 @@ namespace Source.Controllers
             return View(order);
         }
 
-        // POST: Cart/Checkout
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(Order model)
         {
-            var userId = GetCurrentUserId();
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");
             }
 
-            var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>(CART_KEY) ?? new List<CartItem>();
+            var cart = _cartService.GetCart();
             if (cart.Count == 0)
             {
                 TempData["ErrorMessage"] = "Giỏ hàng đã trống.";
@@ -230,45 +217,53 @@ namespace Source.Controllers
 
             if (ModelState.IsValid)
             {
-                model.UserId = userId.Value;
-                model.OrderDate = DateTime.Now;
-                model.TotalAmount = cart.Sum(i => i.TotalPrice);
-                model.Status = "Chưa giao";
-
-                _context.Orders.Add(model);
-                await _context.SaveChangesAsync();
-
-                foreach (var item in cart)
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    var orderDetail = new OrderDetail
+                    model.UserId = userId.Value;
+                    model.OrderDate = DateTime.Now;
+                    model.TotalAmount = cart.Sum(i => i.TotalPrice);
+                    model.Status = OrderStatus.Pending;
+
+                    _context.Orders.Add(model);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var item in cart)
                     {
-                        OrderId = model.Id,
-                        FastFoodId = item.FastFoodId,
-                        ComboId = item.ComboId,
-                        Quantity = item.Quantity,
-                        Price = item.Price
-                    };
-                    _context.OrderDetails.Add(orderDetail);
+                        _context.OrderDetails.Add(new OrderDetail
+                        {
+                            OrderId = model.Id,
+                            FastFoodId = item.FastFoodId,
+                            ComboId = item.ComboId,
+                            Quantity = item.Quantity,
+                            Price = item.Price
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _cartService.ClearCart();
+
+                    TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";
+                    return RedirectToAction("OrderTracking", new { id = model.Id });
                 }
-
-                await _context.SaveChangesAsync();
-
-                // Clear Cart
-                HttpContext.Session.Remove(CART_KEY);
-
-                TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";
-                return RedirectToAction("OrderTracking", new { id = model.Id });
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Checkout failed for user {UserId}. Cart had {Count} items.", userId.Value, cart.Count);
+                    TempData["ErrorMessage"] = "Không thể hoàn tất đặt hàng. Vui lòng thử lại.";
+                }
             }
 
             ViewBag.Cart = cart;
             return View(model);
         }
 
-        // GET: Cart/OrderHistory
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> OrderHistory()
         {
-            var userId = GetCurrentUserId();
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");
@@ -283,11 +278,11 @@ namespace Source.Controllers
             return View(orders);
         }
 
-        // GET: Cart/OrderTracking/5
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> OrderTracking(int id)
         {
-            var userId = GetCurrentUserId();
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login", "Account");

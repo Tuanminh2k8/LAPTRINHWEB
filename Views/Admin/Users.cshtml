@@ -6,10 +6,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-users text-danger me-2"></i>Quản Lý Người Dùng</h3>
-        <p class="text-muted small mb-0">Quản lý danh sách tài khoản khách hàng và quản trị viên</p>
+        <h3 class="fw-bold text-dark mb-1">Quản Lý Người Dùng</h3>
+        <p class="text-muted small mb-0">Quản lý danh sách tài khoản</p>
     </div>
-    <a asp-action="UserCreate" class="btn btn-danger btn-custom rounded-pill px-4">
+    <a asp-action="UserCreate" class="btn btn-primary-custom btn-custom rounded-pill px-4 py-2">
         <i class="fa-solid fa-user-plus me-2"></i> Thêm Người Dùng
     </a>
 </div>
@@ -63,4 +63,5 @@
             </tbody>
         </table>
     </div>
+    <partial name="_Pagination" />
 </div>

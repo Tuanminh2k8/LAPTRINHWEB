@@ -2,36 +2,47 @@
 @using Source.Helpers
 @using Source.Models
 @{
-    var userId = HttpContextAccessor.HttpContext?.Session.GetInt32("UserId");
-    var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName") ?? HttpContextAccessor.HttpContext?.User.FindFirst("FullName")?.Value;
-    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role") ?? HttpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
+    var fullName = HttpContextAccessor.HttpContext?.User.FindFirst("FullName")?.Value ?? HttpContextAccessor.HttpContext?.User.Identity?.Name;
+    var role = HttpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
     
     var cart = HttpContextAccessor.HttpContext?.Session.GetObjectFromJson<List<CartItem>>("FastFoodCart") ?? new List<CartItem>();
     var cartCount = cart.Sum(i => i.Quantity);
-}
 
+    var pageTitle = (ViewData["Title"]?.ToString() ?? "Trang chủ") + " - PolyFood Store";
+    var siteDescription = "PolyFood - Hệ thống đặt thức ăn nhanh hàng đầu. Giao hàng siêu tốc trong 30 phút.";
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PolyFood Store</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap and Font Awesome -->
+    <meta name="description" content="@siteDescription" />
+    <meta name="keywords" content="fast food, đồ ăn nhanh, pizza, burger, gà rán, đặt đồ ăn online" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@siteDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/images/default_food.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@siteDescription" />
+    <link rel="canonical" href="https://polyfood.example.com" />
+    <title>@pageTitle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <div class="preloader" id="preloader">
+        <div class="preloader-spinner"></div>
+    </div>
+
     <header class="site-header">
-        <nav class="navbar navbar-expand-lg navbar-custom fixed-top shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
                     <div class="brand-icon"><i class="fa-solid fa-burger"></i></div>
@@ -53,42 +64,41 @@
                         {
                             <li class="nav-item">
                                 <a class="nav-link nav-link-custom text-danger fw-bold" asp-controller="Admin" asp-action="Index">
-                                    <i class="fa-solid fa-gauge-high me-1"></i> Quản trị System
+                                    <i class="fa-solid fa-gauge-high me-1"></i> Quản trị
                                 </a>
                             </li>
                         }
                     </ul>
                     
-                    <div class="d-flex align-items-center gap-3">
-                        <!-- Shopping Cart Button -->
-                        <a asp-controller="Cart" asp-action="Index" class="btn btn-cart-icon position-relative text-dark">
+                    <div class="d-flex align-items-center gap-2">
+                        <a asp-controller="Cart" asp-action="Index" class="btn btn-cart-icon position-relative text-dark" aria-label="Giỏ hàng">
                             <i class="fa-solid fa-cart-shopping fs-5"></i>
                             <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light @(cartCount > 0 ? "" : "d-none")">
                                 @cartCount
                             </span>
                         </a>
 
-                        @if (userId.HasValue || HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+                        @if (isAuthenticated)
                         {
                             <div class="dropdown">
                                 <button class="btn btn-user-menu dropdown-toggle d-flex align-items-center gap-2" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa-solid fa-circle-user fs-5 text-danger"></i>
-                                    <span class="fw-600 text-dark">@fullName</span>
+                                    <span class="fw-semibold d-none d-md-inline">@fullName</span>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2 rounded-3" aria-labelledby="userMenu">
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2" aria-labelledby="userMenu">
                                     <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card me-2 text-muted"></i> Hồ sơ cá nhân</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Cart" asp-action="OrderHistory"><i class="fa-solid fa-receipt me-2 text-muted"></i> Lịch sử đơn hàng</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item py-2 text-danger fw-600" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a></li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li><a class="dropdown-item py-2 text-danger fw-bold" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a></li>
                                 </ul>
                             </div>
                         }
                         else
                         {
-                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-600">
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-auth btn-auth-outline">
                                 <i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập
                             </a>
-                            <a asp-controller="Account" asp-action="Register" class="btn btn-danger btn-sm rounded-pill px-3 py-2 fw-600 shadow-sm">
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-auth btn-auth-solid">
                                 Đăng ký
                             </a>
                         }
@@ -98,13 +108,13 @@
         </nav>
     </header>
 
-    <div class="main-wrapper" style="margin-top: 78px;">
+    <div class="main-wrapper animate-fadeIn" style="margin-top: var(--nav-height);">
         @if (TempData["SuccessMessage"] != null)
         {
             <div class="container mt-3">
-                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 d-flex align-items-center py-3 px-4" role="alert">
                     <i class="fa-solid fa-circle-check fs-5 me-2 text-success"></i>
-                    <div>@TempData["SuccessMessage"]</div>
+                    <div class="fw-600 small">@TempData["SuccessMessage"]</div>
                     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
@@ -112,9 +122,9 @@
         @if (TempData["ErrorMessage"] != null)
         {
             <div class="container mt-3">
-                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 d-flex align-items-center py-3 px-4" role="alert">
                     <i class="fa-solid fa-circle-exclamation fs-5 me-2 text-danger"></i>
-                    <div>@TempData["ErrorMessage"]</div>
+                    <div class="fw-600 small">@TempData["ErrorMessage"]</div>
                     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
@@ -125,32 +135,47 @@
         </main>
     </div>
 
-    <footer class="footer mt-auto py-4 bg-dark text-light">
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index:1090"></div>
+
+    <button id="btnScrollTop" class="btn-scroll-top" aria-label="Cuộn lên đầu trang">
+        <i class="fa-solid fa-chevron-up"></i>
+    </button>
+
+    <footer class="footer mt-auto py-5 bg-dark text-light">
         <div class="container">
             <div class="row gy-4">
                 <div class="col-md-5">
-                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-burger text-danger me-2"></i>PolyFood FastFood</h5>
-                    <p class="text-white-50 small pe-lg-4">Hệ thống phân phối và đặt hàng thức ăn nhanh hiện đại. Cam kết giao hàng nóng hổi, vệ sinh an toàn thực phẩm 100%.</p>
+                    <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                        <span class="footer-brand-icon"><i class="fa-solid fa-burger"></i></span>
+                        PolyFood
+                    </h5>
+                    <p class="text-white-50 small pe-lg-4 lh-lg">Hệ thống phân phối và đặt hàng thức ăn nhanh hiện đại. Cam kết giao hàng nóng hổi, vệ sinh an toàn thực phẩm 100%.</p>
                 </div>
                 <div class="col-md-3">
                     <h6 class="fw-bold text-white mb-3">Liên kết nhanh</h6>
-                    <ul class="list-unstyled text-white-50 small">
-                        <li><a asp-controller="Home" asp-action="Index" class="text-white-50 text-decoration-none hover-white">Trang chủ Menu</a></li>
-                        <li><a asp-controller="Cart" asp-action="Index" class="text-white-50 text-decoration-none hover-white">Giỏ hàng của bạn</a></li>
-                        <li><a asp-controller="Account" asp-action="Login" class="text-white-50 text-decoration-none hover-white">Đăng nhập / Đăng ký</a></li>
+                    <ul class="list-unstyled text-white-50 small lh-lg">
+                        <li><a asp-controller="Home" asp-action="Index" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Trang chủ</a></li>
+                        <li><a asp-controller="Cart" asp-action="Index" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Giỏ hàng</a></li>
+                        <li><a asp-controller="Account" asp-action="Login" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Đăng nhập</a></li>
+                        <li><a asp-controller="Account" asp-action="Register" class="text-white-50 text-decoration-none hover-white"><i class="fa-solid fa-angle-right me-1"></i> Đăng ký</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h6 class="fw-bold text-white mb-3">Thông tin liên hệ</h6>
-                    <p class="text-white-50 small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i>123 Tô Ký, Q.12, TP. Hồ Chí Minh</p>
-                    <p class="text-white-50 small mb-1"><i class="fa-solid fa-phone me-2 text-danger"></i>Hotline: 1900 6789</p>
-                    <p class="text-white-50 small"><i class="fa-solid fa-envelope me-2 text-danger"></i>Support: cskh@polyfood.com</p>
+                    <h6 class="fw-bold text-white mb-3">Liên hệ</h6>
+                    <p class="text-white-50 small mb-2"><i class="fa-solid fa-location-dot me-2 text-danger"></i>123 Tô Ký, Q.12, TP. HCM</p>
+                    <p class="text-white-50 small mb-2"><i class="fa-solid fa-phone me-2 text-danger"></i>Hotline: 1900 6789</p>
+                    <p class="text-white-50 small mb-3"><i class="fa-solid fa-envelope me-2 text-danger"></i>cskh@polyfood.com</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
                 </div>
             </div>
             <hr class="my-4 border-secondary">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center text-white-50 small">
-                <div>&copy; 2026 <strong>PolyFood</strong>. Production standard ASP.NET Core MVC.</div>
-                <div class="mt-2 mt-md-0">Môn học: SOF2041 / Lập trình Web cơ bản</div>
+                <div>&copy; 2026 <strong class="text-white">PolyFood</strong>. All rights reserved.</div>
+                <div class="mt-2 mt-md-0">SOF2041 - Lập trình Web</div>
             </div>
         </div>
     </footer>

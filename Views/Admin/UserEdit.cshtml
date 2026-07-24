@@ -5,7 +5,7 @@
 }
 
 <div class="mb-4">
-    <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-pen text-danger me-2"></i>Chỉnh Sửa Người Dùng #@Model.Id</h3>
+    <h3 class="fw-bold text-dark mb-1">Chỉnh Sửa Người Dùng #@Model.Id</h3>
     <a asp-action="Users" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách</a>
 </div>
 
@@ -22,8 +22,8 @@
                 <span asp-validation-for="Username" class="text-danger small"></span>
             </div>
             <div class="col-md-6">
-                <label class="form-label fw-bold small text-muted">Mật khẩu mới (Bỏ trống nếu không đổi)</label>
-                <input type="password" name="newPassword" class="form-control form-control-custom" placeholder="Nhập mật khẩu mới..." />
+                <label class="form-label fw-bold small text-muted">Mật khẩu mới (bỏ trống nếu không đổi)</label>
+                <input type="password" name="newPassword" class="form-control form-control-custom" placeholder="Tối thiểu 6 ký tự..." />
             </div>
         </div>
 
@@ -64,7 +64,7 @@
 
         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
             <a asp-action="Users" class="btn btn-secondary-custom btn-custom">Hủy bỏ</a>
-            <button type="submit" class="btn btn-danger btn-custom rounded-pill px-4">Lưu Thay Đổi</button>
+            <button type="submit" class="btn btn-primary-custom btn-custom rounded-pill px-4">Lưu Thay Đổi</button>
         </div>
     </form>
 </div>

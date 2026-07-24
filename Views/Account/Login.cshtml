@@ -1,38 +1,40 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
 @model Source.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "Đăng Nhập";
+    var showTestCredentials = Config.GetValue<bool>("ShowTestCredentials");
 }
 
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="bg-danger text-white text-center py-4 px-3 position-relative">
-                    <div class="mb-2">
-                        <i class="fa-solid fa-circle-user fa-3x text-warning"></i>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <div class="text-center pt-5 px-4">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:16px;background:var(--gradient-primary);">
+                        <i class="fa-solid fa-circle-user fa-2x text-white"></i>
                     </div>
-                    <h3 class="fw-bold mb-1">Đăng Nhập Tài Khoản</h3>
-                    <p class="small text-white-50 mb-0">Chào mừng bạn quay lại PolyFood Store</p>
+                    <h3 class="fw-bold text-dark mb-1">Đăng Nhập</h3>
+                    <p class="text-muted small mb-0">Chào mừng bạn quay lại PolyFood</p>
                 </div>
 
-                <div class="card-body p-4 p-md-5 bg-white">
+                <div class="p-4 p-md-5">
                     <form asp-controller="Account" asp-action="Login" method="post" asp-route-returnUrl="@ViewBag.ReturnUrl">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
 
                         <div class="mb-3">
-                            <label asp-for="UsernameOrEmail" class="form-label fw-bold small text-muted"></label>
+                            <label asp-for="UsernameOrEmail" class="form-label small fw-bold text-muted"></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-user"></i></span>
-                                <input asp-for="UsernameOrEmail" class="form-control bg-light border-start-0 py-2" placeholder="Nhập username hoặc email..." />
+                                <input asp-for="UsernameOrEmail" class="form-control border-start-0 bg-light py-2" placeholder="Username hoặc email..." />
                             </div>
                             <span asp-validation-for="UsernameOrEmail" class="text-danger small ms-1"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Password" class="form-label fw-bold small text-muted"></label>
+                            <label asp-for="Password" class="form-label small fw-bold text-muted"></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-key"></i></span>
-                                <input asp-for="Password" class="form-control bg-light border-start-0 py-2" placeholder="Nhập mật khẩu..." />
+                                <input asp-for="Password" class="form-control border-start-0 bg-light py-2" placeholder="Mật khẩu..." />
                             </div>
                             <span asp-validation-for="Password" class="text-danger small ms-1"></span>
                         </div>
@@ -40,17 +42,17 @@
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="form-check">
                                 <input asp-for="RememberMe" class="form-check-input" />
-                                <label asp-for="RememberMe" class="form-check-input-label small text-muted"></label>
+                                <label asp-for="RememberMe" class="form-check-label small text-muted"></label>
                             </div>
-                            <a asp-action="GoogleLoginMock" class="small text-danger text-decoration-none fw-600">Đăng nhập Google?</a>
+                            <a asp-action="GoogleLoginMock" class="small text-danger text-decoration-none fw-600">Google?</a>
                         </div>
 
-                        <button type="submit" class="btn btn-danger w-100 py-3 rounded-pill fw-bold text-uppercase shadow-sm mb-3">
-                            <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập ngay
+                        <button type="submit" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow-sm mb-3">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng Nhập
                         </button>
 
-                        <div class="text-center mt-3">
-                            <p class="small text-muted mb-0">Chưa có tài khoản? 
+                        <div class="text-center">
+                            <p class="small text-muted mb-0">Chưa có tài khoản?
                                 <a asp-action="Register" class="text-danger fw-bold text-decoration-none">Đăng ký ngay</a>
                             </p>
                         </div>
@@ -58,13 +60,16 @@
                 </div>
             </div>
 
-            <div class="mt-4 p-3 bg-light rounded-3 text-center border">
-                <p class="small text-muted mb-1"><i class="fa-solid fa-circle-info text-primary me-1"></i> <strong>Tài khoản thử nghiệm hệ thống:</strong></p>
-                <div class="d-flex justify-content-center gap-4 small">
-                    <div>Admin: <code>admin</code> / <code>admin123</code></div>
-                    <div>Khách: <code>customer</code> / <code>customer123</code></div>
+            @if (showTestCredentials)
+            {
+                <div class="mt-4 p-3 bg-light rounded-3 text-center border">
+                    <p class="small text-muted mb-1"><i class="fa-solid fa-circle-info text-primary me-1"></i> <strong>Tài khoản thử nghiệm:</strong></p>
+                    <div class="d-flex justify-content-center gap-4 small">
+                        <div>Admin: <code class="bg-white px-2 py-1 rounded">admin / admin123</code></div>
+                        <div>Khách: <code class="bg-white px-2 py-1 rounded">customer / customer123</code></div>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
     </div>
 </div>

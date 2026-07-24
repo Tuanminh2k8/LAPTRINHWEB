@@ -6,10 +6,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-boxes-packing text-danger me-2"></i>Quản Lý Gói Combo</h3>
-        <p class="text-muted small mb-0">Quản lý các gói combo ưu đãi trong hệ thống</p>
+        <h3 class="fw-bold text-dark mb-1">Quản Lý Gói Combo</h3>
+        <p class="text-muted small mb-0">Quản lý các gói combo ưu đãi</p>
     </div>
-    <a asp-action="ComboCreate" class="btn btn-danger btn-custom rounded-pill px-4">
+    <a asp-action="ComboCreate" class="btn btn-primary-custom btn-custom rounded-pill px-4 py-2">
         <i class="fa-solid fa-plus me-2"></i> Thêm Combo Mới
     </a>
 </div>
@@ -31,7 +31,7 @@
                 {
                     <tr>
                         <td>
-                            <img src="@combo.ImageUrl" alt="@combo.Name" class="rounded-3 shadow-sm" style="width: 55px; height: 55px; object-fit: cover;">
+                            <img src="@combo.ImageUrl" alt="@combo.Name" class="rounded-3 shadow-sm" style="width: 55px; height: 55px; object-fit: cover;" loading="lazy">
                         </td>
                         <td>
                             <div class="fw-bold text-dark">@combo.Name</div>
@@ -62,4 +62,5 @@
             </tbody>
         </table>
     </div>
+    <partial name="_Pagination" />
 </div>

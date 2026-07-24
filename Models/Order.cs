@@ -23,7 +23,7 @@ namespace Source.Models
 
         [Required]
         [Display(Name = "Trạng thái")]
-        public string Status { get; set; } = "Chưa giao"; // Chưa giao, Đang giao, Đã giao
+        public string Status { get; set; } = OrderStatus.Pending;
 
         [Required(ErrorMessage = "Tên người nhận không được để trống")]
         [StringLength(100, ErrorMessage = "Tên người nhận không được quá 100 ký tự")]

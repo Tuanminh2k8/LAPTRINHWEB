@@ -1,6 +1,80 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Chính sách Bảo mật";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <div class="brand-icon mx-auto mb-3" style="width:64px;height:64px;font-size:1.5rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h1 class="fw-bold text-dark">Chính sách Bảo mật</h1>
+                <p class="text-muted">Cập nhật lần cuối: Tháng 7, 2026</p>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5 mb-4">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-database me-2"></i>1. Thu thập Thông tin</h4>
+                <p class="text-secondary">Khi đăng ký tài khoản và sử dụng dịch vụ của PolyFood, chúng tôi có thể thu thập các thông tin sau:</p>
+                <ul class="text-secondary">
+                    <li><strong>Thông tin cá nhân:</strong> Họ tên, số điện thoại, địa chỉ giao hàng, email (nếu có).</li>
+                    <li><strong>Thông tin tài khoản:</strong> Tên đăng nhập, mật mã (được mã hóa bằng BCrypt).</li>
+                    <li><strong>Thông tin đơn hàng:</strong> Lịch sử đặt hàng, sản phẩm đã mua, trạng thái giao hàng.</li>
+                    <li><strong>Thông tin thiết bị:</strong> Địa chỉ IP, loại trình duyệt, hệ điều hành (cho mục đích cải thiện dịch vụ).</li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5 mb-4">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-bullseye me-2"></i>2. Mục đích Sử dụng</h4>
+                <p class="text-secondary">Thông tin của bạn được sử dụng cho các mục đích:</p>
+                <ul class="text-secondary">
+                    <li>Xử lý và giao đơn hàng đặt thức ăn.</li>
+                    <li>Quản lý tài khoản người dùng.</li>
+                    <li>Liên hệ hỗ trợ khách hàng khi cần thiết.</li>
+                    <li>Cải thiện chất lượng dịch vụ và trải nghiệm người dùng.</li>
+                    <li>Thực hiện các yêu cầu pháp lý theo quy định của pháp luật.</li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5 mb-4">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-lock me-2"></i>3. Bảo mật Thông tin</h4>
+                <p class="text-secondary">Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn bằng các biện pháp:</p>
+                <ul class="text-secondary">
+                    <li>Mã hóa mật khẩu bằng thuật toán BCrypt, không lưu trữ mật khẩu thô.</li>
+                    <li>Sử dụng phiên (Session) và cookie có thời hạn để xác thực người dùng.</li>
+                    <li>Triển khai mã chống giả mạo CSRF (Anti-Forgery Token) trên tất cả biểu mẫu.</li>
+                    <li>Hạn chế truy cập cơ sở dữ liệu theo nguyên tắc cần biết.</li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5 mb-4">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-share-nodes me-2"></i>4. Chia sẻ Thông tin</h4>
+                <p class="text-secondary">Chúng tôi <strong>KHÔNG</strong> bán, cho thuê hoặc chia sẻ thông tin cá nhân của bạn với bên thứ ba vì mục đích thương mại. Thông tin chỉ được chia sẻ khi:</p>
+                <ul class="text-secondary">
+                    <li>Có yêu cầu từ cơ quan pháp luật có thẩm quyền.</li>
+                    <li>Nhằm bảo vệ quyền lợi hợp pháp của PolyFood và người dùng.</li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5 mb-4">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-user-check me-2"></i>5. Quyền của Người dùng</h4>
+                <p class="text-secondary">Bạn có quyền:</p>
+                <ul class="text-secondary">
+                    <li>Xem và cập nhật thông tin cá nhân tại trang <a asp-controller="Account" asp-action="Profile" class="text-danger fw-bold">Hồ sơ cá nhân</a>.</li>
+                    <li>Yêu cầu xóa tài khoản bằng cách liên hệ bộ phận hỗ trợ.</li>
+                    <li>Từ chối nhận thông báo khuyến mãi (nếu có).</li>
+                </ul>
+            </div>
+
+            <div class="glass-panel p-4 p-md-5">
+                <h4 class="fw-bold text-danger mb-3"><i class="fa-solid fa-headset me-2"></i>6. Liên hệ</h4>
+                <p class="text-secondary">Nếu bạn có câu hỏi về Chính sách Bảo mật, vui lòng liên hệ:</p>
+                <ul class="text-secondary">
+                    <li><i class="fa-solid fa-envelope me-2 text-danger"></i>Email: cskh@polyfood.com</li>
+                    <li><i class="fa-solid fa-phone me-2 text-danger"></i>Hotline: 1900 6789</li>
+                    <li><i class="fa-solid fa-location-dot me-2 text-danger"></i>Địa chỉ: 123 Tô Ký, Q.12, TP. HCM</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>

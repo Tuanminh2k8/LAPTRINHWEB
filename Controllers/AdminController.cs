@@ -1,44 +1,34 @@
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
 using Source.Models;
 
 namespace Source.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
+        private const int PageSize = 15;
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<AdminController> _logger;
 
-        public AdminController(AppDbContext context)
+        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger)
         {
             _context = context;
+            _environment = environment;
+            _logger = logger;
         }
 
-        // Restrict all actions in this controller to Admin role in session or Claims
-        public override void OnActionExecuting(ActionExecutingContext context)
-        {
-            var sessionRole = HttpContext.Session.GetString("Role");
-            var isClaimAdmin = User.IsInRole("Admin") || User.FindFirstValue(ClaimTypes.Role) == "Admin";
-
-            if (sessionRole != "Admin" && !isClaimAdmin)
-            {
-                TempData["ErrorMessage"] = "Bạn không có quyền truy cập trang quản trị.";
-                context.Result = new RedirectToActionResult("Login", "Account", null);
-            }
-            base.OnActionExecuting(context);
-        }
-
-        // GET: Admin/Index (Dashboard)
         public async Task<IActionResult> Index()
         {
             ViewBag.TotalOrders = await _context.Orders.CountAsync();
-            ViewBag.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Chưa giao");
-            ViewBag.DeliveringOrders = await _context.Orders.CountAsync(o => o.Status == "Đang giao");
-            ViewBag.DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == "Đã giao");
-            ViewBag.TotalRevenue = await _context.Orders.Where(o => o.Status == "Đã giao").SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
-            
+            ViewBag.PendingOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending);
+            ViewBag.DeliveringOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivering);
+            ViewBag.DeliveredOrders = await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered);
+            ViewBag.TotalRevenue = await _context.Orders.Where(o => o.Status == OrderStatus.Delivered).SumAsync(o => (decimal?)o.TotalAmount) ?? 0;
+
             ViewBag.TotalFoods = await _context.FastFoods.CountAsync();
             ViewBag.TotalCombos = await _context.Combos.CountAsync();
             ViewBag.TotalUsers = await _context.Users.CountAsync();
@@ -52,27 +42,34 @@ namespace Source.Controllers
             return View(recentOrders);
         }
 
-        #region User Management (CRUD)
+        #region User Management
 
-        // GET: Admin/Users
-        public async Task<IActionResult> Users()
+        public async Task<IActionResult> Users(int page = 1)
         {
-            var users = await _context.Users.ToListAsync();
+            page = Math.Max(1, page);
+            var query = _context.Users.OrderBy(u => u.Username);
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            var users = await query.Skip((page - 1) * PageSize).Take(PageSize).ToListAsync();
             return View(users);
         }
 
-        // GET: Admin/UserCreate
         [HttpGet]
-        public IActionResult UserCreate()
-        {
-            return View();
-        }
+        public IActionResult UserCreate() => View();
 
-        // POST: Admin/UserCreate
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UserCreate(User user)
+        public async Task<IActionResult> UserCreate(User user, string password)
         {
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+            {
+                ModelState.AddModelError("password", "Mật khẩu phải chứa ít nhất 6 ký tự.");
+            }
+
             var existingUser = await _context.Users.AnyAsync(u => u.Username.ToLower() == user.Username.ToLower());
             if (existingUser)
             {
@@ -85,18 +82,20 @@ namespace Source.Controllers
                 ModelState.AddModelError("Email", "Email đã tồn tại");
             }
 
+            ModelState.Remove("PasswordHash");
+
             if (ModelState.IsValid)
             {
-                user.PasswordHash = PasswordHelper.HashPassword(user.PasswordHash);
+                user.PasswordHash = PasswordHelper.HashPassword(password);
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Admin created user: {Username} (Role={Role})", user.Username, user.Role);
                 TempData["SuccessMessage"] = "Thêm người dùng thành công!";
                 return RedirectToAction(nameof(Users));
             }
             return View(user);
         }
 
-        // GET: Admin/UserEdit/5
         [HttpGet]
         public async Task<IActionResult> UserEdit(int id)
         {
@@ -105,7 +104,6 @@ namespace Source.Controllers
             return View(user);
         }
 
-        // POST: Admin/UserEdit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UserEdit(int id, User updatedUser, string? newPassword)
@@ -146,10 +144,14 @@ namespace Source.Controllers
 
                 if (!string.IsNullOrWhiteSpace(newPassword))
                 {
+                    if (newPassword.Length < 6)
+                    {
+                        ModelState.AddModelError("newPassword", "Mật khẩu mới phải chứa ít nhất 6 ký tự.");
+                        return View(updatedUser);
+                    }
                     dbUser.PasswordHash = PasswordHelper.HashPassword(newPassword);
                 }
 
-                _context.Update(dbUser);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Cập nhật người dùng thành công!";
                 return RedirectToAction(nameof(Users));
@@ -157,12 +159,11 @@ namespace Source.Controllers
             return View(updatedUser);
         }
 
-        // POST: Admin/UserDelete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UserDelete(int id)
         {
-            var currentUserId = HttpContext.Session.GetInt32("UserId");
+            var currentUserId = UserClaimsHelper.GetUserId(User);
             if (currentUserId == id)
             {
                 TempData["ErrorMessage"] = "Không thể xóa tài khoản Admin đang đăng nhập!";
@@ -172,6 +173,13 @@ namespace Source.Controllers
             var user = await _context.Users.FindAsync(id);
             if (user != null)
             {
+                var hasOrders = await _context.Orders.AnyAsync(o => o.UserId == id);
+                if (hasOrders)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa người dùng đã có đơn hàng.";
+                    return RedirectToAction(nameof(Users));
+                }
+
                 _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Xóa người dùng thành công!";
@@ -181,16 +189,96 @@ namespace Source.Controllers
 
         #endregion
 
-        #region Fast Food Management (CRUD)
+        #region Category Management
 
-        // GET: Admin/Foods
-        public async Task<IActionResult> Foods()
+        public async Task<IActionResult> Categories()
         {
-            var foods = await _context.FastFoods.Include(f => f.Category).ToListAsync();
+            var categories = await _context.Categories
+                .Include(c => c.FastFoods)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            return View(categories);
+        }
+
+        [HttpGet]
+        public IActionResult CategoryCreate() => View(new Category());
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CategoryCreate(Category category)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Categories.Add(category);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Thêm danh mục thành công!";
+                return RedirectToAction(nameof(Categories));
+            }
+            return View(category);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CategoryEdit(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null) return NotFound();
+            return View(category);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CategoryEdit(int id, Category category)
+        {
+            if (id != category.Id) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                _context.Update(category);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Admin updated category: {CategoryName} (ID={Id})", category.Name, category.Id);
+                TempData["SuccessMessage"] = "Cập nhật danh mục thành công!";
+                return RedirectToAction(nameof(Categories));
+            }
+            return View(category);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CategoryDelete(int id)
+        {
+            var category = await _context.Categories.Include(c => c.FastFoods).FirstOrDefaultAsync(c => c.Id == id);
+            if (category == null) return RedirectToAction(nameof(Categories));
+
+            if (category.FastFoods.Any())
+            {
+                TempData["ErrorMessage"] = "Không thể xóa danh mục đang có món ăn.";
+                return RedirectToAction(nameof(Categories));
+            }
+
+            _context.Categories.Remove(category);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Xóa danh mục thành công!";
+            return RedirectToAction(nameof(Categories));
+        }
+
+        #endregion
+
+        #region Fast Food Management
+
+        public async Task<IActionResult> Foods(int page = 1)
+        {
+            page = Math.Max(1, page);
+            var query = _context.FastFoods.Include(f => f.Category).OrderBy(f => f.Name);
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            var foods = await query.Skip((page - 1) * PageSize).Take(PageSize).ToListAsync();
             return View(foods);
         }
 
-        // GET: Admin/FoodCreate
         [HttpGet]
         public async Task<IActionResult> FoodCreate()
         {
@@ -198,32 +286,32 @@ namespace Source.Controllers
             return View();
         }
 
-        // POST: Admin/FoodCreate
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FoodCreate(FastFood food, IFormFile? imageFile)
         {
             ModelState.Remove("Category");
 
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var validation = ImageUploadHelper.Validate(imageFile);
+                if (!validation.IsValid)
+                {
+                    ModelState.AddModelError("imageFile", validation.ErrorMessage!);
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
-                    
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir!);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-                    food.ImageUrl = "/images/" + fileName;
+                    food.ImageUrl = await ImageUploadHelper.SaveToWwwRootAsync(imageFile, _environment.WebRootPath, "images/uploads")
+                        ?? food.ImageUrl;
                 }
 
                 _context.FastFoods.Add(food);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Admin created food: {FoodName} (Price={Price})", food.Name, food.Price);
                 TempData["SuccessMessage"] = "Thêm món ăn thành công!";
                 return RedirectToAction(nameof(Foods));
             }
@@ -232,7 +320,6 @@ namespace Source.Controllers
             return View(food);
         }
 
-        // GET: Admin/FoodEdit/5
         [HttpGet]
         public async Task<IActionResult> FoodEdit(int id)
         {
@@ -242,13 +329,21 @@ namespace Source.Controllers
             return View(food);
         }
 
-        // POST: Admin/FoodEdit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FoodEdit(int id, FastFood food, IFormFile? imageFile)
         {
             if (id != food.Id) return NotFound();
             ModelState.Remove("Category");
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var validation = ImageUploadHelper.Validate(imageFile);
+                if (!validation.IsValid)
+                {
+                    ModelState.AddModelError("imageFile", validation.ErrorMessage!);
+                }
+            }
 
             if (ModelState.IsValid)
             {
@@ -263,17 +358,8 @@ namespace Source.Controllers
 
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
-                    
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir!);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-                    dbFood.ImageUrl = "/images/" + fileName;
+                    dbFood.ImageUrl = await ImageUploadHelper.SaveToWwwRootAsync(imageFile, _environment.WebRootPath, "images/uploads")
+                        ?? dbFood.ImageUrl;
                 }
 
                 _context.Update(dbFood);
@@ -286,7 +372,6 @@ namespace Source.Controllers
             return View(food);
         }
 
-        // POST: Admin/FoodDelete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FoodDelete(int id)
@@ -294,6 +379,14 @@ namespace Source.Controllers
             var food = await _context.FastFoods.FindAsync(id);
             if (food != null)
             {
+                var inOrders = await _context.OrderDetails.AnyAsync(od => od.FastFoodId == id);
+                var inCombos = await _context.ComboDetails.AnyAsync(cd => cd.FastFoodId == id);
+                if (inOrders || inCombos)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa món ăn đang được sử dụng trong combo hoặc đơn hàng.";
+                    return RedirectToAction(nameof(Foods));
+                }
+
                 _context.FastFoods.Remove(food);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Xóa món ăn thành công!";
@@ -303,16 +396,26 @@ namespace Source.Controllers
 
         #endregion
 
-        #region Combo Management (CRUD)
+        #region Combo Management
 
-        // GET: Admin/Combos
-        public async Task<IActionResult> Combos()
+        public async Task<IActionResult> Combos(int page = 1)
         {
-            var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
+            page = Math.Max(1, page);
+            var query = _context.Combos
+                .Include(c => c.ComboDetails)
+                .ThenInclude(cd => cd.FastFood)
+                .OrderBy(c => c.Name);
+
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            var combos = await query.Skip((page - 1) * PageSize).Take(PageSize).ToListAsync();
             return View(combos);
         }
 
-        // GET: Admin/ComboCreate
         [HttpGet]
         public async Task<IActionResult> ComboCreate()
         {
@@ -320,26 +423,37 @@ namespace Source.Controllers
             return View();
         }
 
-        // POST: Admin/ComboCreate
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ComboCreate(Combo combo, int[] selectedFoods, int[] foodQuantities, IFormFile? imageFile)
         {
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var validation = ImageUploadHelper.Validate(imageFile);
+                if (!validation.IsValid)
+                {
+                    ModelState.AddModelError("imageFile", validation.ErrorMessage!);
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
-                    
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir!);
+                    combo.ImageUrl = await ImageUploadHelper.SaveToWwwRootAsync(imageFile, _environment.WebRootPath, "images/uploads")
+                        ?? combo.ImageUrl;
+                }
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                if (selectedFoods != null && selectedFoods.Length > 0)
+                {
+                    var validFoodIds = await _context.FastFoods.Select(f => f.Id).ToListAsync();
+                    var invalidIds = selectedFoods.Where(id => !validFoodIds.Contains(id)).ToArray();
+                    if (invalidIds.Any())
                     {
-                        await imageFile.CopyToAsync(stream);
+                        ModelState.AddModelError("selectedFoods", "Một số món ăn được chọn không hợp lệ.");
+                        ViewBag.Foods = await _context.FastFoods.ToListAsync();
+                        return View(combo);
                     }
-                    combo.ImageUrl = "/images/" + fileName;
                 }
 
                 _context.Combos.Add(combo);
@@ -370,7 +484,6 @@ namespace Source.Controllers
             return View(combo);
         }
 
-        // GET: Admin/ComboEdit/5
         [HttpGet]
         public async Task<IActionResult> ComboEdit(int id)
         {
@@ -387,15 +500,35 @@ namespace Source.Controllers
             return View(combo);
         }
 
-        // POST: Admin/ComboEdit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ComboEdit(int id, Combo combo, int[] selectedFoods, int[] foodQuantities, IFormFile? imageFile)
         {
             if (id != combo.Id) return NotFound();
 
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var validation = ImageUploadHelper.Validate(imageFile);
+                if (!validation.IsValid)
+                {
+                    ModelState.AddModelError("imageFile", validation.ErrorMessage!);
+                }
+            }
+
             if (ModelState.IsValid)
             {
+                if (selectedFoods != null && selectedFoods.Length > 0)
+                {
+                    var validFoodIds = await _context.FastFoods.Select(f => f.Id).ToListAsync();
+                    var invalidIds = selectedFoods.Where(id => !validFoodIds.Contains(id)).ToArray();
+                    if (invalidIds.Any())
+                    {
+                        ModelState.AddModelError("selectedFoods", "Một số món ăn được chọn không hợp lệ.");
+                        ViewBag.Foods = await _context.FastFoods.ToListAsync();
+                        return View(combo);
+                    }
+                }
+
                 var dbCombo = await _context.Combos.Include(c => c.ComboDetails).FirstOrDefaultAsync(c => c.Id == id);
                 if (dbCombo == null) return NotFound();
 
@@ -405,17 +538,8 @@ namespace Source.Controllers
 
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
-                    
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir!);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-                    dbCombo.ImageUrl = "/images/" + fileName;
+                    dbCombo.ImageUrl = await ImageUploadHelper.SaveToWwwRootAsync(imageFile, _environment.WebRootPath, "images/uploads")
+                        ?? dbCombo.ImageUrl;
                 }
 
                 _context.ComboDetails.RemoveRange(dbCombo.ComboDetails);
@@ -436,7 +560,6 @@ namespace Source.Controllers
                     }
                 }
 
-                _context.Update(dbCombo);
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Cập nhật combo thành công!";
@@ -447,7 +570,6 @@ namespace Source.Controllers
             return View(combo);
         }
 
-        // POST: Admin/ComboDelete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ComboDelete(int id)
@@ -455,6 +577,13 @@ namespace Source.Controllers
             var combo = await _context.Combos.Include(c => c.ComboDetails).FirstOrDefaultAsync(c => c.Id == id);
             if (combo != null)
             {
+                var inOrders = await _context.OrderDetails.AnyAsync(od => od.ComboId == id);
+                if (inOrders)
+                {
+                    TempData["ErrorMessage"] = "Không thể xóa combo đang có trong đơn hàng.";
+                    return RedirectToAction(nameof(Combos));
+                }
+
                 _context.ComboDetails.RemoveRange(combo.ComboDetails);
                 _context.Combos.Remove(combo);
                 await _context.SaveChangesAsync();
@@ -467,9 +596,9 @@ namespace Source.Controllers
 
         #region Order Management
 
-        // GET: Admin/Orders
-        public async Task<IActionResult> Orders(string? status)
+        public async Task<IActionResult> Orders(string? status, int page = 1)
         {
+            page = Math.Max(1, page);
             var query = _context.Orders.Include(o => o.User).AsQueryable();
 
             if (!string.IsNullOrEmpty(status))
@@ -477,23 +606,38 @@ namespace Source.Controllers
                 query = query.Where(o => o.Status == status);
             }
 
-            var orders = await query.OrderByDescending(o => o.OrderDate).ToListAsync();
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
+
             ViewBag.SelectedStatus = status;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            var orders = await query
+                .OrderByDescending(o => o.OrderDate)
+                .Skip((page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
 
             return View(orders);
         }
 
-        // POST: Admin/UpdateOrderStatus (AJAX friendly)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateOrderStatus(int id, string status)
         {
+            if (!OrderStatus.IsValid(status))
+            {
+                return BadRequest(new { success = false, message = "Trạng thái không hợp lệ." });
+            }
+
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
             order.Status = status;
-            _context.Update(order);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Admin updated order #{OrderId} status to: {Status}", id, status);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -501,10 +645,9 @@ namespace Source.Controllers
             }
 
             TempData["SuccessMessage"] = "Cập nhật trạng thái đơn hàng thành công!";
-            return RedirectToAction(nameof(Orders), new { status = status });
+            return RedirectToAction(nameof(Orders), new { status });
         }
 
-        // GET: Admin/OrderDetail/5
         public async Task<IActionResult> OrderDetail(int id)
         {
             var order = await _context.Orders

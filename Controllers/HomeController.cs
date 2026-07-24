@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Models;
@@ -6,15 +7,19 @@ namespace Source.Controllers
 {
     public class HomeController : Controller
     {
+        private const int PageSize = 12;
         private readonly AppDbContext _context;
+        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(AppDbContext context)
+        public HomeController(AppDbContext context, ILogger<HomeController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        public async Task<IActionResult> Index(string? searchName, int? categoryId)
+        public async Task<IActionResult> Index(string? searchName, int? categoryId, int page = 1)
         {
+            page = Math.Max(1, page);
             var categories = await _context.Categories.ToListAsync();
             ViewBag.Categories = categories;
 
@@ -22,6 +27,8 @@ namespace Source.Controllers
 
             if (!string.IsNullOrEmpty(searchName))
             {
+                searchName = searchName.Trim();
+                if (searchName.Length > 100) searchName = searchName[..100];
                 query = query.Where(f => f.Name.Contains(searchName));
             }
 
@@ -30,12 +37,28 @@ namespace Source.Controllers
                 query = query.Where(f => f.CategoryId == categoryId.Value);
             }
 
-            var foods = await query.ToListAsync();
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)PageSize));
+
+            if (page > totalPages)
+            {
+                page = totalPages;
+            }
+
+            var foods = await query
+                .OrderBy(f => f.Name)
+                .Skip((page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
             var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
 
             ViewBag.Combos = combos;
             ViewBag.SelectedCategory = categoryId;
             ViewBag.SearchName = searchName;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
 
             return View(foods);
         }
@@ -47,6 +70,8 @@ namespace Source.Controllers
 
             if (!string.IsNullOrEmpty(name))
             {
+                name = name.Trim();
+                if (name.Length > 100) name = name[..100];
                 query = query.Where(f => f.Name.Contains(name));
             }
 
@@ -67,11 +92,15 @@ namespace Source.Controllers
 
             if (!string.IsNullOrEmpty(theme))
             {
+                theme = theme.Trim();
+                if (theme.Length > 100) theme = theme[..100];
                 query = query.Where(f => f.Theme.Contains(theme));
             }
 
             if (!string.IsNullOrEmpty(description))
             {
+                description = description.Trim();
+                if (description.Length > 250) description = description[..250];
                 query = query.Where(f => f.Description.Contains(description));
             }
 
@@ -120,6 +149,27 @@ namespace Source.Controllers
             }
 
             return View(combo);
+        }
+
+        public IActionResult Privacy() => View();
+
+        public IActionResult PageNotFound(int? statusCode)
+        {
+            if (statusCode.HasValue && statusCode.Value == 404)
+            {
+                Response.StatusCode = 404;
+                return View();
+            }
+            return RedirectToAction("Index");
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            });
         }
     }
 }

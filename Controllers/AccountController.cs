@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
@@ -18,32 +19,28 @@ namespace Source.Controllers
             _context = context;
         }
 
-        // GET: Account/Register
         [HttpGet]
         public IActionResult Register()
         {
-            if (User.Identity?.IsAuthenticated == true || HttpContext.Session.GetInt32("UserId").HasValue)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Home");
             }
             return View();
         }
 
-        // POST: Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Check duplicate Username
                 var isUsernameTaken = await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower());
                 if (isUsernameTaken)
                 {
                     ModelState.AddModelError("Username", "Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác.");
                 }
 
-                // Check duplicate Email
                 var isEmailTaken = await _context.Users.AnyAsync(u => u.Email.ToLower() == model.Email.ToLower());
                 if (isEmailTaken)
                 {
@@ -74,11 +71,10 @@ namespace Source.Controllers
             return View(model);
         }
 
-        // GET: Account/Login
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
-            if (User.Identity?.IsAuthenticated == true || HttpContext.Session.GetInt32("UserId").HasValue)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -86,7 +82,6 @@ namespace Source.Controllers
             return View(new LoginViewModel());
         }
 
-        // POST: Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -98,7 +93,7 @@ namespace Source.Controllers
 
             string identifier = model.UsernameOrEmail.Trim().ToLower();
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => 
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
                 u.Username.ToLower() == identifier || u.Email.ToLower() == identifier);
 
             if (user == null || !PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
@@ -107,7 +102,6 @@ namespace Source.Controllers
                 return View(model);
             }
 
-            // Create Authentication Claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -129,12 +123,6 @@ namespace Source.Controllers
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
 
-            // Store user details in Session
-            HttpContext.Session.SetInt32("UserId", user.Id);
-            HttpContext.Session.SetString("Username", user.Username);
-            HttpContext.Session.SetString("FullName", user.FullName);
-            HttpContext.Session.SetString("Role", user.Role);
-
             TempData["SuccessMessage"] = $"Chào mừng {user.FullName} đã đăng nhập thành công!";
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -150,14 +138,19 @@ namespace Source.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: Account/GoogleLoginMock
         [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [Authorize]
         public IActionResult GoogleLoginMock()
         {
             return View();
         }
 
-        // POST: Account/GoogleLoginMockSubmit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GoogleLoginMockSubmit(string email, string name, string subId)
@@ -173,7 +166,7 @@ namespace Source.Controllers
             {
                 user = new User
                 {
-                    Username = "google_" + Guid.NewGuid().ToString("N").Substring(0, 8),
+                    Username = "google_" + Guid.NewGuid().ToString("N")[..8],
                     PasswordHash = PasswordHelper.HashPassword(Guid.NewGuid().ToString()),
                     FullName = name,
                     Email = email,
@@ -204,26 +197,15 @@ namespace Source.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
-            HttpContext.Session.SetInt32("UserId", user.Id);
-            HttpContext.Session.SetString("Username", user.Username);
-            HttpContext.Session.SetString("FullName", user.FullName);
-            HttpContext.Session.SetString("Role", user.Role);
-
             TempData["SuccessMessage"] = $"Đăng nhập Google thành công! Chào {user.FullName}.";
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: Account/Profile
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Profile()
         {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
-            {
-                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
-            }
-
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login");
@@ -238,18 +220,12 @@ namespace Source.Controllers
             return View(user);
         }
 
-        // POST: Account/Profile
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(User updatedUser)
+        public async Task<IActionResult> Profile(User updatedUser, string? newPassword, string? confirmNewPassword)
         {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
-            {
-                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
-            }
-
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue || userId.Value != updatedUser.Id)
             {
                 return RedirectToAction("Login");
@@ -264,17 +240,52 @@ namespace Source.Controllers
             ModelState.Remove("Username");
             ModelState.Remove("PasswordHash");
 
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                if (newPassword.Length < 6)
+                {
+                    ModelState.AddModelError("newPassword", "Mật khẩu mới phải chứa ít nhất 6 ký tự.");
+                }
+                else if (newPassword != confirmNewPassword)
+                {
+                    ModelState.AddModelError("confirmNewPassword", "Mật khẩu xác nhận không trùng khớp.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
+                var emailTaken = await _context.Users.AnyAsync(u =>
+                    u.Id != dbUser.Id && u.Email.ToLower() == updatedUser.Email.Trim().ToLower());
+                if (emailTaken)
+                {
+                    ModelState.AddModelError("Email", "Email này đã được sử dụng bởi tài khoản khác.");
+                    return View(updatedUser);
+                }
+
                 dbUser.FullName = updatedUser.FullName.Trim();
                 dbUser.Email = updatedUser.Email.Trim();
                 dbUser.PhoneNumber = updatedUser.PhoneNumber.Trim();
                 dbUser.Address = updatedUser.Address.Trim();
 
-                _context.Update(dbUser);
+                if (!string.IsNullOrWhiteSpace(newPassword))
+                {
+                    dbUser.PasswordHash = PasswordHelper.HashPassword(newPassword);
+                }
+
                 await _context.SaveChangesAsync();
 
-                HttpContext.Session.SetString("FullName", dbUser.FullName);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
+                    new Claim(ClaimTypes.Name, dbUser.Username),
+                    new Claim("FullName", dbUser.FullName),
+                    new Claim(ClaimTypes.Email, dbUser.Email),
+                    new Claim(ClaimTypes.Role, dbUser.Role)
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity));
 
                 TempData["SuccessMessage"] = "Cập nhật thông tin cá nhân thành công!";
                 return View(dbUser);
@@ -283,7 +294,7 @@ namespace Source.Controllers
             return View(updatedUser);
         }
 
-        // GET/POST: Account/Logout
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

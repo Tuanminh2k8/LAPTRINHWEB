@@ -6,25 +6,24 @@
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
     <div>
-        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-file-invoice text-danger me-2"></i>Chi Tiết Đơn Hàng #@Model.Id</h3>
-        <a asp-action="Orders" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách đơn hàng</a>
+        <h3 class="fw-bold text-dark mb-1">Chi Tiết Đơn Hàng #@Model.Id</h3>
+        <a asp-action="Orders" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách</a>
     </div>
     <span class="badge bg-danger fs-6 px-3 py-2 rounded-pill">@Model.Status</span>
 </div>
 
 <div class="row g-4">
-    <!-- Receiver & Customer Details -->
     <div class="col-md-5">
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
             <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Thông Tin Người Nhận</h5>
-            
+
             <div class="mb-2">
                 <span class="text-muted small d-block">Tài khoản đặt hàng:</span>
                 <strong class="text-dark">@(Model.User?.FullName ?? "Khách vãng lai") (@Model.User?.Username)</strong>
             </div>
 
             <div class="mb-2">
-                <span class="text-muted small d-block">Người nhận hàng:</span>
+                <span class="text-muted small d-block">Người nhận:</span>
                 <strong class="text-dark">@Model.ReceiverName</strong>
             </div>
 
@@ -34,7 +33,7 @@
             </div>
 
             <div class="mb-2">
-                <span class="text-muted small d-block">Địa chỉ giao hàng:</span>
+                <span class="text-muted small d-block">Địa chỉ:</span>
                 <strong class="text-dark">@Model.ReceiverAddress</strong>
             </div>
 
@@ -56,17 +55,16 @@
                         <option value="Đã giao" selected="@(Model.Status == "Đã giao")">Đã giao</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-danger btn-custom w-100 rounded-pill py-2">
-                    Lưu Trạng Thái Đơn Hàng
+                <button type="submit" class="btn btn-primary-custom btn-custom w-100 rounded-pill py-2">
+                    Lưu Trạng Thái
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Order Items Table -->
     <div class="col-md-7">
         <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
-            <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Danh Sách Món Ăn Đã Đặt</h5>
+            <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Danh Sách Món Ăn</h5>
 
             <div class="table-responsive">
                 <table class="table align-middle">
@@ -87,7 +85,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <img src="@img" alt="@name" class="rounded-3" style="width: 45px; height: 45px; object-fit: cover;">
+                                        <img src="@img" alt="@name" class="rounded-3" style="width: 45px; height: 45px; object-fit: cover;" loading="lazy">
                                         <span class="fw-bold text-dark small">@name</span>
                                     </div>
                                 </td>
@@ -101,7 +99,7 @@
             </div>
 
             <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                <span class="fs-5 fw-bold text-dark">Tổng Tiền Đơn Hàng:</span>
+                <span class="fs-5 fw-bold text-dark">Tổng Tiền:</span>
                 <span class="fs-4 fw-800 text-danger">@Model.TotalAmount.ToString("N0") ₫</span>
             </div>
         </div>

@@ -5,7 +5,7 @@
 }
 
 <div class="mb-4">
-    <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-plus text-danger me-2"></i>Thêm Người Dùng Mới</h3>
+    <h3 class="fw-bold text-dark mb-1">Thêm Người Dùng Mới</h3>
     <a asp-action="Users" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách</a>
 </div>
 
@@ -21,9 +21,8 @@
                 <span asp-validation-for="Username" class="text-danger small"></span>
             </div>
             <div class="col-md-6">
-                <label asp-for="PasswordHash" class="form-label fw-bold small text-muted">Mật khẩu</label>
-                <input asp-for="PasswordHash" type="password" class="form-control form-control-custom" placeholder="Nhập mật khẩu..." />
-                <span asp-validation-for="PasswordHash" class="text-danger small"></span>
+                <label class="form-label fw-bold small text-muted">Mật khẩu</label>
+                <input name="password" type="password" class="form-control form-control-custom" placeholder="Tối thiểu 6 ký tự..." />
             </div>
         </div>
 
@@ -64,7 +63,7 @@
 
         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
             <a asp-action="Users" class="btn btn-secondary-custom btn-custom">Hủy bỏ</a>
-            <button type="submit" class="btn btn-danger btn-custom rounded-pill px-4">Lưu Người Dùng</button>
+            <button type="submit" class="btn btn-primary-custom btn-custom rounded-pill px-4">Lưu Người Dùng</button>
         </div>
     </form>
 </div>
