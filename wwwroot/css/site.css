@@ -814,6 +814,32 @@ small { font-size: 0.85rem; }
 .admin-table tbody tr { transition: background var(--transition-fast); }
 .admin-content-area { padding-left: 240px; padding-top: 0; min-height: 100vh; }
 
+/* ─── Admin Return Bar ─── */
+.admin-return-bar {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 8px 0;
+  text-align: center;
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  z-index: 1025;
+}
+.admin-return-bar .admin-return-btn {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+.admin-return-bar .admin-return-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.main-wrapper.has-admin-bar { margin-top: calc(var(--nav-height) + 40px) !important; }
+
 /* ─── Pagination ─── */
 .pagination .page-link {
   border: none; padding: 8px 14px; margin: 0 2px;

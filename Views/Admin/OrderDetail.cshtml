@@ -45,7 +45,12 @@
         <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-file-invoice text-danger me-2"></i>Chi Tiết Đơn Hàng #@Model.Id</h3>
         <a asp-action="Orders" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách</a>
     </div>
-    <span class="badge fs-6 px-3 py-2 rounded-pill @statusBadgeClass">@statusLabel</span>
+    <div class="d-flex gap-2">
+        <span class="badge fs-6 px-3 py-2 rounded-pill @statusBadgeClass">@statusLabel</span>
+        <a asp-action="PrintInvoice" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill px-3" title="In hóa đơn">
+            <i class="fa-solid fa-print me-1"></i> In
+        </a>
+    </div>
 </div>
 
 @if (activeStep > 0)
@@ -116,6 +121,13 @@
                 <div class="mb-2">
                     <span class="text-muted small d-block">Ghi chú:</span>
                     <strong class="text-dark">@Model.Note</strong>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.CancelReason))
+            {
+                <div class="mb-2">
+                    <span class="text-muted small d-block">Lý do hủy:</span>
+                    <strong class="text-danger">@Model.CancelReason</strong>
                 </div>
             }
             <div class="mb-0">

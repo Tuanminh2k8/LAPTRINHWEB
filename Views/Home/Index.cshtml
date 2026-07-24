@@ -33,16 +33,6 @@
         "https://images.unsplash.com/photo-1544025162-d76694265947?w=600",
         "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
     };
-
-    var featuredItems = new List<dynamic>
-    {
-        new { Name = "Burger Bò", Price = 89000, Img = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500", Cat = "Burger" },
-        new { Name = "Burger Gà", Price = 79000, Img = "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=500", Cat = "Burger" },
-        new { Name = "Gà Rán Cay", Price = 69000, Img = "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=500", Cat = "Gà Rán" },
-        new { Name = "Pizza Hải Sản", Price = 159000, Img = "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500", Cat = "Pizza" },
-        new { Name = "Khoai Tây Chiên", Price = 35000, Img = "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500", Cat = "Món Kèm" },
-        new { Name = "Đồ Uống Lạnh", Price = 29000, Img = "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500", Cat = "Đồ Uống" }
-    };
 }
 
 <section class="hero-section">
@@ -234,28 +224,68 @@
         <h3 class="polyfood-section-title">Thực đơn Món Lẻ Nổi Bật</h3>
     </div>
 
+    <div id="food-list-container">
     <div class="food-grid-4">
-        @foreach (var item in featuredItems)
+        @{
+            var foodsList = Model?.Take(8).ToList() ?? new List<Source.Models.FastFood>();
+        }
+        @if (!foodsList.Any())
         {
-            <div class="col reveal">
-                <div class="food-card">
-                    <div class="food-img-wrap">
-                        <img src="@item.Img" alt="@item.Name" loading="lazy">
-                        <span class="food-category-badge">@item.Cat</span>
-                    </div>
-                    <div class="food-body">
-                        <h5 class="food-name">@item.Name</h5>
-                        <p class="food-desc">Món ăn thơm ngon, chế biến từ nguyên liệu tươi sạch, đạt chuẩn vệ sinh an toàn thực phẩm.</p>
-                        <div class="food-footer">
-                            <span class="food-price">@item.Price.ToString("N0") ₫</span>
-                            <button onclick="showToast('Đã thêm @item.Name vào giỏ hàng!', 'success')" class="btn-add-cart" title="Thêm vào giỏ hàng">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+            <div class="empty-state col-12">
+                <div class="empty-state-icon"><i class="fa-solid fa-face-frown"></i></div>
+                <h5 class="empty-state-title">Chưa có món ăn nào</h5>
+                <p class="empty-state-text">Vui lòng quay lại sau.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in foodsList)
+            {
+                <div class="reveal">
+                    <div class="food-card">
+                        <div class="food-img-wrap">
+                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
+                            <span class="food-category-badge">@item.Category?.Name</span>
+                        </div>
+                        <div class="food-body">
+                            <h5 class="food-name">@item.Name</h5>
+                            <p class="food-desc">@item.Description</p>
+                            <div class="food-footer">
+                                <span class="food-price">@item.Price.ToString("N0") ₫</span>
+                                <button onclick="addToCart(@item.Id, false, 1, this)" class="btn-add-cart" title="Thêm vào giỏ hàng">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
         }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber - 1 })">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == pageNumber ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = i })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { searchName = searchName, categoryId = selectedCategory, sortOrder = sortOrder, page = pageNumber + 1 })">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
     </div>
 
     <div class="text-center mt-4">

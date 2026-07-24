@@ -35,6 +35,9 @@ namespace Source.Models
                 .WithMany(f => f.ComboDetails)
                 .HasForeignKey(cd => cd.FastFoodId);
 
+            // Categories, Combos, Users, ComboDetails seed remain
+            // Foods are seeded dynamically via DbInitializer
+            
             // Seed Categories
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, Name = "Burgers", Description = "Các loại bánh burger thơm ngon" },

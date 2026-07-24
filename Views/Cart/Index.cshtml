@@ -1,6 +1,8 @@
 @model List<Source.Models.CartItem>
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Giỏ Hàng";
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
 }
 
 <div class="container py-5">
@@ -119,9 +121,18 @@
                         <span class="fw-800 text-danger" id="cart-total-amount" style="font-size:1.4rem;">@Model.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
                     </div>
 
-                    <a asp-controller="Cart" asp-action="Checkout" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
-                        <i class="fa-solid fa-credit-card me-2"></i> Tiến Hành Thanh Toán
-                    </a>
+                    @if (isAuthenticated)
+                    {
+                        <a asp-controller="Cart" asp-action="Checkout" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
+                            <i class="fa-solid fa-credit-card me-2"></i> Tiến Hành Thanh Toán
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Index", "Cart")" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập để thanh toán
+                        </a>
+                    }
                 </div>
             </div>
         </div>

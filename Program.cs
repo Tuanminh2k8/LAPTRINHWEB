@@ -55,8 +55,6 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseStatusCodePagesWithReExecute("/Home/PageNotFound", "?statusCode={0}");
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -70,13 +68,13 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        context.Database.Migrate();
-        DbInitializer.Seed(context);
+        await context.Database.MigrateAsync();
+        await DbInitializer.SeedAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred migrating the database.");
+        logger.LogError(ex, "Lỗi xảy ra trong quá trình Migrate/Seed Database.");
     }
 }
 

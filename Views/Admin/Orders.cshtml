@@ -83,7 +83,6 @@
         }
     </div>
 </div>
-</div>
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
     <div class="table-responsive">
@@ -223,8 +222,14 @@
         function shipOrder(id) { ajaxPost('@Url.Action("ShipOrder", "Admin")', { id: id }, removeRow); }
         function deliverOrder(id) { ajaxPost('@Url.Action("DeliverOrder", "Admin")', { id: id }, removeRow); }
         function cancelOrder(id) {
-            if (!confirm('Bạn có chắc muốn hủy đơn hàng #' + id + '?')) return;
-            ajaxPost('@Url.Action("CancelOrder", "Admin")', { id: id }, removeRow);
+            var reason = prompt('Nhập lý do hủy đơn hàng #' + id + ':');
+            if (reason === null) return;
+            ajaxPost('@Url.Action("CancelOrder", "Admin")', { id: id, cancelReason: reason }, function(res) {
+                if (res.success) {
+                    $('#order-row-' + id).find('td:eq(7)').html('<span class="badge rounded-pill px-3 py-2 bg-danger">Đã hủy</span>');
+                    $('#order-row-' + id).find('.d-flex.justify-content-center').empty();
+                }
+            });
         }
         function deleteOrder(id) {
             if (!confirm('Bạn có chắc muốn xóa đơn hàng #' + id + '?')) return;

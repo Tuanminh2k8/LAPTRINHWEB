@@ -207,10 +207,17 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CategoryCreate(Category category)
         {
+            var existing = await _context.Categories.AnyAsync(c => c.Name.ToLower() == category.Name.ToLower());
+            if (existing)
+            {
+                ModelState.AddModelError("Name", "Tên danh mục đã tồn tại. Vui lòng chọn tên khác.");
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Categories.Add(category);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Admin created category: {CategoryName}", category.Name);
                 TempData["SuccessMessage"] = "Thêm danh mục thành công!";
                 return RedirectToAction(nameof(Categories));
             }
@@ -230,6 +237,12 @@ namespace Source.Controllers
         public async Task<IActionResult> CategoryEdit(int id, Category category)
         {
             if (id != category.Id) return NotFound();
+
+            var existing = await _context.Categories.AnyAsync(c => c.Name.ToLower() == category.Name.ToLower() && c.Id != id);
+            if (existing)
+            {
+                ModelState.AddModelError("Name", "Tên danh mục đã tồn tại. Vui lòng chọn tên khác.");
+            }
 
             if (ModelState.IsValid)
             {
@@ -708,9 +721,26 @@ namespace Source.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelOrder(int id)
+        public async Task<IActionResult> CancelOrder(int id, string? cancelReason)
         {
-            return await ChangeStatus(id, "Cancelled");
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = "Cancelled";
+            order.UpdatedAt = DateTime.Now;
+            order.CancelReason = cancelReason;
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Admin cancelled order #{OrderId}. Reason: {Reason}", id, cancelReason);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, newStatus = "Cancelled", orderId = id });
+            }
+
+            TempData["SuccessMessage"] = $"Đã hủy đơn hàng #{id}";
+            return RedirectToAction(nameof(Orders));
         }
 
         [HttpPost]
@@ -797,6 +827,27 @@ namespace Source.Controllers
             ViewBag.StatusBadgeClass = GetStatusBadgeClass(order.Status);
             ViewBag.StatusLabel = GetStatusLabel(order.Status);
 
+            var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
+            ViewBag.Subtotal = subtotal;
+            ViewBag.GrandTotal = subtotal + order.ShippingFee - order.Discount;
+
+            return View(order);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PrintInvoice(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(d => d.FastFood)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(d => d.Combo)
+                .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+
+            if (order == null) return NotFound();
+
+            ViewBag.StatusLabel = GetStatusLabel(order.Status);
             var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
             ViewBag.Subtotal = subtotal;
             ViewBag.GrandTotal = subtotal + order.ShippingFee - order.Discount;

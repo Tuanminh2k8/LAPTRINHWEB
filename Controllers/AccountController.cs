@@ -93,8 +93,9 @@ namespace Source.Controllers
 
             string identifier = model.UsernameOrEmail.Trim().ToLower();
 
-            var user = await _context.Users.FirstOrDefaultAsync(u =>
-                u.Username.ToLower() == identifier || u.Email.ToLower() == identifier);
+            var user = await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    u.Username == identifier || u.Email == identifier);
 
             if (user == null || !PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
             {
@@ -307,13 +308,7 @@ namespace Source.Controllers
         [HttpGet]
         public async Task<IActionResult> ChangePassword()
         {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
-            {
-                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
-            }
-
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login");
@@ -334,13 +329,7 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ViewModels.ChangePasswordViewModel model)
         {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue && User.Identity?.IsAuthenticated == true)
-            {
-                var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (int.TryParse(claimId, out int parsedId)) userId = parsedId;
-            }
-
+            var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
             {
                 return RedirectToAction("Login");

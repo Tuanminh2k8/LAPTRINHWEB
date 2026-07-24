@@ -20,10 +20,10 @@ namespace Source.Controllers
         public async Task<IActionResult> Index(string? searchName, int? categoryId, string? sortOrder, int? page)
         {
             page = Math.Max(1, page ?? 1);
-            var categories = await _context.Categories.ToListAsync();
+            var categories = await _context.Categories.AsNoTracking().ToListAsync();
             ViewBag.Categories = categories;
 
-            var query = _context.FastFoods.Include(f => f.Category).AsQueryable();
+            var query = _context.FastFoods.Include(f => f.Category).AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrEmpty(searchName))
             {
@@ -62,9 +62,10 @@ namespace Source.Controllers
             var foods = await query
                 .Skip((currentPage - 1) * PageSize)
                 .Take(PageSize)
+                .AsNoTracking()
                 .ToListAsync();
 
-            var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
+            var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).AsNoTracking().ToListAsync();
             ViewBag.Combos = combos;
             ViewBag.PageNumber = currentPage;
             ViewBag.TotalPages = totalPages;
@@ -115,7 +116,7 @@ namespace Source.Controllers
                 query = query.Where(f => f.Description.Contains(description));
             }
 
-            var results = await query.ToListAsync();
+            var results = await query.AsNoTracking().ToListAsync();
 
             // Check if AJAX request
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -123,8 +124,8 @@ namespace Source.Controllers
                 return PartialView("_FoodListPartial", results);
             }
 
-            ViewBag.Categories = await _context.Categories.ToListAsync();
-            ViewBag.Combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).ToListAsync();
+            ViewBag.Categories = await _context.Categories.AsNoTracking().ToListAsync();
+            ViewBag.Combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).AsNoTracking().ToListAsync();
             ViewBag.SelectedCategory = categoryId;
             ViewBag.SearchName = name;
             return View("Index", results);
@@ -135,6 +136,7 @@ namespace Source.Controllers
         {
             var food = await _context.FastFoods
                 .Include(f => f.Category)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.Id == id);
 
             if (food == null)
@@ -144,6 +146,7 @@ namespace Source.Controllers
 
             ViewBag.RelatedFoods = await _context.FastFoods
                 .Include(f => f.Category)
+                .AsNoTracking()
                 .Where(f => f.CategoryId == food.CategoryId && f.Id != id)
                 .Take(4)
                 .ToListAsync();
@@ -166,6 +169,7 @@ namespace Source.Controllers
                 .Include(c => c.ComboDetails)
                 .ThenInclude(cd => cd.FastFood)
                 .ThenInclude(f => f!.Category)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (combo == null)
@@ -176,6 +180,7 @@ namespace Source.Controllers
             ViewBag.RelatedCombos = await _context.Combos
                 .Include(c => c.ComboDetails)
                 .ThenInclude(cd => cd.FastFood)
+                .AsNoTracking()
                 .Where(c => c.Id != id)
                 .Take(3)
                 .ToListAsync();
@@ -185,10 +190,10 @@ namespace Source.Controllers
 
         public async Task<IActionResult> Menu(int? categoryId)
         {
-            var categories = await _context.Categories.ToListAsync();
+            var categories = await _context.Categories.AsNoTracking().ToListAsync();
             ViewBag.Categories = categories;
 
-            var query = _context.FastFoods.Include(f => f.Category).AsQueryable();
+            var query = _context.FastFoods.Include(f => f.Category).AsNoTracking().AsQueryable();
 
             if (categoryId.HasValue)
             {
@@ -196,7 +201,7 @@ namespace Source.Controllers
                 ViewBag.SelectedCategory = categoryId;
             }
 
-            var foods = await query.OrderBy(f => f.Name).ToListAsync();
+            var foods = await query.OrderBy(f => f.Name).AsNoTracking().ToListAsync();
             return View(foods);
         }
 
@@ -205,6 +210,7 @@ namespace Source.Controllers
             var combos = await _context.Combos
                 .Include(c => c.ComboDetails)
                 .ThenInclude(cd => cd.FastFood)
+                .AsNoTracking()
                 .ToListAsync();
             return View(combos);
         }

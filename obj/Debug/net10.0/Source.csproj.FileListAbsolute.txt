@@ -225,4 +225,4 @@ D:\LAPTRINHWEB\obj\Debug\net10.0\refint\Source.dll
 D:\LAPTRINHWEB\obj\Debug\net10.0\Source.pdb
 D:\LAPTRINHWEB\obj\Debug\net10.0\Source.genruntimeconfig.cache
 D:\LAPTRINHWEB\obj\Debug\net10.0\ref\Source.dll
-D:\LAPTRINHWEB\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-cplkccr6js-cplkccr6js.gz
+D:\LAPTRINHWEB\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-29ty5ne39s-29ty5ne39s.gz

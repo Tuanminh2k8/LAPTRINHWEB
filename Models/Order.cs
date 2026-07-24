@@ -57,6 +57,10 @@ namespace Source.Models
         [StringLength(500)]
         public string? Note { get; set; }
 
+        [Display(Name = "Lý do hủy")]
+        [StringLength(500)]
+        public string? CancelReason { get; set; }
+
         [Display(Name = "Đã xóa")]
         public bool IsDeleted { get; set; } = false;
 

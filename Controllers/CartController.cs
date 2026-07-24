@@ -246,7 +246,7 @@ namespace Source.Controllers
                     _cartService.ClearCart();
 
                     TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";
-                    return RedirectToAction("OrderTracking", new { id = model.Id });
+                    return RedirectToAction("Tracking", "Orders", new { id = model.Id });
                 }
                 catch (Exception ex)
                 {
