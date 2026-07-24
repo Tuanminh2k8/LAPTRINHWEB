@@ -1,0 +1,118 @@
+@model Source.Models.Order
+@{
+    Layout = null;
+    var statusLabel = ViewBag.StatusLabel as string ?? Model.Status;
+    var subtotal = ViewBag.Subtotal as decimal? ?? 0;
+    var grandTotal = ViewBag.GrandTotal as decimal? ?? Model.TotalAmount;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hóa Đơn #@Model.Id - PolyFood</title>
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: #1a1a2e; padding: 40px; line-height: 1.6; }
+        .invoice-wrap { max-width: 700px; margin: 0 auto; }
+        .header { text-align: center; border-bottom: 2px solid #FF3838; padding-bottom: 20px; margin-bottom: 24px; }
+        .header h1 { font-size: 24px; font-weight: 800; color: #FF3838; margin-bottom: 4px; }
+        .header p { color: #6B7280; font-size: 13px; }
+        .info-grid { display: flex; justify-content: space-between; margin-bottom: 24px; gap: 24px; }
+        .info-box { flex: 1; }
+        .info-box h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #6B7280; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .info-box p { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+        .info-box .label { font-size: 11px; color: #9CA3AF; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        thead th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:last-child { text-align: right; }
+        tbody td { padding: 10px 14px; border-bottom: 1px solid #E5E7EB; font-size: 13px; }
+        tbody td:last-child { text-align: right; font-weight: 700; }
+        .total-section { border-top: 2px solid #1a1a2e; padding-top: 12px; text-align: right; }
+        .total-line { display: flex; justify-content: flex-end; gap: 40px; margin-bottom: 6px; font-size: 13px; }
+        .total-line.grand { font-size: 18px; font-weight: 800; color: #FF3838; border-top: 1px solid #E5E7EB; padding-top: 8px; margin-top: 8px; }
+        .footer { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #E5E7EB; font-size: 11px; color: #9CA3AF; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #FF3838; color: white; }
+        .print-btn { display: block; width: 200px; margin: 24px auto; padding: 12px; background: #FF3838; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .print-btn:hover { background: #e62e2e; }
+        @@media print { .print-btn { display: none; } body { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="invoice-wrap">
+        <div class="header">
+            <h1>PolyFood</h1>
+            <p>Hóa Đơn Bán Hàng</p>
+            <p style="margin-top:4px;">Mã đơn: <strong>#@Model.Id</strong> | <span class="status-badge">@statusLabel</span></p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>Khách hàng</h3>
+                <p>@(Model.User?.FullName ?? Model.ReceiverName)</p>
+                <p class="label">@Model.ReceiverPhone</p>
+                <p class="label">@Model.ReceiverAddress</p>
+            </div>
+            <div class="info-box" style="text-align:right;">
+                <h3>Đơn hàng</h3>
+                <p>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+                <p class="label">Thanh toán: @Model.PaymentMethod</p>
+                @if (!string.IsNullOrEmpty(Model.Note))
+                {
+                    <p class="label">Ghi chú: @Model.Note</p>
+                }
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50%;">Sản phẩm</th>
+                    <th style="text-align:center;">Đơn giá</th>
+                    <th style="text-align:center;">SL</th>
+                    <th style="text-align:right;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var detail in Model.OrderDetails)
+                {
+                    var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                    <tr>
+                        <td>@name</td>
+                        <td style="text-align:center;">@detail.Price.ToString("N0")</td>
+                        <td style="text-align:center;">@detail.Quantity</td>
+                        <td>@((detail.Price * detail.Quantity).ToString("N0"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <div class="total-line">
+                <span>Tạm tính:</span>
+                <span>@subtotal.ToString("N0") ₫</span>
+            </div>
+            <div class="total-line">
+                <span>Phí vận chuyển:</span>
+                <span>@Model.ShippingFee.ToString("N0") ₫</span>
+            </div>
+            <div class="total-line">
+                <span>Giảm giá:</span>
+                <span>-@Model.Discount.ToString("N0") ₫</span>
+            </div>
+            <div class="total-line grand">
+                <span>Tổng cộng:</span>
+                <span>@grandTotal.ToString("N0") ₫</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Cảm ơn quý khách đã mua hàng tại PolyFood!</p>
+            <p>Trụ sở: Khu Công Nghệ Cao, Biên Hòa, Đồng Nai | Hotline: 0338 301 054</p>
+        </div>
+
+        <button class="print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> In hóa đơn</button>
+    </div>
+</body>
+</html>
