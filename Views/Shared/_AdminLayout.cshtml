@@ -1,8 +1,13 @@
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using Source.Helpers
+@using Source.Models
 @{
     var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName") ?? HttpContextAccessor.HttpContext?.User.FindFirst("FullName")?.Value ?? "Admin";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    var pageTitle = (ViewData["Title"]?.ToString() ?? "Trang chủ") + " - PolyFood Store";
+    var siteDescription = "PolyFood - Hệ thống đặt thức ăn nhanh hàng đầu. Giao hàng siêu tốc trong 30 phút.";
 }
 
 <!DOCTYPE html>
@@ -10,14 +15,25 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Quản Trị PolyFood</title>
+    <meta name="description" content="@siteDescription" />
+    <meta name="keywords" content="fast food, đồ ăn nhanh, pizza, burger, gà rán, đặt đồ ăn online, quản trị, admin" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@siteDescription" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/images/default_food.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@siteDescription" />
+    <link rel="canonical" href="https://polyfood.example.com/admin" />
+    <title>@pageTitle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @Html.AntiForgeryToken()
 </head>
 <body class="bg-light">
     <!-- Mobile offcanvas sidebar -->
@@ -30,30 +46,46 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body p-3">
-            <nav class="nav flex-column gap-1">
-                <a class="nav-link-admin @(currentAction == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index">
-                    <i class="fa-solid fa-chart-line me-2" style="width:20px;"></i> Dashboard
-                </a>
-                <a class="nav-link-admin @(currentController == "Admin" && currentAction == "Users" ? "active" : "")" asp-controller="Admin" asp-action="Users">
-                    <i class="fa-solid fa-users me-2" style="width:20px;"></i> Người dùng
-                </a>
-                <a class="nav-link-admin @(currentController == "Admin" && currentAction == "Categories" ? "active" : "")" asp-controller="Admin" asp-action="Categories">
-                    <i class="fa-solid fa-list me-2" style="width:20px;"></i> Danh mục
-                </a>
-                <a class="nav-link-admin @(currentAction == "Foods" ? "active" : "")" asp-controller="Admin" asp-action="Foods">
-                    <i class="fa-solid fa-burger me-2" style="width:20px;"></i> Món ăn
-                </a>
-                <a class="nav-link-admin @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
-                    <i class="fa-solid fa-boxes-packing me-2" style="width:20px;"></i> Combo
-                </a>
-                <a class="nav-link-admin @(currentAction == "Orders" ? "active" : "")" asp-controller="Admin" asp-action="Orders">
-                    <i class="fa-solid fa-receipt me-2" style="width:20px;"></i> Đơn hàng
-                </a>
-                <hr class="border-white border-opacity-10 my-2">
-                <a class="nav-link-admin" asp-controller="Home" asp-action="Index">
-                    <i class="fa-solid fa-globe me-2" style="width:20px;"></i> Xem trang khách
-                </a>
-            </nav>
+            <ul class="navbar-nav flex-column gap-1">
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index">
+                        <i class="fa-solid fa-chart-line me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentController == "Admin" && currentAction == "Users" ? "active" : "")" asp-controller="Admin" asp-action="Users">
+                        <i class="fa-solid fa-users me-2"></i> Người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentController == "Admin" && currentAction == "Categories" ? "active" : "")" asp-controller="Admin" asp-action="Categories">
+                        <i class="fa-solid fa-list me-2"></i> Danh mục
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Foods" ? "active" : "")" asp-controller="Admin" asp-action="Foods">
+                        <i class="fa-solid fa-burger me-2"></i> Món ăn
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
+                        <i class="fa-solid fa-boxes-packing me-2"></i> Combo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Orders" ? "active" : "")" asp-controller="Admin" asp-action="Orders">
+                        <i class="fa-solid fa-receipt me-2"></i> Đơn hàng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <hr class="dropdown-divider my-2">
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-globe me-2"></i> Xem trang khách
+                    </a>
+                </li>
+            </ul>
         </div>
 
         <!-- Loading Overlay -->
@@ -74,27 +106,27 @@
             </a>
         </div>
         <nav class="nav flex-column gap-1 p-3 flex-grow-1">
-            <a class="nav-link-admin @(currentAction == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index">
-                <i class="fa-solid fa-chart-line me-2" style="width:20px;"></i> Dashboard
+            <a class="nav-link nav-link-polyfood @(currentAction == "Index" ? "active" : "")" asp-controller="Admin" asp-action="Index">
+                <i class="fa-solid fa-chart-line me-2"></i> Dashboard
             </a>
-            <a class="nav-link-admin @(currentController == "Admin" && currentAction == "Users" ? "active" : "")" asp-controller="Admin" asp-action="Users">
-                <i class="fa-solid fa-users me-2" style="width:20px;"></i> Người dùng
+            <a class="nav-link nav-link-polyfood @(currentController == "Admin" && currentAction == "Users" ? "active" : "")" asp-controller="Admin" asp-action="Users">
+                <i class="fa-solid fa-users me-2"></i> Người dùng
             </a>
-            <a class="nav-link-admin @(currentController == "Admin" && currentAction == "Categories" ? "active" : "")" asp-controller="Admin" asp-action="Categories">
-                <i class="fa-solid fa-list me-2" style="width:20px;"></i> Danh mục
+            <a class="nav-link nav-link-polyfood @(currentController == "Admin" && currentAction == "Categories" ? "active" : "")" asp-controller="Admin" asp-action="Categories">
+                <i class="fa-solid fa-list me-2"></i> Danh mục
             </a>
-            <a class="nav-link-admin @(currentAction == "Foods" ? "active" : "")" asp-controller="Admin" asp-action="Foods">
-                <i class="fa-solid fa-burger me-2" style="width:20px;"></i> Món ăn
+            <a class="nav-link nav-link-polyfood @(currentAction == "Foods" ? "active" : "")" asp-controller="Admin" asp-action="Foods">
+                <i class="fa-solid fa-burger me-2"></i> Món ăn
             </a>
-            <a class="nav-link-admin @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
-                <i class="fa-solid fa-boxes-packing me-2" style="width:20px;"></i> Combo
+            <a class="nav-link nav-link-polyfood @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
+                <i class="fa-solid fa-boxes-packing me-2"></i> Combo
             </a>
-            <a class="nav-link-admin @(currentAction == "Orders" ? "active" : "")" asp-controller="Admin" asp-action="Orders">
-                <i class="fa-solid fa-receipt me-2" style="width:20px;"></i> Đơn hàng
+            <a class="nav-link nav-link-polyfood @(currentAction == "Orders" ? "active" : "")" asp-controller="Admin" asp-action="Orders">
+                <i class="fa-solid fa-receipt me-2"></i> Đơn hàng
             </a>
             <hr class="border-white border-opacity-10 my-2">
-            <a class="nav-link-admin" asp-controller="Home" asp-action="Index">
-                <i class="fa-solid fa-arrow-left-long me-2" style="width:20px;"></i> Về trang khách
+            <a class="nav-link nav-link-polyfood" asp-controller="Home" asp-action="Index">
+                <i class="fa-solid fa-arrow-left-long me-2"></i> Về trang khách
             </a>
         </nav>
         <div class="p-3 border-top border-white border-opacity-10">
