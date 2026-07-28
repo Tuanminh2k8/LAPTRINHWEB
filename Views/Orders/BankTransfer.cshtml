@@ -1,0 +1,114 @@
+@model Source.Models.Order
+@{
+    ViewData["Title"] = "Hướng Dẫn Chuyển Khoản";
+    var transferContent = $"POLYFOOD {Model.Id}";
+    var amount = Model.TotalAmount;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-dark d-flex align-items-center justify-content-center gap-2">
+                    <span class="brand-icon" style="width:36px;height:36px;font-size:.85rem;"><i class="fa-solid fa-building-columns"></i></span>
+                    Hướng Dẫn Chuyển Khoản
+                </h2>
+                <p class="text-muted" style="font-size:.92rem;">
+                    Đơn hàng <strong>#@Model.Id</strong> đã được ghi nhận. Vui lòng chuyển khoản để chúng tôi xác nhận và giao hàng sớm nhất.
+                </p>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
+                <div class="alert alert-warning border-0 rounded-3 small d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Vui lòng chuyển <strong>đúng số tiền</strong> và <strong>đúng nội dung</strong> để đơn được xác nhận tự động.</span>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <div class="text-muted small mb-1"><i class="fa-solid fa-building-columns me-1"></i> Ngân hàng</div>
+                            <div class="fw-bold text-dark">Vietcombank — CN Đồng Nai</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100">
+                            <div class="text-muted small mb-1"><i class="fa-solid fa-user me-1"></i> Chủ tài khoản</div>
+                            <div class="fw-bold text-dark">CONG TY TNHH POLYFOOD</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small mb-1"><i class="fa-solid fa-hashtag me-1"></i> Số tài khoản</div>
+                                <div class="fw-bold text-dark" id="accNumber">0123456789012</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-copy" data-copy="0123456789012" title="Sao chép">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 h-100 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small mb-1"><i class="fa-solid fa-money-bill-wave me-1"></i> Số tiền</div>
+                                <div class="fw-800 text-danger fs-5">@amount.ToString("N0") ₫</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-copy" data-copy="@amount.ToString("F0")" title="Sao chép">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small mb-1"><i class="fa-solid fa-message me-1"></i> Nội dung chuyển khoản</div>
+                                <div class="fw-bold text-dark">@transferContent</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-copy" data-copy="@transferContent" title="Sao chép">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 small text-muted">
+                    <p class="mb-1"><i class="fa-solid fa-circle-info me-1"></i> Sau khi chuyển khoản, đơn hàng sẽ được xác nhận trong vòng 15 phút (giờ làm việc 7:00 - 22:00).</p>
+                    <p class="mb-0"><i class="fa-solid fa-phone me-1"></i> Cần hỗ trợ? Gọi <a href="tel:0338301054" class="fw-bold text-decoration-none">0338 301 054</a>.</p>
+                </div>
+
+                <div class="mt-4 d-flex flex-column flex-md-row gap-2">
+                    <a asp-action="Tracking" asp-route-id="@Model.Id" class="btn btn-primary-custom btn-custom flex-fill py-3 rounded-pill shadow">
+                        <i class="fa-solid fa-truck-fast me-2"></i> Theo dõi đơn hàng
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary-custom btn-custom flex-fill py-3 rounded-pill">
+                        <i class="fa-solid fa-receipt me-2"></i> Đơn hàng của tôi
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('.btn-copy').on('click', function () {
+            var $btn = $(this);
+            var text = $btn.data('copy').toString();
+            function done() {
+                var original = $btn.html();
+                $btn.html('<i class="fa-solid fa-check text-success"></i>');
+                setTimeout(function () { $btn.html(original); }, 1500);
+                if (window.showToast) showToast('Đã sao chép: ' + text, 'success');
+            }
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done);
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta); done();
+            }
+        });
+    </script>
+}
