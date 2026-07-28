@@ -1,9 +1,15 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Source.Models;
 using Source.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Mặc định định dạng tiền tệ / số theo chuẩn Việt Nam (VNĐ: 1.250.000 ₫)
+var viCulture = new CultureInfo("vi-VN");
+CultureInfo.DefaultThreadCurrentCulture = viCulture;
+CultureInfo.DefaultThreadCurrentUICulture = viCulture;
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -31,6 +37,7 @@ builder.Services.AddSession(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICartSessionService, CartSessionService>();
+builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
 
 builder.Services.AddControllersWithViews();
 

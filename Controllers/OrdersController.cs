@@ -101,6 +101,31 @@ namespace Source.Controllers
             return View(order);
         }
 
+        // GET: Orders/BankTransfer/5 — hướng dẫn chuyển khoản cho đơn thanh toán Bank
+        public async Task<IActionResult> BankTransfer(int id)
+        {
+            var userId = UserClaimsHelper.GetUserId(User);
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value && !o.IsDeleted);
+
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            if (order.PaymentMethod != "Bank")
+            {
+                return RedirectToAction("Tracking", new { id });
+            }
+
+            return View(order);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id, string cancelReason)
@@ -125,13 +150,13 @@ namespace Source.Controllers
                 return NotFound();
             }
 
-            if (order.Status != "Pending")
+            if (order.Status != OrderStatus.Pending)
             {
                 TempData["ErrorMessage"] = "Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận.";
                 return RedirectToAction("Details", new { id });
             }
 
-            order.Status = "Cancelled";
+            order.Status = OrderStatus.Cancelled;
             order.CancelReason = cancelReason;
             order.UpdatedAt = DateTime.Now;
             _context.Update(order);

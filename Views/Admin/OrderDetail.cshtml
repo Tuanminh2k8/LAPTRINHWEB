@@ -114,7 +114,7 @@
             </div>
             <div class="mb-2">
                 <span class="text-muted small d-block">Phương thức TT:</span>
-                <strong class="text-dark">@Model.PaymentMethod</strong>
+                <strong class="text-dark">@(Model.PaymentMethod == "Bank" ? "Chuyển khoản ngân hàng" : "Thanh toán khi nhận hàng (COD)")</strong>
             </div>
             @if (!string.IsNullOrEmpty(Model.Note))
             {

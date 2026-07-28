@@ -57,7 +57,7 @@
             <div class="info-box" style="text-align:right;">
                 <h3>Đơn hàng</h3>
                 <p>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
-                <p class="label">Thanh toán: @Model.PaymentMethod</p>
+                <p class="label">Thanh toán: @(Model.PaymentMethod == "Bank" ? "Chuyển khoản ngân hàng" : "Tiền mặt khi nhận hàng (COD)")</p>
                 @if (!string.IsNullOrEmpty(Model.Note))
                 {
                     <p class="label">Ghi chú: @Model.Note</p>

@@ -93,9 +93,11 @@ namespace Source.Controllers
 
             string identifier = model.UsernameOrEmail.Trim().ToLower();
 
+            // ToLower() cả 2 vế để không phụ thuộc collation của DB
+            // (SQL Server mặc định case-insensitive nhưng PostgreSQL/SQLite thì không)
             var user = await _context.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u =>
-                    u.Username == identifier || u.Email == identifier);
+                    u.Username.ToLower() == identifier || u.Email.ToLower() == identifier);
 
             if (user == null || !PasswordHelper.VerifyPassword(model.Password, user.PasswordHash))
             {

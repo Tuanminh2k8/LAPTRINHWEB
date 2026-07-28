@@ -154,8 +154,9 @@ namespace Source.Controllers
             return View(food);
         }
 
-        // GET: Home/NotFound
-        [HttpGet]
+        // Home/NotFound — chấp nhận mọi verb: UseStatusCodePagesWithReExecute
+        // re-execute request lỗi với method gốc (POST lỗi -> POST NotFound)
+        [AcceptVerbs("GET", "POST", "PUT", "DELETE")]
         public IActionResult NotFound(int? statusCode = null)
         {
             ViewBag.StatusCode = statusCode ?? 404;

@@ -66,6 +66,7 @@ namespace Source.Models
                 SeedOrders(context);
                 SeedFoods(context);
                 SeedCombos(context);
+                SeedPromoCodes(context);
             }
             catch (Exception ex)
             {
@@ -514,6 +515,52 @@ namespace Source.Models
             }
 
             Console.WriteLine($"[DbInitializer] Seeded {comboData.Count} combos. Total: {context.Combos.Count()}");
+        }
+
+        private static void SeedPromoCodes(AppDbContext context)
+        {
+            if (context.PromoCodes.Any()) return;
+
+            context.PromoCodes.AddRange(
+                new PromoCode
+                {
+                    Code = "POLYFOOD20",
+                    Description = "Giảm 20% cho đơn hàng, tối đa 50.000 ₫ (đơn tối thiểu 50.000 ₫)",
+                    DiscountType = "Percent",
+                    DiscountValue = 20,
+                    MinOrderAmount = 50000,
+                    MaxDiscountAmount = 50000,
+                    MaxUsage = 0,
+                    StartDate = DateTime.Now.AddDays(-1),
+                    EndDate = DateTime.Now.AddYears(1),
+                    IsActive = true
+                },
+                new PromoCode
+                {
+                    Code = "GIAM30K",
+                    Description = "Giảm thẳng 30.000 ₫ cho đơn từ 150.000 ₫",
+                    DiscountType = "Amount",
+                    DiscountValue = 30000,
+                    MinOrderAmount = 150000,
+                    MaxDiscountAmount = 0,
+                    MaxUsage = 100,
+                    StartDate = DateTime.Now.AddDays(-1),
+                    EndDate = DateTime.Now.AddMonths(3),
+                    IsActive = true
+                },
+                new PromoCode
+                {
+                    Code = "HETHAN",
+                    Description = "Mã đã hết hạn (dùng để kiểm thử)",
+                    DiscountType = "Percent",
+                    DiscountValue = 50,
+                    MinOrderAmount = 0,
+                    StartDate = DateTime.Now.AddMonths(-2),
+                    EndDate = DateTime.Now.AddMonths(-1),
+                    IsActive = true
+                });
+            context.SaveChanges();
+            Console.WriteLine($"[DbInitializer] Seeded promo codes. Total: {context.PromoCodes.Count()}");
         }
     }
 }

@@ -120,7 +120,7 @@
                             <td class="small">@order.ReceiverPhone</td>
                             <td class="small text-truncate" style="max-width: 200px;">@order.ReceiverAddress</td>
                             <td class="small">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="small">@order.PaymentMethod</td>
+                            <td class="small">@(order.PaymentMethod == "Bank" ? "Chuyển khoản" : "COD")</td>
                             <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") ₫</td>
                             <td>
                                 <span class="badge rounded-pill px-3 py-2 @GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span>

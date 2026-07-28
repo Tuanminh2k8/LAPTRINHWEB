@@ -15,6 +15,7 @@ namespace Source.Models
         public DbSet<ComboDetail> ComboDetails { get; set; } = null!;
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderDetail> OrderDetails { get; set; } = null!;
+        public DbSet<PromoCode> PromoCodes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

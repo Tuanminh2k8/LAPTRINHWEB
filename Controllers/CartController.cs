@@ -9,14 +9,17 @@ namespace Source.Controllers
 {
     public class CartController : Controller
     {
+        private const string PromoSessionKey = "AppliedPromoCode";
         private readonly AppDbContext _context;
         private readonly ICartSessionService _cartService;
+        private readonly IPromoCodeService _promoService;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context, ICartSessionService cartService, ILogger<CartController> logger)
+        public CartController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, ILogger<CartController> logger)
         {
             _context = context;
             _cartService = cartService;
+            _promoService = promoService;
             _logger = logger;
         }
 
@@ -30,6 +33,7 @@ namespace Source.Controllers
         public async Task<IActionResult> AddToCart(int id, bool isCombo, int quantity = 1)
         {
             if (quantity <= 0) quantity = 1;
+            if (quantity > 50) quantity = 50;
 
             var cart = _cartService.GetCart();
             string name = "";
@@ -69,7 +73,7 @@ namespace Source.Controllers
             }
             else
             {
-                item.Quantity += quantity;
+                item.Quantity = Math.Min(item.Quantity + quantity, 50);
             }
 
             _cartService.SaveCart(cart);
@@ -104,7 +108,7 @@ namespace Source.Controllers
             }
             else if (item != null)
             {
-                item.Quantity = quantity;
+                item.Quantity = Math.Min(quantity, 50);
             }
 
             _cartService.SaveCart(cart);
@@ -157,8 +161,53 @@ namespace Source.Controllers
         public IActionResult ClearCart()
         {
             _cartService.ClearCart();
+            HttpContext.Session.Remove(PromoSessionKey);
             TempData["SuccessMessage"] = "Đã làm trống giỏ hàng!";
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyPromo(string? promoCode)
+        {
+            var cart = _cartService.GetCart();
+            var subtotal = cart.Sum(i => i.TotalPrice);
+
+            if (cart.Count == 0)
+            {
+                HttpContext.Session.Remove(PromoSessionKey);
+                return Json(new { success = false, message = "Giỏ hàng đang trống, không thể áp dụng mã.", discount = 0, subtotal = 0, total = 0 });
+            }
+
+            var result = await _promoService.ValidateAsync(promoCode, subtotal);
+
+            if (result.Success && result.Promo != null)
+            {
+                HttpContext.Session.SetString(PromoSessionKey, result.Promo.Code);
+            }
+            else
+            {
+                HttpContext.Session.Remove(PromoSessionKey);
+            }
+
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message,
+                discount = result.DiscountAmount,
+                subtotal,
+                total = subtotal - result.DiscountAmount
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemovePromo()
+        {
+            HttpContext.Session.Remove(PromoSessionKey);
+            var cart = _cartService.GetCart();
+            var subtotal = cart.Sum(i => i.TotalPrice);
+            return Json(new { success = true, message = "Đã bỏ mã giảm giá.", discount = 0, subtotal, total = subtotal });
         }
 
         [HttpGet]
@@ -181,23 +230,34 @@ namespace Source.Controllers
             var user = await _context.Users.FindAsync(userId.Value);
             if (user == null) return RedirectToAction("Logout", "Account");
 
+            var subtotal = cart.Sum(i => i.TotalPrice);
+            var promoCode = HttpContext.Session.GetString(PromoSessionKey);
+            var promoResult = await _promoService.ValidateAsync(promoCode, subtotal);
+            if (!promoResult.Success) HttpContext.Session.Remove(PromoSessionKey);
+
             var order = new Order
             {
                 UserId = user.Id,
                 ReceiverName = user.FullName,
                 ReceiverPhone = user.PhoneNumber,
                 ReceiverAddress = user.Address,
-                TotalAmount = cart.Sum(i => i.TotalPrice)
+                Discount = promoResult.Success ? promoResult.DiscountAmount : 0,
+                TotalAmount = subtotal - (promoResult.Success ? promoResult.DiscountAmount : 0)
             };
 
             ViewBag.Cart = cart;
+            ViewBag.Subtotal = subtotal;
+            ViewBag.PromoCode = promoResult.Success ? promoResult.Promo!.Code : null;
+            ViewBag.PromoDiscount = promoResult.Success ? promoResult.DiscountAmount : 0m;
             return View(order);
         }
+
+        private static readonly string[] AllowedPaymentMethods = { "COD", "Bank" };
 
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(Order model)
+        public async Task<IActionResult> Checkout([Bind("ReceiverName,ReceiverPhone,ReceiverAddress,PaymentMethod,Note")] Order model)
         {
             var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue)
@@ -215,14 +275,27 @@ namespace Source.Controllers
             ModelState.Remove("User");
             ModelState.Remove("OrderDetails");
 
+            if (string.IsNullOrWhiteSpace(model.PaymentMethod) || !AllowedPaymentMethods.Contains(model.PaymentMethod))
+            {
+                model.PaymentMethod = "COD";
+            }
+
             if (ModelState.IsValid)
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
+                    var subtotal = cart.Sum(i => i.TotalPrice);
+
+                    // Xác thực lại mã giảm giá phía server (không tin dữ liệu client)
+                    var promoCode = HttpContext.Session.GetString(PromoSessionKey);
+                    var promoResult = await _promoService.ValidateAsync(promoCode, subtotal);
+                    var discount = promoResult.Success ? promoResult.DiscountAmount : 0m;
+
                     model.UserId = userId.Value;
                     model.OrderDate = DateTime.Now;
-                    model.TotalAmount = cart.Sum(i => i.TotalPrice);
+                    model.Discount = discount;
+                    model.TotalAmount = subtotal - discount;
                     model.Status = OrderStatus.Pending;
 
                     _context.Orders.Add(model);
@@ -240,10 +313,32 @@ namespace Source.Controllers
                         });
                     }
 
+                    // Ghi nhận lượt dùng mã trong cùng transaction
+                    if (promoResult.Success && promoResult.Promo != null)
+                    {
+                        promoResult.Promo.UsedCount++;
+                        // Guard chống race: nếu tăng xong vượt MaxUsage thì hủy toàn bộ đơn
+                        if (promoResult.Promo.MaxUsage > 0 && promoResult.Promo.UsedCount > promoResult.Promo.MaxUsage)
+                        {
+                            await transaction.RollbackAsync();
+                            HttpContext.Session.Remove(PromoSessionKey);
+                            TempData["ErrorMessage"] = "Mã giảm giá vừa hết lượt sử dụng. Vui lòng thử lại.";
+                            return RedirectToAction("Checkout");
+                        }
+                        _context.PromoCodes.Update(promoResult.Promo);
+                    }
+
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     _cartService.ClearCart();
+                    HttpContext.Session.Remove(PromoSessionKey);
+
+                    if (model.PaymentMethod == "Bank")
+                    {
+                        TempData["SuccessMessage"] = "Đặt hàng thành công! Vui lòng chuyển khoản theo hướng dẫn bên dưới.";
+                        return RedirectToAction("BankTransfer", "Orders", new { id = model.Id });
+                    }
 
                     TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";
                     return RedirectToAction("Tracking", "Orders", new { id = model.Id });
@@ -257,51 +352,29 @@ namespace Source.Controllers
             }
 
             ViewBag.Cart = cart;
+            {
+                var vbSubtotal = cart.Sum(i => i.TotalPrice);
+                var vbPromoCode = HttpContext.Session.GetString(PromoSessionKey);
+                var vbPromo = await _promoService.ValidateAsync(vbPromoCode, vbSubtotal);
+                ViewBag.Subtotal = vbSubtotal;
+                ViewBag.PromoCode = vbPromo.Success ? vbPromo.Promo!.Code : null;
+                ViewBag.PromoDiscount = vbPromo.Success ? vbPromo.DiscountAmount : 0m;
+            }
             return View(model);
         }
 
+        // Gộp trang: Cart/OrderHistory & Cart/OrderTracking trùng lặp với Orders/Index & Orders/Tracking.
+        // Giữ redirect 301 để không gãy link cũ (bookmark, lịch sử trình duyệt).
         [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> OrderHistory()
+        public IActionResult OrderHistory()
         {
-            var userId = UserClaimsHelper.GetUserId(User);
-            if (!userId.HasValue)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var orders = await _context.Orders
-                .Where(o => o.UserId == userId.Value)
-                .Include(o => o.OrderDetails)
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
-
-            return View(orders);
+            return RedirectToActionPermanent("Index", "Orders");
         }
 
         [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> OrderTracking(int id)
+        public IActionResult OrderTracking(int id)
         {
-            var userId = UserClaimsHelper.GetUserId(User);
-            if (!userId.HasValue)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var order = await _context.Orders
-                .Include(o => o.OrderDetails)
-                .ThenInclude(d => d.FastFood)
-                .Include(o => o.OrderDetails)
-                .ThenInclude(d => d.Combo)
-                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value);
-
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return View(order);
+            return RedirectToActionPermanent("Tracking", "Orders", new { id });
         }
     }
 }

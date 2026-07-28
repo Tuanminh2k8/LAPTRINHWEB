@@ -1516,3 +1516,19 @@ small { font-size: 0.85rem; }
   .navbar-polyfood, .footer, .btn-scroll-top, .preloader, #cart-badge { display: none !important; }
   body { background: var(--white); }
 }
+
+/* ─── Checkout payment options (UX polish) ─── */
+.payment-option { transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; cursor: pointer; }
+.payment-option:hover { border-color: #dc3545 !important; box-shadow: 0 2px 10px rgba(220,53,69,.08); }
+.payment-option:has(input:checked) { border-color: #dc3545 !important; background: #fff5f5 !important; box-shadow: 0 2px 12px rgba(220,53,69,.12); }
+.payment-option .form-check-input,
+.payment-option label { cursor: pointer; }
+
+/* ─── Smoother buttons & cards ─── */
+.btn-custom, .btn-primary-custom { transition: transform .15s ease, box-shadow .15s ease; }
+.btn-custom:active { transform: scale(.97); }
+.card-food { transition: transform .2s ease, box-shadow .2s ease; }
+.card-food:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+
+/* ─── Focus states (accessibility) ─── */
+.form-control-custom:focus { border-color: #dc3545; box-shadow: 0 0 0 .2rem rgba(220,53,69,.12); }

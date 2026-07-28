@@ -89,7 +89,7 @@
                     </ul>
 
                     <div class="d-flex align-items-center gap-3 ms-lg-4">
-                        <button class="btn-location d-none d-lg-flex" onclick="window.location='https://maps.google.com/?q=Ha+Noi'">
+                        <button class="btn-location d-none d-lg-flex" onclick="window.location='https://maps.google.com/?q=Bien+Hoa+Dong+Nai'">
                             <i class="fa-solid fa-location-dot text-danger"></i>
                             <span>Đồng Nai</span>
                         </button>
@@ -110,7 +110,7 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2" aria-labelledby="userMenu">
                                     <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card me-2 text-muted"></i> Hồ sơ cá nhân</a></li>
-                                    <li><a class="dropdown-item py-2" asp-controller="Cart" asp-action="OrderHistory"><i class="fa-solid fa-receipt me-2 text-muted"></i> Lịch sử đơn hàng</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Orders" asp-action="Index"><i class="fa-solid fa-receipt me-2 text-muted"></i> Lịch sử đơn hàng</a></li>
                                     @if (role == "Admin")
                                     {
                                     <li><hr class="dropdown-divider my-1"></li>

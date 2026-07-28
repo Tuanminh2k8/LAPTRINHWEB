@@ -84,6 +84,12 @@ namespace Source.Controllers
 
             ModelState.Remove("PasswordHash");
 
+            // Phân quyền: chỉ chấp nhận role hợp lệ
+            if (user.Role != "Admin" && user.Role != "Customer")
+            {
+                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin hoặc Customer.");
+            }
+
             if (ModelState.IsValid)
             {
                 user.PasswordHash = PasswordHelper.HashPassword(password);
@@ -132,6 +138,18 @@ namespace Source.Controllers
             }
 
             ModelState.Remove("PasswordHash");
+
+            // Phân quyền: role hợp lệ + không cho admin tự hạ quyền chính mình
+            if (updatedUser.Role != "Admin" && updatedUser.Role != "Customer")
+            {
+                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin hoặc Customer.");
+            }
+
+            var currentAdminId = UserClaimsHelper.GetUserId(User);
+            if (currentAdminId == id && dbUser.Role == "Admin" && updatedUser.Role != "Admin")
+            {
+                ModelState.AddModelError("Role", "Bạn không thể tự hạ quyền tài khoản Admin đang đăng nhập.");
+            }
 
             if (ModelState.IsValid)
             {
@@ -659,12 +677,12 @@ namespace Source.Controllers
             ViewBag.StatusCounts = new Dictionary<string, int>
             {
                 { "All", await _context.Orders.CountAsync(o => !o.IsDeleted) },
-                { "Pending", await _context.Orders.CountAsync(o => o.Status == "Pending" && !o.IsDeleted) },
-                { "Preparing", await _context.Orders.CountAsync(o => o.Status == "Preparing" && !o.IsDeleted) },
-                { "Shipping", await _context.Orders.CountAsync(o => o.Status == "Shipping" && !o.IsDeleted) },
-                { "Delivered", await _context.Orders.CountAsync(o => o.Status == "Delivered" && !o.IsDeleted) },
-                { "Cancelled", await _context.Orders.CountAsync(o => o.Status == "Cancelled" && !o.IsDeleted) },
-                { "Refunded", await _context.Orders.CountAsync(o => o.Status == "Refunded" && !o.IsDeleted) }
+                { OrderStatus.Pending, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending && !o.IsDeleted) },
+                { OrderStatus.Preparing, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Preparing && !o.IsDeleted) },
+                { OrderStatus.Shipping, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Shipping && !o.IsDeleted) },
+                { OrderStatus.Delivered, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered && !o.IsDeleted) },
+                { OrderStatus.Cancelled, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Cancelled && !o.IsDeleted) },
+                { OrderStatus.Refunded, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Refunded && !o.IsDeleted) }
             };
 
             return View(orders);
@@ -702,21 +720,21 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmOrder(int id)
         {
-            return await ChangeStatus(id, "Preparing");
+            return await ChangeStatus(id, OrderStatus.Preparing);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ShipOrder(int id)
         {
-            return await ChangeStatus(id, "Shipping");
+            return await ChangeStatus(id, OrderStatus.Shipping);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeliverOrder(int id)
         {
-            return await ChangeStatus(id, "Delivered");
+            return await ChangeStatus(id, OrderStatus.Delivered);
         }
 
         [HttpPost]
@@ -726,7 +744,17 @@ namespace Source.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            order.Status = "Cancelled";
+            if (order.Status == OrderStatus.Delivered)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return BadRequest(new { success = false, message = "Không thể hủy đơn hàng đã giao thành công." });
+                }
+                TempData["ErrorMessage"] = "Không thể hủy đơn hàng đã giao thành công.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            order.Status = OrderStatus.Cancelled;
             order.UpdatedAt = DateTime.Now;
             order.CancelReason = cancelReason;
             _context.Update(order);
@@ -736,7 +764,7 @@ namespace Source.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, newStatus = "Cancelled", orderId = id });
+                return Json(new { success = true, newStatus = OrderStatus.Cancelled, orderId = id });
             }
 
             TempData["SuccessMessage"] = $"Đã hủy đơn hàng #{id}";
@@ -787,12 +815,12 @@ namespace Source.Controllers
         {
             return status switch
             {
-                "Pending" => "Chờ xác nhận",
-                "Preparing" => "Đang chuẩn bị",
-                "Shipping" => "Đang giao",
-                "Delivered" => "Đã giao",
-                "Cancelled" => "Đã hủy",
-                "Refunded" => "Hoàn tiền",
+                OrderStatus.Pending => "Chờ xác nhận",
+                OrderStatus.Preparing => "Đang chuẩn bị",
+                OrderStatus.Shipping => "Đang giao",
+                OrderStatus.Delivered => "Đã giao",
+                OrderStatus.Cancelled => "Đã hủy",
+                OrderStatus.Refunded => "Hoàn tiền",
                 _ => status
             };
         }
@@ -801,12 +829,12 @@ namespace Source.Controllers
         {
             return status switch
             {
-                "Pending" => "bg-warning text-dark",
-                "Preparing" => "bg-info text-dark",
-                "Shipping" => "bg-primary",
-                "Delivered" => "bg-success",
-                "Cancelled" => "bg-danger",
-                "Refunded" => "bg-secondary",
+                OrderStatus.Pending => "bg-warning text-dark",
+                OrderStatus.Preparing => "bg-info text-dark",
+                OrderStatus.Shipping => "bg-primary",
+                OrderStatus.Delivered => "bg-success",
+                OrderStatus.Cancelled => "bg-danger",
+                OrderStatus.Refunded => "bg-secondary",
                 _ => "bg-secondary"
             };
         }

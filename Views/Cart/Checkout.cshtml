@@ -2,6 +2,9 @@
 @{
     ViewData["Title"] = "Thanh Toán";
     var cart = ViewBag.Cart as List<Source.Models.CartItem> ?? new List<Source.Models.CartItem>();
+    decimal subtotal = ViewBag.Subtotal ?? cart.Sum(i => i.TotalPrice);
+    string? appliedPromo = ViewBag.PromoCode as string;
+    decimal promoDiscount = ViewBag.PromoDiscount ?? 0m;
 }
 
 <div class="container py-5">
@@ -42,12 +45,28 @@
                         <span asp-validation-for="ReceiverAddress" class="text-danger small"></span>
                     </div>
 
+                    <div class="mb-4">
+                        <label asp-for="Note" class="form-label"></label>
+                        <textarea asp-for="Note" class="form-control form-control-custom" rows="2" placeholder="Ghi chú cho cửa hàng (không bắt buộc)..."></textarea>
+                        <span asp-validation-for="Note" class="text-danger small"></span>
+                    </div>
+
                     <div class="p-3 bg-light rounded-3 border">
-                        <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2" style="font-size:.85rem;"><i class="fa-solid fa-wallet text-success"></i>Phương Thức Thanh Toán</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" checked>
-                            <label class="form-check-label fw-600" for="cod" style="font-size:.88rem;">
+                        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size:.85rem;"><i class="fa-solid fa-wallet text-success"></i>Phương Thức Thanh Toán</h6>
+                        <div class="form-check payment-option mb-2 p-3 border rounded-3 bg-white">
+                            <input class="form-check-input ms-0 me-2" type="radio" asp-for="PaymentMethod" value="COD" id="payCod" checked>
+                            <label class="form-check-label fw-600 w-100" for="payCod" style="font-size:.88rem;">
+                                <i class="fa-solid fa-hand-holding-dollar text-warning me-1"></i>
                                 Thanh toán khi nhận hàng (COD)
+                                <div class="text-muted fw-normal small">Thanh toán bằng tiền mặt (VNĐ) khi shipper giao hàng</div>
+                            </label>
+                        </div>
+                        <div class="form-check payment-option p-3 border rounded-3 bg-white">
+                            <input class="form-check-input ms-0 me-2" type="radio" asp-for="PaymentMethod" value="Bank" id="payBank">
+                            <label class="form-check-label fw-600 w-100" for="payBank" style="font-size:.88rem;">
+                                <i class="fa-solid fa-building-columns text-primary me-1"></i>
+                                Chuyển khoản ngân hàng
+                                <div class="text-muted fw-normal small">Chuyển khoản VNĐ theo hướng dẫn sau khi đặt hàng</div>
                             </label>
                         </div>
                     </div>
@@ -74,14 +93,39 @@
                         }
                     </div>
 
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label fw-bold" style="font-size:.85rem;"><i class="fa-solid fa-ticket text-danger me-1"></i> Mã giảm giá</label>
+                        <div class="input-group">
+                            <input type="text" id="promoInput" class="form-control form-control-custom text-uppercase" placeholder="Nhập mã (VD: POLYFOOD20)" value="@appliedPromo" autocomplete="off" />
+                            <button type="button" id="btnApplyPromo" class="btn btn-dark px-3">Áp dụng</button>
+                        </div>
+                        <div id="promoFeedback" class="small mt-2 @(appliedPromo != null ? "text-success" : "d-none")">
+                            @if (appliedPromo != null)
+                            {
+                                <i class="fa-solid fa-circle-check me-1"></i><span>Đang áp dụng mã <strong>@appliedPromo</strong></span>
+                                <a href="#" id="btnRemovePromo" class="text-danger ms-2">Bỏ mã</a>
+                            }
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between mt-3 pt-2">
+                        <span class="text-muted" style="font-size:.9rem;">Tạm tính:</span>
+                        <span id="ck-subtotal" class="fw-bold" style="font-size:.9rem;">@subtotal.ToString("N0") ₫</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-1" id="ck-discount-row" style="@(promoDiscount > 0 ? "" : "display:none;")">
+                        <span class="text-success" style="font-size:.9rem;">Giảm giá:</span>
+                        <span id="ck-discount" class="fw-bold text-success" style="font-size:.9rem;">-@promoDiscount.ToString("N0") ₫</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-1">
                         <span class="fw-bold text-muted" style="font-size:.9rem;">Phí vận chuyển:</span>
                         <span class="badge bg-success">FREE</span>
                     </div>
 
                     <div class="d-flex justify-content-between mt-2 pt-2 border-top">
                         <span class="fw-bold text-dark" style="font-size:1rem;">Tổng cộng:</span>
-                        <span class="fw-800 text-danger" style="font-size:1.5rem;">@cart.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
+                        <span id="ck-total" class="fw-800 text-danger" style="font-size:1.5rem;">@((subtotal - promoDiscount).ToString("N0")) ₫</span>
                     </div>
 
                     <div class="mt-4">
@@ -100,4 +144,62 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Chống double-submit khi bấm Xác Nhận Đặt Hàng
+        $('form').on('submit', function () {
+            var $btn = $(this).find('button[type="submit"]');
+            if ($(this).valid && !$(this).valid()) return;
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...');
+        });
+
+        // ─── Mã giảm giá ───
+        (function () {
+            var token = $('input[name="__RequestVerificationToken"]').first().val() || '';
+            function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' ₫'; }
+            function updateTotals(res) {
+                $('#ck-subtotal').text(fmt(res.subtotal));
+                $('#ck-total').text(fmt(res.total));
+                if (res.discount > 0) {
+                    $('#ck-discount').text('-' + fmt(res.discount));
+                    $('#ck-discount-row').show();
+                } else {
+                    $('#ck-discount-row').hide();
+                }
+            }
+            function feedback(html, ok) {
+                $('#promoFeedback').removeClass('d-none text-success text-danger')
+                    .addClass(ok ? 'text-success' : 'text-danger').html(html);
+            }
+            function applyPromo() {
+                var code = $.trim($('#promoInput').val());
+                var $btn = $('#btnApplyPromo').prop('disabled', true);
+                $.post('/Cart/ApplyPromo', { promoCode: code, __RequestVerificationToken: token })
+                    .done(function (res) {
+                        updateTotals(res);
+                        if (res.success) {
+                            feedback('<i class="fa-solid fa-circle-check me-1"></i>' + res.message +
+                                ' <a href="#" id="btnRemovePromo" class="text-danger ms-2">Bỏ mã</a>', true);
+                            if (window.showToast) showToast(res.message, 'success');
+                        } else {
+                            feedback('<i class="fa-solid fa-circle-exclamation me-1"></i>' + res.message, false);
+                        }
+                    })
+                    .fail(function () { feedback('Có lỗi xảy ra. Vui lòng thử lại.', false); })
+                    .always(function () { $btn.prop('disabled', false); });
+            }
+            $('#btnApplyPromo').on('click', applyPromo);
+            $('#promoInput').on('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); applyPromo(); }
+            });
+            $(document).on('click', '#btnRemovePromo', function (e) {
+                e.preventDefault();
+                $.post('/Cart/RemovePromo', { __RequestVerificationToken: token })
+                    .done(function (res) {
+                        updateTotals(res);
+                        $('#promoInput').val('');
+                        feedback('<i class="fa-solid fa-circle-info me-1"></i>' + res.message, true);
+                    });
+            });
+        })();
+    </script>
 }
