@@ -452,4 +452,4 @@ C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\refint\Source.dll
 C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\Source.pdb
 C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\Source.genruntimeconfig.cache
 C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\ref\Source.dll
-C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-unjqr5swq6-unjqr5swq6.gz
+C:\Users\ADMIN\LAPTRINHWEB\obj\Debug\net10.0\compressed\nj5vl8uenh-{0}-em4v7cnbh6-em4v7cnbh6.gz

@@ -89,6 +89,13 @@
                     </ul>
 
                     <div class="d-flex align-items-center gap-3 ms-lg-4">
+                        <form asp-controller="Device" asp-action="SetMode" method="post" class="d-inline" id="device-switcher-desktop">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="mode" value="mobile" />
+                            <button type="submit" class="btn btn-outline-light btn-sm d-none d-lg-flex" title="Chuyển sang phiên bản Mobile">
+                                <i class="fa-solid fa-mobile-screen-button me-1"></i> Mobile
+                            </button>
+                        </form>
                         <button class="btn-location d-none d-lg-flex" onclick="window.location='https://maps.google.com/?q=Bien+Hoa+Dong+Nai'">
                             <i class="fa-solid fa-location-dot text-danger"></i>
                             <span>Đồng Nai</span>
