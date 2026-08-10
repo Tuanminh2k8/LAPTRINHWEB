@@ -68,6 +68,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "ApiFoods" ? "active" : "")" asp-controller="Admin" asp-action="ApiFoods">
+                        <i class="fa-solid fa-code me-2"></i> Quản lý món ăn
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link nav-link-polyfood @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
                         <i class="fa-solid fa-boxes-packing me-2"></i> Combo
                     </a>
@@ -117,6 +122,9 @@
             </a>
             <a class="nav-link nav-link-polyfood @(currentAction == "Foods" ? "active" : "")" asp-controller="Admin" asp-action="Foods">
                 <i class="fa-solid fa-burger me-2"></i> Món ăn
+            </a>
+            <a class="nav-link nav-link-polyfood @(currentAction == "ApiFoods" ? "active" : "")" asp-controller="Admin" asp-action="ApiFoods">
+                <i class="fa-solid fa-code me-2"></i> Quản lý món ăn
             </a>
             <a class="nav-link nav-link-polyfood @(currentAction == "Combos" ? "active" : "")" asp-controller="Admin" asp-action="Combos">
                 <i class="fa-solid fa-boxes-packing me-2"></i> Combo

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Source.Models;
 using Source.Services;
@@ -26,7 +27,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -39,7 +43,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICartSessionService, CartSessionService>();
 builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
 
+// Demo DI lifetimes
+builder.Services.AddSingleton<ISingletonOperation, OperationService>();
+builder.Services.AddScoped<IScopedOperation, OperationService>();
+builder.Services.AddTransient<ITransientOperation, OperationService>();
+builder.Services.AddScoped<OperationDemoService>();
+
 builder.Services.AddControllersWithViews();
+builder.Services.AddAntiforgery();
 
 var app = builder.Build();
 

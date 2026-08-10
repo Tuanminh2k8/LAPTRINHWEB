@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Models;
+using Source.Services;
 
 namespace Source.Controllers
 {
@@ -221,6 +222,23 @@ namespace Source.Controllers
         public IActionResult About() => View();
 
         public IActionResult Privacy() => View();
+
+        // Demo vòng đời DI (Singleton / Scoped / Transient)
+        public IActionResult DependencyInjectionDemo()
+        {
+            var scoped1 = HttpContext.RequestServices.GetRequiredService<IScopedOperation>();
+            var transient1 = HttpContext.RequestServices.GetRequiredService<ITransientOperation>();
+            var singleton1 = HttpContext.RequestServices.GetRequiredService<ISingletonOperation>();
+
+            var transient2 = HttpContext.RequestServices.GetRequiredService<ITransientOperation>();
+
+            ViewBag.SingletonId = singleton1.OperationId;
+            ViewBag.ScopedId = scoped1.OperationId;
+            ViewBag.Transient1Id = transient1.OperationId;
+            ViewBag.Transient2Id = transient2.OperationId;
+
+            return View();
+        }
 
         public IActionResult PageNotFound(int? statusCode)
         {

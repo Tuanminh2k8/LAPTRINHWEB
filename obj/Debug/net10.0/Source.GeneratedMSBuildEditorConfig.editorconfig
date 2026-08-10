@@ -51,6 +51,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/LAPTRINHWEB/Views/Admin/ApiFoods.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQXBpRm9vZHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/LAPTRINHWEB/Views/Admin/Categories.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQ2F0ZWdvcmllcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -139,6 +143,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb21ib3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/LAPTRINHWEB/Views/Home/DependencyInjectionDemo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxEZXBlbmRlbmN5SW5qZWN0aW9uRGVtby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/LAPTRINHWEB/Views/Home/FoodDetails.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxGb29kRGV0YWlscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -195,15 +203,11 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-<<<<<<< HEAD
-[D:/LAPTRINHWEB/Views/Shared/_ValidationScriptsPartial.cshtml]
-=======
-[C:/Users/ADMIN/LAPTRINHWEB/Views/Shared/_Layout.mobile.cshtml]
+[D:/LAPTRINHWEB/Views/Shared/_Layout.mobile.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQubW9iaWxlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/ADMIN/LAPTRINHWEB/Views/Shared/_ValidationScriptsPartial.cshtml]
->>>>>>> 457e8375399dacded1aa3ddce4d97e20350c51da
+[D:/LAPTRINHWEB/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 

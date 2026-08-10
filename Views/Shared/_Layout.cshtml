@@ -49,17 +49,14 @@
                     <div class="brand-icon">
                         <i class="fa-solid fa-burger"></i>
                     </div>
-                    <div>
-                        <h1 class="brand-text m-0">Poly<span class="text-danger">Food</span></h1>
-                        <p class="m-0 text-muted small">Đồng Nai, Việt Nam</p>
-                    </div>
+                    <h1 class="brand-text m-0">Poly<span class="text-danger">Food</span></h1>
                 </a>
 
                 <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse justify-content-center" id="navbarContent">
+                <div class="collapse navbar-collapse" id="navbarContent">
                     <ul class="navbar-nav mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link nav-link-polyfood @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
@@ -88,11 +85,11 @@
                         </li>
                     </ul>
 
-                    <div class="d-flex align-items-center gap-3 ms-lg-4">
+                    <div class="d-flex align-items-center gap-3 mt-3 mt-lg-0">
                         <form asp-controller="Device" asp-action="SetMode" method="post" class="d-inline" id="device-switcher-desktop">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="mode" value="mobile" />
-                            <button type="submit" class="btn btn-outline-light btn-sm d-none d-lg-flex" title="Chuyển sang phiên bản Mobile">
+                            <button type="submit" class="btn btn-outline-dark btn-sm d-none d-lg-flex" title="Chuyển sang phiên bản Mobile">
                                 <i class="fa-solid fa-mobile-screen-button me-1"></i> Mobile
                             </button>
                         </form>
@@ -207,6 +204,7 @@
                         <li><a asp-controller="Home" asp-action="Combos" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Combo</a></li>
                         <li><a asp-controller="Home" asp-action="Promotions" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Khuyến mãi</a></li>
                         <li><a asp-controller="Home" asp-action="About" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Về chúng tôi</a></li>
+                        <li><a asp-controller="Home" asp-action="DependencyInjectionDemo" class="text-decoration-none"><i class="fa-solid fa-angle-right me-1"></i> Demo Dependency Injection</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-3 col-md-6">

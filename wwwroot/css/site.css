@@ -1465,6 +1465,10 @@ small { font-size: 0.85rem; }
 }
 
 /* ─── Responsive ─── */
+@media (min-width: 992px) {
+  .navbar-polyfood .navbar-collapse { flex-grow: 1; justify-content: flex-end; }
+  .navbar-polyfood .navbar-nav { margin-inline: auto; }
+}
 @media (max-width: 1199.98px) {
   .food-grid-4 { grid-template-columns: repeat(3, 1fr); }
   .combo-grid-3 { grid-template-columns: repeat(2, 1fr); }

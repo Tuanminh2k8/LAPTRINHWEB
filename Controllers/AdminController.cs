@@ -425,6 +425,53 @@ namespace Source.Controllers
             return RedirectToAction(nameof(Foods));
         }
 
+        // GET: Admin/ApiFoods - quản lý món ăn (AJAX)
+        public async Task<IActionResult> ApiFoods()
+        {
+            ViewBag.ApiCategories = await _context.Categories.AsNoTracking().OrderBy(c => c.Name).ToListAsync();
+
+            ViewBag.ApiFoods = await _context.FastFoods
+                .Include(f => f.Category)
+                .AsNoTracking()
+                .OrderBy(f => f.Name)
+                .Select(f => new
+                {
+                    id = f.Id,
+                    name = f.Name,
+                    price = f.Price,
+                    description = f.Description,
+                    imageUrl = f.ImageUrl,
+                    theme = f.Theme,
+                    categoryId = f.CategoryId,
+                    categoryName = f.Category != null ? f.Category.Name : ""
+                })
+                .ToListAsync();
+
+            ViewBag.ApiCombos = await _context.Combos
+                .Include(c => c.ComboDetails)
+                .ThenInclude(cd => cd.FastFood)
+                .ThenInclude(f => f!.Category)
+                .AsNoTracking()
+                .OrderBy(c => c.Name)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name,
+                    price = c.Price,
+                    imageUrl = c.ImageUrl,
+                    isOnSale = c.IsOnSale,
+                    originalPrice = c.OriginalPrice,
+                    items = c.ComboDetails.Select(cd => new
+                    {
+                        foodName = cd.FastFood != null ? cd.FastFood.Name : "",
+                        quantity = cd.Quantity
+                    })
+                })
+                .ToListAsync();
+
+            return View();
+        }
+
         #endregion
 
         #region Combo Management
