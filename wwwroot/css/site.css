@@ -913,6 +913,15 @@ small { font-size: 0.85rem; }
 }
 .loading-overlay.active { opacity: 1; visibility: visible; }
 .loading-spinner { width: 48px; height: 48px; border: 5px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+#cancelLoadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ─── Empty State ─── */
 .empty-state { padding: 60px 20px; text-align: center; }
@@ -1523,6 +1532,26 @@ small { font-size: 0.85rem; }
 .payment-option:has(input:checked) { border-color: #dc3545 !important; background: #fff5f5 !important; box-shadow: 0 2px 12px rgba(220,53,69,.12); }
 .payment-option .form-check-input,
 .payment-option label { cursor: pointer; }
+
+/* ─── Mobile Layout Helpers ─── */
+.mobile-shell{ padding-top: calc(var(--nav-height) + 10px); }
+.mobile-shell .main-wrapper{ padding: 0; }
+.mobile-shell .container{ padding-left: 14px; padding-right: 14px; }
+
+/* Mobile bottom action bar */
+.mobile-bottom-bar{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 1040;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px calc(14px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px));
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(18px) saturate(180%);
+  border-top: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 -8px 28px rgba(0,0,0,0.08);
+}
+.mobile-bottom-bar .btn-cart-polyfood{ width: 48px; height: 48px; font-size: 1.1rem; border-radius: 14px; box-shadow: 0 6px 18px rgba(255,56,56,0.28); }
+.mobile-bottom-bar .btn-primary-custom{ height: 48px; border-radius: 16px; padding: 0 18px; }
 
 /* ─── Smoother buttons & cards ─── */
 .btn-custom, .btn-primary-custom { transition: transform .15s ease, box-shadow .15s ease; }

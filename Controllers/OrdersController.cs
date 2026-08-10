@@ -136,8 +136,11 @@ namespace Source.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             if (string.IsNullOrWhiteSpace(cancelReason))
             {
+                if (isAjax) return Json(new { success = false, message = "Vui lòng nhập lý do hủy đơn hàng." });
                 TempData["ErrorMessage"] = "Vui lòng nhập lý do hủy đơn hàng.";
                 return RedirectToAction("Details", new { id });
             }
@@ -147,26 +150,40 @@ namespace Source.Controllers
 
             if (order == null)
             {
+                if (isAjax) return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
                 return NotFound();
             }
 
             if (order.Status != OrderStatus.Pending)
             {
+                if (isAjax) return Json(new { success = false, message = "Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận." });
                 TempData["ErrorMessage"] = "Chỉ có thể hủy đơn hàng khi đang ở trạng thái Chờ xác nhận.";
                 return RedirectToAction("Details", new { id });
             }
 
-            order.Status = OrderStatus.Cancelled;
-            order.CancelReason = cancelReason;
-            order.UpdatedAt = DateTime.Now;
-            _context.Update(order);
+            try
+            {
+                order.Status = OrderStatus.Cancelled;
+                order.CancelReason = cancelReason;
+                order.UpdatedAt = DateTime.Now;
+                _context.Update(order);
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Customer cancelled order #{OrderId}. Reason: {Reason}", id, cancelReason);
+                _logger.LogInformation("Customer cancelled order #{OrderId}. Reason: {Reason}", id, cancelReason);
 
-            TempData["SuccessMessage"] = "Hủy đơn hàng thành công!";
-            return RedirectToAction("Details", new { id });
+                if (isAjax) return Json(new { success = true, redirect = Url.Action("Details", new { id }) });
+
+                TempData["SuccessMessage"] = "Hủy đơn hàng thành công!";
+                return RedirectToAction("Details", new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling order #{OrderId}", id);
+                if (isAjax) return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
+                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+                return RedirectToAction("Details", new { id });
+            }
         }
     }
 }

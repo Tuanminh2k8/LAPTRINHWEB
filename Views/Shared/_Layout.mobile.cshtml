@@ -1,0 +1,205 @@
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using Source.Helpers
+@using Source.Models
+@{
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
+    var fullName = HttpContextAccessor.HttpContext?.User.FindFirst("FullName")?.Value ?? HttpContextAccessor.HttpContext?.User.Identity?.Name;
+    var role = HttpContextAccessor.HttpContext?.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        
+    var cart = HttpContextAccessor.HttpContext?.Session.GetObjectFromJson<List<CartItem>>("FastFoodCart") ?? new List<CartItem>();
+    var cartCount = cart.Sum(i => i.Quantity);
+    
+    var pageTitle = (ViewData["Title"]?.ToString() ?? "Trang chủ") + " - PolyFood Mobile";
+    var siteDescription = "PolyFood Mobile - Đặt thức ăn nhanh, giao hàng siêu tốc.";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="@siteDescription" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <title>@pageTitle</title>
+    @Html.AntiForgeryToken()
+    <style>
+        :root{ --mobile-nav-height:64px; --bottom-safe:env(safe-area-inset-bottom, 0px); }
+        html{ scroll-behavior: smooth; -webkit-font-smoothing: antialiased; scroll-padding-top: calc(var(--nav-height) + 16px); }
+        body{ padding-bottom: calc(var(--mobile-nav-height) + var(--bottom-safe) + 12px); }
+        .site-header .navbar{ height: var(--nav-height); padding-left:12px; padding-right:12px; }
+        .site-header .brand-text{ font-size:1.05rem; }
+        .site-header .brand-icon{ width:34px; height:34px; font-size:.92rem; }
+        .site-header .nav-link-polyfood{ padding:6px 12px !important; font-size:.82rem; }
+        .mobile-shell{ padding-top: calc(var(--nav-height) + 10px); }
+        .section-spacer{ padding:18px 0; }
+        .hero-title{ font-size: clamp(1.3rem, 6vw, 1.9rem); }
+        .hero-subtitle{ font-size: .92rem; max-width: 100%; margin-bottom: 18px; }
+        .hero-visual{ margin-top: 20px; }
+        .hero-img{ max-height: 280px; }
+        .floating-badge{ padding:10px 12px; font-size:.72rem; }
+        .search-pill-bar{ flex-direction: row; }
+        .search-pill-btn{ padding:10px 16px; font-size:.82rem; }
+    </style>
+</head>
+<body>
+    <div class="preloader-mobile" id="preloader">
+        <div class="preloader-spinner"></div>
+    </div>
+
+    <header class="site-header">
+        <nav class="navbar navbar-expand-lg navbar-polyfood fixed-top">
+            <div class="container-fluid px-3">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
+                    <div class="brand-icon"><i class="fa-solid fa-burger"></i></div>
+                    <div class="brand-text">Poly<span class="text-danger">Food</span></div>
+                </a>
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="offcanvas offcanvas-start bg-white shadow-lg" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+            <div class="offcanvas-header border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="brand-icon"><i class="fa-solid fa-burger text-white"></i></div>
+                    <span class="fw-bold">Poly<span class="text-danger">Food</span></span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#mobileMenu" aria-label="Đóng"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <ul class="nav flex-column py-2">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Home" asp-action="Index"><i class="fa-solid fa-house text-danger"></i> Trang chủ</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Home" asp-action="Menu"><i class="fa-solid fa-utensils text-danger"></i> Thực đơn</a></li>
+                    <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Home" asp-action="Combos"><i class="fa-solid fa-box text-danger"></i> Combo</a></li>
+                    <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Home" asp-action="Promotions"><i class="fa-solid fa-tags text-danger"></i> Khuyến mãi</a></li>
+                    <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Home" asp-action="About"><i class="fa-solid fa-info-circle text-danger"></i> Về chúng tôi</a></li>
+                    <li class="border-top mt-2 pt-1"></li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Cart" asp-action="Index">
+                            <i class="fa-solid fa-cart-shopping text-danger"></i> Giỏ hàng
+                            @if (cartCount > 0) { <span class="badge bg-danger ms-auto">@cartCount</span> }
+                        </a>
+                    </li>
+                    @if (isAuthenticated)
+                    {
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card text-danger"></i> Hồ sơ</a></li>
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Orders" asp-action="Index"><i class="fa-solid fa-receipt text-danger"></i> Đơn hàng</a></li>
+                        @if (role == "Admin") { <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-danger fw-semibold" asp-controller="Admin" asp-action="Index"><i class="fa-solid fa-shield-hooded"></i> Quản trị</a></li> }
+                        <li class="nav-item border-top mt-1"></li>
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-danger" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
+                    }
+                    else
+                    {
+                        <li class="nav-item border-top mt-1"></li>
+                        <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-danger fw-semibold" asp-controller="Account" asp-action="Login"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a></li>
+                    }
+                </ul>
+                <div class="border-top my-2 mx-3"></div>
+                <form asp-controller="Device" asp-action="SetMode" method="post" class="px-4 py-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="mode" value="desktop" />
+                    <button type="submit" class="btn btn-outline-dark btn-sm w-100">
+                        <i class="fa-solid fa-display me-1"></i> Chuyển sang Desktop
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    @if (isAuthenticated && role == "Admin")
+    {
+        <div class="admin-return-bar" id="adminReturnBarMobile">
+            <a asp-controller="Admin" asp-action="Index" class="admin-return-btn">
+                <i class="fa-solid fa-shield-hooded"></i> Quay lại Quản trị
+            </a>
+        </div>
+    }
+
+    <div class="mobile-shell">
+        <div class="main-wrapper">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="container mt-3">
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 d-flex align-items-center py-3 px-4" role="alert">
+                        <i class="fa-solid fa-circle-check fs-5 me-2 text-success"></i>
+                        <div class="fw-600 small">@TempData["SuccessMessage"]</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="container mt-3">
+                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 d-flex align-items-center py-3 px-4" role="alert">
+                        <i class="fa-solid fa-circle-exclamation fs-5 me-2 text-danger"></i>
+                        <div class="fw-600 small">@TempData["ErrorMessage"]</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+            }
+            <main role="main" class="pb-5">
+                @RenderBody()
+            </main>
+        </div>
+
+        <!-- Floating bottom action row: cart + CTA -->
+        @if (ViewData["HideMobileCta"] is not bool hide || !hide)
+        {
+            <div class="mobile-bottom-bar">
+                <a asp-controller="Cart" asp-action="Index" class="btn btn-cart-polyfood position-relative" aria-label="Giỏ hàng">
+                    <i class="fa-solid fa-cart-shopping fa-lg"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light @(cartCount > 0 ? "" : "d-none")">@cartCount</span>
+                </a>
+                <button onclick="window.scrollTo({top: document.getElementById('foods-section')?.offsetTop - 80 ?? document.body.scrollHeight, behavior:'smooth'})" class="btn btn-primary-custom flex-grow-1 fw-bold">
+                    Đặt món ngay
+                </button>
+            </div>
+        }
+    </div>
+
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index:1090"></div>
+    <button id="btnScrollTop" class="btn-scroll-top" aria-label="Cuộn lên đầu trang"><i class="fa-solid fa-chevron-up"></i></button>
+
+    <footer class="footer mt-auto py-4">
+        <div class="container">
+            <div class="row gy-3">
+                <div class="col-12">
+                    <h6 class="fw-bold text-white mb-1 d-flex align-items-center gap-2">
+                        <span class="footer-brand-icon"><i class="fa-solid fa-burger"></i></span> PolyFood
+                    </h6>
+                    <p class="text-white-50 small">Hệ thống phân phối và đặt hàng thức ăn nhanh hiện đại.</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="social-link" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="social-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="social-link" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                        <a href="#" class="social-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
+                    <div class="copyright mt-3">&copy; @DateTime.Now.Year PolyFood Store. Tất cả quyền được bảo lưu.</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function(){
+            var p = document.getElementById('preloader');
+            if(p){ p.classList.add('loaded'); }
+            window.addEventListener('load', function(){ if(p){ p.classList.add('loaded'); } });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

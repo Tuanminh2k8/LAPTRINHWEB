@@ -1,3 +1,6 @@
-﻿@{
-    Layout = "_Layout";
+﻿@using Source.Helpers
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    var deviceType = DeviceDetectionHelper.DetectDeviceType(HttpContextAccessor.HttpContext!.Request);
+    Layout = deviceType == DeviceDetectionHelper.Mobile ? "_Layout.mobile" : "_Layout";
 }
