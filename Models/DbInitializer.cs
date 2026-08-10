@@ -6,47 +6,64 @@ namespace Source.Models
 {
     public static class DbInitializer
     {
-        private static readonly string[] UnsplashBurger = {
-            "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-            "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400",
-            "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400",
-            "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400",
-            "https://images.unsplash.com/photo-1586816001966-79b736744398?w=400"
+        // Local image paths (relative to wwwroot)
+        private static readonly string[] LocalBurger = {
+            "/images/products/product-burger-1.jpg",
+            "/images/products/product-burger-2.jpg",
+            "/images/products/product-burger-3.jpg",
+            "/images/products/product-burger-4.jpg",
+            "/images/products/product-burger-5.jpg",
+            "/images/products/burger-bbq-bacon.jpg",
+            "/images/products/burger-cheese-double.jpg"
         };
-        private static readonly string[] UnsplashPizza = {
-            "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400",
-            "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
-            "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400",
-            "https://images.unsplash.com/photo-1558138838-76294be30005?w=400",
-            "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"
+        private static readonly string[] LocalPizza = {
+            "/images/products/product-pizza-1.jpg",
+            "/images/products/product-pizza-2.jpg",
+            "/images/products/product-pizza-3.jpg",
+            "/images/products/product-pizza-4.jpg",
+            "/images/products/product-pizza-5.jpg",
+            "/images/products/pizza-seafood.jpg",
+            "/images/products/pizza-pepperoni.jpg"
         };
-        private static readonly string[] UnsplashChicken = {
-            "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=400",
-            "https://images.unsplash.com/photo-1562967914-608f82629710?w=400",
-            "https://images.unsplash.com/photo-1527477396000-e27163b4be8f?w=400",
-            "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400",
-            "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400"
+        private static readonly string[] LocalChicken = {
+            "/images/products/product-chicken-1.jpg",
+            "/images/products/product-chicken-2.jpg",
+            "/images/products/product-chicken-3.jpg",
+            "/images/products/product-chicken-4.jpg",
+            "/images/products/product-chicken-5.jpg",
+            "/images/products/chicken-crispy.jpg",
+            "/images/products/chicken-spicy-wings.jpg"
         };
-        private static readonly string[] UnsplashDrink = {
-            "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400",
-            "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400",
-            "https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=400",
-            "https://images.unsplash.com/photo-1540224871915-bc8ffb782bdf?w=400",
-            "https://images.unsplash.com/photo-1437414062039-6245b1e3edb4?w=400"
+        private static readonly string[] LocalDrink = {
+            "/images/products/drink-coca.jpg",
+            "/images/products/drink-coke.jpg",
+            "/images/products/drink-lemonade.jpg",
+            "/images/products/drink-matcha.jpg",
+            "/images/products/drink-milktea.jpg",
+            "/images/products/drink-pepsi.jpg",
+            "/images/products/drink-tea.jpg"
         };
-        private static readonly string[] UnsplashSide = {
-            "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400",
-            "https://images.unsplash.com/photo-1585109649139-366815a0d713?w=400",
-            "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400",
-            "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400",
-            "https://images.unsplash.com/photo-1551782450-17144efb9c50?w=400"
+        private static readonly string[] LocalSide = {
+            "/images/products/side-fries-1.jpg",
+            "/images/products/side-fries-2.jpg",
+            "/images/products/side-rings.jpg",
+            "/images/products/side-salad.jpg",
+            "/images/products/side-soup.jpg"
         };
-        private static readonly string[] UnsplashDessert = {
-            "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400",
-            "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400",
-            "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400",
-            "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
-            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"
+        private static readonly string[] LocalDessert = {
+            "/images/products/dessert-donut.jpg",
+            "/images/products/dessert-icecream.jpg",
+            "/images/products/dessert-pie.jpg"
+        };
+        private static readonly string[] LocalCombo = {
+            "/images/combos/combo-family.jpg",
+            "/images/combos/combo-party.jpg",
+            "/images/combos/combo-couple.jpg",
+            "/images/combos/combo-snack.jpg",
+            "/images/combos/combo-solo.jpg",
+            "/images/combos/combo-weekend.jpg",
+            "/images/combos/combo-office.jpg",
+            "/images/combos/combo-kids.jpg"
         };
         private static readonly string[] Themes = { "Gia đình", "Tiệc tùng", "Ăn vặt", "Trẻ em", "Văn phòng", "Ăn sáng" };
         private static readonly Random _rng = new();
@@ -368,12 +385,12 @@ namespace Source.Models
                 }
             }
 
-            idx = 0; AddIfNotExists(burgers, catBurgers, UnsplashBurger);
-            idx = 0; AddIfNotExists(pizzas, catPizzas, UnsplashPizza);
-            idx = 0; AddIfNotExists(chickens, catChicken, UnsplashChicken);
-            idx = 0; AddIfNotExists(drinks, catDrinks, UnsplashDrink);
-            idx = 0; AddIfNotExists(sides, catSides, UnsplashSide);
-            idx = 0; AddIfNotExists(desserts, catDessert, UnsplashDessert);
+            idx = 0; AddIfNotExists(burgers, catBurgers, LocalBurger);
+            idx = 0; AddIfNotExists(pizzas, catPizzas, LocalPizza);
+            idx = 0; AddIfNotExists(chickens, catChicken, LocalChicken);
+            idx = 0; AddIfNotExists(drinks, catDrinks, LocalDrink);
+            idx = 0; AddIfNotExists(sides, catSides, LocalSide);
+            idx = 0; AddIfNotExists(desserts, catDessert, LocalDessert);
 
             context.FastFoods.AddRange(foodList);
             context.SaveChanges();
@@ -496,11 +513,11 @@ namespace Source.Models
                     Price = (int)(totalPrice * 0.8m),
                     ImageUrl = imgType switch
                     {
-                        "burger" => UnsplashBurger[comboIdx % UnsplashBurger.Length],
-                        "pizza" => UnsplashPizza[comboIdx % UnsplashPizza.Length],
-                        "chicken" => UnsplashChicken[comboIdx % UnsplashChicken.Length],
-                        "side" => UnsplashSide[comboIdx % UnsplashSide.Length],
-                        _ => UnsplashBurger[comboIdx % UnsplashBurger.Length]
+                        "burger" => LocalCombo[comboIdx % LocalCombo.Length],
+                        "pizza" => LocalCombo[comboIdx % LocalCombo.Length],
+                        "chicken" => LocalCombo[comboIdx % LocalCombo.Length],
+                        "side" => LocalCombo[comboIdx % LocalCombo.Length],
+                        _ => LocalCombo[comboIdx % LocalCombo.Length]
                     }
                 };
 
