@@ -1,0 +1,59 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Demo Dependency Injection";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-dark mb-2">Demo Dependency Injection (DI)</h1>
+        <p class="text-muted">Vòng đời (lifetime) của các service được đăng ký trong <code>Program.cs</code> — Singleton, Scoped, Transient.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 text-center p-4">
+                <div class="mx-auto mb-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+                    <i class="fa-solid fa-server fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">Singleton</h5>
+                <p class="text-muted small mb-3">Tạo 1 lần duy nhất cho toàn bộ ứng dụng</p>
+                <div class="fw-bold text-primary font-monospace small bg-light rounded-3 py-2">@ViewBag.SingletonId</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 text-center p-4">
+                <div class="mx-auto mb-3 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+                    <i class="fa-solid fa-layer-group fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">Scoped</h5>
+                <p class="text-muted small mb-3">Tạo 1 lần cho mỗi HTTP request</p>
+                <div class="fw-bold text-success font-monospace small bg-light rounded-3 py-2">@ViewBag.ScopedId</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 text-center p-4">
+                <div class="mx-auto mb-3 bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+                    <i class="fa-solid fa-arrows-rotate fs-4"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">Transient</h5>
+                <p class="text-muted small mb-3">Tạo mới mỗi lần được yêu cầu (2 lần lấy = 2 ID khác nhau)</p>
+                <div class="fw-bold text-warning font-monospace small bg-light rounded-3 py-2 mb-1">@ViewBag.Transient1Id</div>
+                <div class="fw-bold text-warning font-monospace small bg-light rounded-3 py-2">@ViewBag.Transient2Id</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 bg-dark text-white p-4">
+        <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-info me-2"></i> Giải thích</h6>
+        <ul class="small lh-lg text-white-50 mb-0 ps-3">
+            <li><strong class="text-primary">Singleton</strong> — giữ nguyên qua các request (tạo một lần, dùng lại mãi).</li>
+            <li><strong class="text-success">Scoped</strong> — cùng một instance trong phạm vi một request; <em>request sau sẽ có ID khác</em>.</li>
+            <li><strong class="text-warning">Transient</strong> — hai lần lấy liên tiếp trong cùng request đã cho 2 ID khác nhau.</li>
+        </ul>
+        <div class="text-end mt-3">
+            <a asp-controller="Home" asp-action="DependencyInjectionDemo" class="btn btn-primary-custom btn-custom rounded-pill px-4">
+                <i class="fa-solid fa-rotate me-1"></i> Nạp lại trang
+            </a>
+        </div>
+    </div>
+</div>
