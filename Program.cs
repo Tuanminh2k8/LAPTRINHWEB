@@ -50,7 +50,12 @@ builder.Services.AddTransient<ITransientOperation, OperationService>();
 builder.Services.AddScoped<OperationDemoService>();
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddAntiforgery();
+builder.Services.AddAntiforgery(options =>
+{
+    // Cho phép API/AJAX gửi token qua header: X-CSRF-TOKEN hoặc RequestVerificationToken
+    options.HeaderName = "RequestVerificationToken";
+    options.SuppressXFrameOptionsHeader = false;
+});
 
 var app = builder.Build();
 

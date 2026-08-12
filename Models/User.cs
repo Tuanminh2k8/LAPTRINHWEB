@@ -45,5 +45,9 @@ namespace Source.Models
         public string Role { get; set; } = "Customer"; // Admin, Customer
 
         public string? GoogleId { get; set; }
+
+        // Navigation property
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

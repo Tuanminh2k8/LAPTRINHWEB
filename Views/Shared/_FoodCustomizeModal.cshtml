@@ -1,0 +1,94 @@
+@* Modal tùy chỉnh món ăn (size/topping/độ cay) — dữ liệu lấy từ API /api/foods/{id} *@
+<div class="modal fade" id="foodCustomizeModal" tabindex="-1" aria-labelledby="foodCustomizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 overflow-hidden">
+            <div class="modal-header border-0 p-4 pb-0 align-items-start">
+                <div class="d-flex gap-3 align-items-start">
+                    <img id="cm-image" src="/images/default_food.svg" alt="" class="rounded-4 shadow-sm" style="width: 72px; height: 72px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1" id="cm-name"></h5>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <div id="cm-rating" class="d-none align-items-center gap-1 small">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span class="fw-bold text-dark" id="cm-rating-value"></span>
+                                <span class="text-muted" id="cm-rating-count"></span>
+                            </div>
+                            <span class="badge bg-light text-muted border rounded-pill small" id="cm-category"></span>
+                        </div>
+                        <p class="text-muted small mb-0" id="cm-desc"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ms-auto mt-0" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <div id="cm-groups" class="d-flex flex-column gap-4"></div>
+                <div id="cm-loading" class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Đang tải tùy chọn...</p>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 p-4 pt-0 d-flex align-items-center gap-3">
+                <div class="quantity-control flex-shrink-0" style="height: 44px;">
+                    <button type="button" id="cm-qty-minus" style="width:44px;height:44px;font-size:1rem;">−</button>
+                    <input type="number" id="cm-qty" value="1" min="1" max="50" readonly style="width:56px;height:44px;font-size:1rem;">
+                    <button type="button" id="cm-qty-plus" style="width:44px;height:44px;font-size:1rem;">+</button>
+                </div>
+                <button type="button" id="cm-add-btn" class="btn btn-primary-custom btn-custom flex-grow-1 py-3 rounded-pill shadow d-flex align-items-center justify-content-center gap-2">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Thêm vào giỏ</span>
+                    <strong id="cm-total" class="ms-auto">0 ₫</strong>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="cm-single-group-template">
+    <div class="cm-group">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold text-dark mb-0 cm-group-title"></h6>
+            <small class="cm-group-required text-danger fw-bold d-none">Chọn 1</small>
+        </div>
+        <p class="small text-muted mb-2 cm-group-desc d-none"></p>
+        <div class="d-flex flex-wrap gap-2 cm-options"></div>
+    </div>
+</template>
+
+<template id="cm-multi-group-template">
+    <div class="cm-group">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold text-dark mb-0 cm-group-title"></h6>
+            <small class="cm-group-count text-muted"></small>
+        </div>
+        <p class="small text-muted mb-2 cm-group-desc d-none"></p>
+        <div class="d-flex flex-wrap gap-2 cm-options"></div>
+    </div>
+</template>
+
+<template id="cm-option-single">
+    <label class="cm-option-chip">
+        <input type="radio" class="cm-opt-input d-none" name="cm-radio-__GROUP__" value="__ID__" data-name="__OPTNAME__" data-price="__OPTPRICE__" data-default="__DEFAULT__">
+        <span class="cm-option-chip-inner">
+            <span class="cm-option-name">__OPTNAME__</span>
+            <span class="cm-option-tail">
+                <span class="cm-option-price cm-opt-price-display"></span>
+                <i class="fa-solid fa-check cm-option-check"></i>
+            </span>
+        </span>
+    </label>
+</template>
+
+<template id="cm-option-multi">
+    <label class="cm-option-chip">
+        <input type="checkbox" class="cm-opt-input d-none" value="__ID__" data-name="__OPTNAME__" data-price="__OPTPRICE__" data-default="__DEFAULT__">
+        <span class="cm-option-chip-inner">
+            <span class="cm-option-name">__OPTNAME__</span>
+            <span class="cm-option-tail">
+                <span class="cm-option-price cm-opt-price-display"></span>
+                <i class="fa-solid fa-check cm-option-check"></i>
+            </span>
+        </span>
+    </label>
+</template>

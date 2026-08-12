@@ -39,7 +39,18 @@ namespace Source.Models
         [Display(Name = "Chủ đề")]
         public string Theme { get; set; } = string.Empty; // e.g. Ăn sáng, Tiệc tùng, Gia đình, Ăn vặt
 
+        [Display(Name = "Đã bán")]
+        public int SoldCount { get; set; } = 0;
+
+        [Display(Name = "Còn hàng")]
+        public bool IsAvailable { get; set; } = true;
+
+        [Display(Name = "Bán chạy")]
+        public bool IsBestSeller { get; set; } = false;
+
         // Navigation properties
         public ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();
+        public ICollection<ModifierGroup> ModifierGroups { get; set; } = new List<ModifierGroup>();
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

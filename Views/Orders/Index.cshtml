@@ -82,9 +82,9 @@
                     <tbody>
                         @foreach (var order in Model)
                         {
-                            var statusLabel = GetStatusLabel(order.Status);
-                            var badgeClass = GetStatusBadgeClass(order.Status);
-                            var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
+                            var statusLabel = Source.Models.OrderStatus.GetLabel(order.Status);
+                            var badgeClass = Source.Models.OrderStatus.GetBadgeClass(order.Status);
+                            var subtotal = order.OrderDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity);
                             var grandTotal = subtotal + order.ShippingFee - order.Discount;
                             <tr>
                                 <td class="ps-4 fw-600 text-dark">#@order.Id</td>
@@ -100,6 +100,19 @@
                                                 <div>
                                                     <div class="fw-500 small text-dark">@name</div>
                                                     <div class="text-muted small">x@detail.Quantity</div>
+                                                    @if (detail.Modifiers.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            @foreach (var m in detail.Modifiers.Take(3))
+                                                            {
+                                                                <span class="badge bg-light border text-muted rounded-pill" style="font-size:.6rem;">@m.OptionName</span>
+                                                            }
+                                                            @if (detail.Modifiers.Count > 3)
+                                                            {
+                                                                <span class="badge bg-light border text-muted rounded-pill" style="font-size:.6rem;">+@(detail.Modifiers.Count - 3)</span>
+                                                            }
+                                                        </div>
+                                                    }
                                                 </div>
                                             </div>
                                         }
@@ -241,32 +254,3 @@
     </script>
 }
 
-@functions {
-    string GetStatusLabel(string status)
-    {
-        return status switch
-        {
-            "Pending" => "Chờ xác nhận",
-            "Preparing" => "Đang chuẩn bị",
-            "Shipping" => "Đang giao",
-            "Delivered" => "Đã giao",
-            "Cancelled" => "Đã hủy",
-            "Refunded" => "Hoàn tiền",
-            _ => status
-        };
-    }
-
-    string GetStatusBadgeClass(string status)
-    {
-        return status switch
-        {
-            "Pending" => "bg-warning text-dark",
-            "Preparing" => "bg-info text-dark",
-            "Shipping" => "bg-primary",
-            "Delivered" => "bg-success",
-            "Cancelled" => "bg-danger",
-            "Refunded" => "bg-secondary",
-            _ => "bg-secondary"
-        };
-    }
-}

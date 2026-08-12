@@ -33,5 +33,11 @@ namespace Source.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Đơn giá")]
         public decimal Price { get; set; }
+
+        // Snapshot tên món để hiển thị lại sau khi xóa sản phẩm
+        [StringLength(100)]
+        public string? FastFoodName { get; set; }
+
+        public ICollection<OrderDetailModifier> Modifiers { get; set; } = new List<OrderDetailModifier>();
     }
 }

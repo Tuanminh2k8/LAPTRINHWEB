@@ -130,42 +130,193 @@
         }
     };
 
-    /* ─── Global addToCart with loading state ─── */
+    /* ─── Food Customize Modal (size/topping/độ cay) ─── */
+    var CustomizeModal = {
+        food: null,
+        currentBtn: null,
+
+        open: function (food, btn) {
+            this.food = food;
+            this.currentBtn = btn || null;
+            $('#cm-name').text(food.name);
+            $('#cm-image').attr('src', food.imageUrl || '/images/default_food.svg');
+            $('#cm-desc').text(food.description || '');
+            $('#cm-category').text(food.categoryName || '');
+            if (food.reviewCount > 0) {
+                $('#cm-rating').removeClass('d-none').addClass('d-flex');
+                $('#cm-rating-value').text(food.avgRating ? food.avgRating.toFixed(1) : '0');
+                $('#cm-rating-count').text('(' + food.reviewCount + ' đánh giá)');
+            } else {
+                $('#cm-rating').addClass('d-none').removeClass('d-flex');
+            }
+            this.renderGroups(food.modifierGroups || []);
+            $('#cm-qty').val(1);
+            this.updateTotal();
+            var modal = new bootstrap.Modal(document.getElementById('foodCustomizeModal'));
+            modal.show();
+        },
+
+        renderGroups: function (groups) {
+            var $container = $('#cm-groups');
+            $container.empty();
+            if (!groups || !groups.length) {
+                $container.html('<p class="text-muted mb-0">Món ăn này không có tùy chọn.</p>');
+                return;
+            }
+            $('#cm-loading').addClass('d-none');
+            groups.forEach(function (group) {
+                var $tmpl = group.isMultiple ? $('#cm-multi-group-template') : $('#cm-single-group-template');
+                var $g = $tmpl.html();
+                var $group = $($g);
+                $group.find('.cm-group-title').text(group.name);
+                if (group.description) {
+                    $group.find('.cm-group-desc').removeClass('d-none').text(group.description);
+                }
+                var $opts = $group.find('.cm-options');
+                if (group.isMultiple) {
+                    $group.find('.cm-group-count').text('Tối đa ' + group.maxOptions + ' lựa chọn');
+                } else {
+                    $group.find('.cm-group-required').removeClass('d-none').text('Bắt buộc');
+                }
+                (group.options || []).forEach(function (opt) {
+                    var $t = group.isMultiple ? $('#cm-option-multi').html() : $('#cm-option-single').html();
+                    $t = $t.replace(/__GROUP__/g, group.id);
+                    var $o = $t
+                        .replace(/__ID__/g, opt.id)
+                        .replace(/__OPTNAME__/g, opt.name)
+                        .replace(/__OPTPRICE__/g, opt.price)
+                        .replace(/__DEFAULT__/g, opt.isDefault);
+                    var $chip = $($o);
+                    $chip.find('.cm-option-name').text(opt.name);
+                    if (opt.price > 0) $chip.find('.cm-opt-price-display').text('+' + Number(opt.price).toLocaleString('vi-VN') + ' ₫');
+                    else $chip.find('.cm-opt-price-display').text('Miễn phí');
+                    if (opt.isDefault) $chip.find('.cm-opt-input').prop('checked', true);
+                    $opts.append($chip);
+                });
+                $container.append($group);
+            });
+        },
+
+        getSelected: function () {
+            var selected = [];
+            $('#cm-groups .cm-group').each(function () {
+                var isMulti = $(this).find('.cm-opt-input[type="checkbox"]').length > 0;
+                if (isMulti) {
+                    $(this).find('.cm-opt-input:checked').each(function () {
+                        selected.push($(this).val());
+                    });
+                } else {
+                    var $checked = $(this).find('.cm-opt-input:checked');
+                    if ($checked.length) selected.push($checked.val());
+                    else {
+                        var $first = $(this).find('.cm-opt-input').first();
+                        $first.prop('checked', true);
+                        selected.push($first.val());
+                    }
+                }
+            });
+            return selected;
+        },
+
+        getUnitPrice: function () {
+            var base = this.food.price || 0;
+            var addon = 0;
+            $('#cm-groups .cm-opt-input:checked').each(function () {
+                addon += Number($(this).data('price') || 0);
+            });
+            return base + addon;
+        },
+
+        updateTotal: function () {
+            var qty = parseInt($('#cm-qty').val(), 10) || 1;
+            var unit = this.getUnitPrice();
+            $('#cm-total').text(Number(unit * qty).toLocaleString('vi-VN') + ' ₫');
+        },
+
+        enforceMultiLimit: function ($group) {
+            var max = 1;
+            var $req = $group.closest('.cm-group').find('.cm-group-count');
+            var name = $group.closest('.cm-group').find('.cm-group-title').text();
+            // parse max from template container name lookup
+            CustomizeModal.food.modifierGroups.forEach(function (g) {
+                if (g.name === name) max = g.maxOptions;
+            });
+            var checked = $group.closest('.cm-group').find('.cm-opt-input:checked').length;
+            if (checked > max) {
+                PolyFood.showToast('Chỉ được chọn tối đa ' + max + ' lựa chọn cho "' + name + '".', 'warning');
+                $group.prop('checked', false);
+            }
+        }
+    };
+
     window.addToCart = function (id, isCombo, qty, btn) {
         qty = qty || 1;
+        var $btn = btn ? $(btn) : $();
+        if ($btn.length && $btn.prop('disabled')) return;
+
+        if (isCombo) {
+            addToCartDirect(id, isCombo, qty, btn);
+            return;
+        }
+
+        // Món lẻ: kiểm tra tùy chọn (size/topping/độ cay) qua API
+        $.getJSON('/api/foods/' + id)
+            .done(function (food) {
+                if (food.modifierGroups && food.modifierGroups.length) {
+                    CustomizeModal.open(food, btn);
+                } else {
+                    addToCartDirect(id, false, qty, btn);
+                }
+            })
+            .fail(function () {
+                addToCartDirect(id, false, qty, btn);
+            });
+    };
+
+    function addToCartDirect(id, isCombo, qty, btn) {
         var $btn = btn ? $(btn) : $();
         if ($btn.length && $btn.prop('disabled')) return;
         $btn.prop('disabled', true);
         var originalHtml = $btn.length ? $btn.html() : '';
         if ($btn.length) $btn.html('<span class="spinner-border spinner-border-sm me-1" role="status"></span>');
         $.ajax({
-            url: '/Cart/AddToCart',
+            url: '/api/cart/add',
             type: 'POST',
-            data: {
-                id: id,
-                isCombo: isCombo,
+            contentType: 'application/json',
+            data: JSON.stringify({
+                foodId: isCombo ? null : id,
+                comboId: isCombo ? id : null,
                 quantity: qty,
-                __RequestVerificationToken: PolyFood.csrfToken
-            },
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                optionIds: []
+            }),
             success: function (res) {
                 if (res.success) {
-                    var badge = $('#cart-badge');
-                    badge.text(res.cartCount).removeClass('d-none');
-                    badge.css('animation', 'none');
-                    setTimeout(function () { badge.css('animation', 'bounceIn 0.3s ease-out'); }, 10);
+                    updateCartBadge(res.count);
                     PolyFood.showToast(res.message || 'Đã thêm vào giỏ hàng!', 'success');
                 }
             },
-            error: function () {
-                PolyFood.showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'danger');
+            error: function (xhr) {
+                var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                PolyFood.showToast(msg, 'danger');
             },
             complete: function () {
                 $btn.prop('disabled', false);
                 if ($btn.length) $btn.html(originalHtml);
             }
         });
-    };
+    }
+
+    function updateCartBadge(count) {
+        var badge = $('#cart-badge');
+        if (count > 0) {
+            badge.text(count).removeClass('d-none');
+            badge.css('animation', 'none');
+            setTimeout(function () { badge.css('animation', 'bounceIn 0.3s ease-out'); }, 10);
+        } else {
+            badge.addClass('d-none');
+        }
+    }
 
     window.showToast = PolyFood.showToast;
 
@@ -188,5 +339,59 @@
     /* ─── Initialize ─── */
     $(document).ready(function () {
         PolyFood.init();
+
+        // ─── Food Customize Modal events ───
+        $('#cm-qty-plus').on('click', function () {
+            var $q = $('#cm-qty');
+            var v = parseInt($q.val(), 10) || 1;
+            if (v < 50) { $q.val(v + 1); CustomizeModal.updateTotal(); }
+        });
+        $('#cm-qty-minus').on('click', function () {
+            var $q = $('#cm-qty');
+            var v = parseInt($q.val(), 10) || 1;
+            if (v > 1) { $q.val(v - 1); CustomizeModal.updateTotal(); }
+        });
+        $('#cm-groups').on('change', '.cm-opt-input', function () {
+            if ($(this).attr('type') === 'checkbox') CustomizeModal.enforceMultiLimit($(this));
+            CustomizeModal.updateTotal();
+        });
+        $('#cm-add-btn').on('click', function () {
+            if (!CustomizeModal.food) return;
+            var $btn = $(this).prop('disabled', true);
+            var original = $btn.html();
+            $btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang thêm...');
+            var qty = parseInt($('#cm-qty').val(), 10) || 1;
+            $.ajax({
+                url: '/api/cart/add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    foodId: CustomizeModal.food.id,
+                    comboId: null,
+                    quantity: qty,
+                    optionIds: CustomizeModal.getSelected().map(Number)
+                }),
+                success: function (res) {
+                    if (res.success) {
+                        updateCartBadge(res.count);
+                        PolyFood.showToast(res.message || 'Đã thêm vào giỏ hàng!', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('foodCustomizeModal')).hide();
+                    }
+                },
+                error: function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    PolyFood.showToast(msg, 'danger');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html(original);
+                }
+            });
+        });
+        $('#foodCustomizeModal').on('hidden.bs.modal', function () {
+            $('#cm-groups').empty();
+            $('#cm-loading').removeClass('d-none');
+            CustomizeModal.food = null;
+        });
     });
 })();

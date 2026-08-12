@@ -4,9 +4,12 @@
     ViewData["Title"] = "Bảng Điều Khiển";
 }
 
-<div class="mb-4">
-    <h3 class="fw-bold text-dark mb-1">Bảng Điều Khiển</h3>
-    <p class="text-muted small">Tổng quan tình hình kinh doanh của PolyFood Store</p>
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Bảng Điều Khiển</h3>
+        <p class="text-muted small mb-0">Tổng quan tình hình kinh doanh của PolyFood Store</p>
+    </div>
+    <span class="badge bg-light text-muted border px-3 py-2 rounded-pill"><i class="fa-solid fa-rotate me-1 text-danger"></i>Tự cập nhật mỗi 10 giây</span>
 </div>
 
 <div class="row g-4 mb-5">
@@ -14,7 +17,7 @@
         <div class="admin-card-stat bg-orders">
             <div class="card-body">
                 <h6 class="text-white-50 text-uppercase fw-bold mb-2">Tổng Đơn Hàng</h6>
-                <h2 class="fw-bold mb-0">@ViewBag.TotalOrders</h2>
+                <h2 class="fw-bold mb-0" id="statTotalOrders">@ViewBag.TotalOrders</h2>
                 <i class="fa-solid fa-receipt admin-stat-icon"></i>
             </div>
         </div>
@@ -23,7 +26,7 @@
         <div class="admin-card-stat bg-pending">
             <div class="card-body">
                 <h6 class="text-white-50 text-uppercase fw-bold mb-2">Đơn Chưa Giao</h6>
-                <h2 class="fw-bold mb-0">@ViewBag.PendingOrders</h2>
+                <h2 class="fw-bold mb-0" id="statPendingOrders">@ViewBag.PendingOrders</h2>
                 <i class="fa-solid fa-clock admin-stat-icon"></i>
             </div>
         </div>
@@ -32,7 +35,7 @@
         <div class="admin-card-stat bg-revenue">
             <div class="card-body">
                 <h6 class="text-white-50 text-uppercase fw-bold mb-2">Doanh Thu Đã Giao</h6>
-                <h2 class="fw-bold mb-0">@(((decimal)ViewBag.TotalRevenue).ToString("N0")) ₫</h2>
+                <h2 class="fw-bold mb-0" id="statTotalRevenue">@(((decimal)ViewBag.TotalRevenue).ToString("N0")) ₫</h2>
                 <i class="fa-solid fa-sack-dollar admin-stat-icon"></i>
             </div>
         </div>
@@ -41,73 +44,262 @@
         <div class="admin-card-stat bg-users">
             <div class="card-body">
                 <h6 class="text-white-50 text-uppercase fw-bold mb-2">Người Dùng</h6>
-                <h2 class="fw-bold mb-0">@ViewBag.TotalUsers</h2>
+                <h2 class="fw-bold mb-0" id="statTotalUsers">@ViewBag.TotalUsers</h2>
                 <i class="fa-solid fa-users admin-stat-icon"></i>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
-    <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center border-0">
-        <h5 class="fw-bold text-dark mb-0">Đơn Hàng Mới Nhất</h5>
-        <a asp-action="Orders" class="btn btn-secondary-custom btn-custom py-2 px-3" style="font-size:.82rem;">Xem tất cả</a>
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white h-100">
+            <div class="card-header bg-white p-4 border-0">
+                <h5 class="fw-bold text-dark mb-1">Doanh Thu 7 Ngày</h5>
+                <p class="text-muted small mb-0">Chỉ tính các đơn đã giao thành công</p>
+            </div>
+            <div class="card-body pt-0 px-4 pb-4">
+                <div style="height: 300px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead class="bg-light">
-                <tr class="text-muted small">
-                    <th>Mã Đơn</th>
-                    <th>Khách Hàng</th>
-                    <th>Ngày Đặt</th>
-                    <th>Tổng Tiền</th>
-                    <th>Trạng Thái</th>
-                    <th class="text-center">Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">Chưa có đơn hàng nào.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var order in Model)
-                    {
-                        <tr>
-                            <td class="fw-bold text-dark">#@order.Id</td>
-                            <td>
-                                <div class="fw-bold">@order.ReceiverName</div>
-                                <div class="small text-muted">@order.ReceiverPhone</div>
-                            </td>
-                            <td class="small">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") ₫</td>
-                            <td>
-                                @if (order.Status == "Chưa giao")
-                                {
-                                    <span class="badge bg-warning text-dark px-3 py-1 rounded-pill">Chưa giao</span>
-                                }
-                                else if (order.Status == "Đang giao")
-                                {
-                                    <span class="badge bg-info text-dark px-3 py-1 rounded-pill">Đang giao</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-success px-3 py-1 rounded-pill">Đã giao</span>
-                                }
-                            </td>
-                            <td class="text-center">
-                                <a asp-action="OrderDetail" asp-route-id="@order.Id" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2" title="Chi tiết">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white h-100">
+            <div class="card-header bg-white p-4 border-0">
+                <h5 class="fw-bold text-dark mb-0">Trạng Thái Đơn Hàng</h5>
+            </div>
+            <div class="card-body pt-0 px-4 pb-4 d-flex align-items-center">
+                <div style="height: 240px; width: 100%;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="card-header bg-white p-4 border-0">
+                <h5 class="fw-bold text-dark mb-1">Đơn Hàng Mới Nhất</h5>
+                <p class="text-muted small mb-0">Cập nhật realtime mỗi 10 giây</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="text-muted small">
+                            <th>Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Ngày Đặt</th>
+                            <th>Tổng Tiền</th>
+                            <th>Trạng Thái</th>
+                            <th class="text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentOrdersBody">
+                        @if (!Model.Any())
+                        {
+                            <tr id="noOrdersRow">
+                                <td colspan="6" class="text-center py-4 text-muted">Chưa có đơn hàng nào.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var order in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark">#@order.Id</td>
+                                    <td>
+                                        <div class="fw-bold">@order.ReceiverName</div>
+                                        <div class="small text-muted">@order.ReceiverPhone</div>
+                                    </td>
+                                    <td class="small">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") ₫</td>
+                                    <td>
+                                        <span class="badge px-3 py-1 rounded-pill @Source.Models.OrderStatus.GetBadgeClass(order.Status)">@Source.Models.OrderStatus.GetLabel(order.Status)</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-action="OrderDetail" asp-route-id="@order.Id" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2" title="Chi tiết">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white h-100">
+            <div class="card-header bg-white p-4 border-0">
+                <h5 class="fw-bold text-dark mb-0">Top Món Bán Chạy</h5>
+            </div>
+            <div class="card-body pt-0 px-4 pb-4">
+                <div style="height: 300px;">
+                    <canvas id="topFoodsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script src="~/lib/qrcodejs/qrcode.min.js"></script>
+    <script>
+        let revenueChart, statusChart, topFoodsChart;
+
+        function statusColors(status) {
+            return {
+                Pending: '#ffc107', Preparing: '#0dcaf0', Shipping: '#0d6efd',
+                Delivered: '#198754', Cancelled: '#dc3545', Refunded: '#6c757d'
+            }[status] || '#6c757d';
+        }
+
+        function renderCharts(data) {
+            // Doanh thu theo ngày
+            const labels = data.revenueByDay.map(d => d.label);
+            const revenue = data.revenueByDay.map(d => d.revenue);
+            const orderCounts = data.revenueByDay.map(d => d.orders);
+
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Doanh thu (₫)',
+                        data: revenue,
+                        backgroundColor: 'rgba(255, 56, 56, .85)',
+                        borderRadius: 8,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Số đơn',
+                        data: orderCounts,
+                        type: 'line',
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, .1)',
+                        tension: .4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { font: { family: 'Plus Jakarta Sans' } } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => v >= 1000 ? (v / 1000) + 'k' : v } },
+                        y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+
+            // Trạng thái đơn (donut)
+            const stLabels = Object.keys(data.statusCounts).map(s => data.statusLabels[s] || s);
+            const stValues = Object.keys(data.statusCounts).map(s => data.statusCounts[s]);
+            const stColors = Object.keys(data.statusCounts).map(statusColors);
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: stLabels,
+                    datasets: [{ data: stValues, backgroundColor: stColors, borderWidth: 2, borderColor: '#ffffff' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } }
+                    }
+                }
+            });
+
+            // Top món bán chạy
+            const foods = data.topFoods.map(f => f.name.length > 18 ? f.name.slice(0, 18) + '…' : f.name);
+            const sold = data.topFoods.map(f => f.soldCount);
+
+            if (topFoodsChart) topFoodsChart.destroy();
+            topFoodsChart = new Chart(document.getElementById('topFoodsChart'), {
+                type: 'bar',
+                data: {
+                    labels: foods,
+                    datasets: [{
+                        label: 'Đã bán',
+                        data: sold,
+                        backgroundColor: 'rgba(255, 56, 56, .8)',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        function renderRecentOrders(orders) {
+            const body = document.getElementById('recentOrdersBody');
+            const emptyRow = document.getElementById('noOrdersRow');
+            if (!orders || orders.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có đơn hàng nào.</td></tr>';
+                return;
+            }
+            const rows = orders.map(o => `
+                <tr>
+                    <td class="fw-bold text-dark">#${o.id}</td>
+                    <td>
+                        <div class="fw-bold">${o.receiverName}</div>
+                        <div class="small text-muted">${o.receiverPhone}</div>
+                    </td>
+                    <td class="small">${new Date(o.orderDate).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td class="fw-bold text-danger">${Number(o.totalAmount).toLocaleString('vi-VN')} ₫</td>
+                    <td><span class="badge px-3 py-1 rounded-pill ${o.badgeClass}">${o.statusLabel}</span></td>
+                    <td class="text-center">
+                        <a href="/Admin/OrderDetail/${o.id}" class="btn btn-sm btn-outline-secondary border-0 rounded-circle p-2" title="Chi tiết">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>`).join('');
+            body.innerHTML = rows;
+        }
+
+        function updateStats(dashboard) {
+            const sc = dashboard.statusCounts || {};
+            const orderCount = Object.values(sc).reduce((a, b) => a + b, 0);
+            document.getElementById('statTotalOrders').textContent = orderCount;
+            document.getElementById('statPendingOrders').textContent = sc.Pending || 0;
+            const revenue = dashboard.revenueByDay.reduce((a, d) => a + d.revenue, 0);
+            document.getElementById('statTotalRevenue').textContent = Number(revenue).toLocaleString('vi-VN') + ' ₫';
+        }
+
+        async function refreshDashboard() {
+            try {
+                const [dash, recent] = await Promise.all([
+                    fetch('/api/admin/dashboard'),
+                    fetch('/api/admin/dashboard/recent')
+                ]);
+                const dashData = await dash.json();
+                const recentData = await recent.json();
+                updateStats(dashData);
+                renderCharts(dashData);
+                renderRecentOrders(recentData);
+            } catch (e) {
+                console.error('Lỗi tải dashboard:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshDashboard();
+            setInterval(refreshDashboard, 10000);
+        });
+    </script>
+}

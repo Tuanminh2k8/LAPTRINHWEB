@@ -73,19 +73,33 @@
                         <tbody>
                             @foreach (var detail in Model.OrderDetails)
                             {
-                                var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                                var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? detail.FastFoodName ?? "Sản phẩm";
                                 var img = detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
-                                
+                                var modifierTotal = detail.Modifiers.Sum(m => m.OptionPrice);
+
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <img src="@img" alt="@name" class="rounded-3" style="width: 42px; height: 42px; object-fit: cover;">
-                                            <span class="fw-bold text-dark" style="font-size:.85rem;">@name</span>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:.85rem;">@name</div>
+                                                @if (detail.Modifiers.Any())
+                                                {
+                                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                                        @foreach (var m in detail.Modifiers)
+                                                        {
+                                                            <span class="badge bg-light border text-muted rounded-pill" style="font-size:.65rem;">
+                                                                @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="text-center small">@detail.Price.ToString("N0") ₫</td>
+                                    <td class="text-center small">@((detail.Price + modifierTotal).ToString("N0")) ₫</td>
                                     <td class="text-center fw-bold">x @detail.Quantity</td>
-                                    <td class="text-end fw-bold text-danger small">@((detail.Price * detail.Quantity).ToString("N0")) ₫</td>
+                                    <td class="text-end fw-bold text-danger small">@(((detail.Price + modifierTotal) * detail.Quantity).ToString("N0")) ₫</td>
                                 </tr>
                             }
                         </tbody>
@@ -114,13 +128,20 @@
                 </div>
 
                 <div class="mb-3">
-                    <span class="text-muted small d-block">Địa chỉ giao hàng:</span>
-                    <strong class="text-dark">@Model.ReceiverAddress</strong>
+                    <span class="text-muted small d-block">@(Model.OrderType == "Pickup" ? "Hình thức nhận" : "Địa chỉ giao hàng"):</span>
+                    @if (Model.OrderType == "Pickup")
+                    {
+                        <strong class="text-dark">Tự đến lấy tại cửa hàng @(Model.PickupTime.HasValue ? "— " + Model.PickupTime.Value.ToString("dd/MM HH:mm") : "")</strong>
+                    }
+                    else
+                    {
+                        <strong class="text-dark">@Model.ReceiverAddress</strong>
+                    }
                 </div>
 
                 <div class="p-3 bg-light rounded-3 mt-4 border">
                     <span class="text-muted small d-block"><i class="fa-solid fa-shield-halved text-success me-1"></i>Trạng thái hiện tại:</span>
-                    <strong class="text-danger" style="font-size:1.2rem;">@Model.Status</strong>
+                    <strong class="text-danger" style="font-size:1.2rem;">@Source.Models.OrderStatus.GetLabel(Model.Status)</strong>
                 </div>
             </div>
         </div>

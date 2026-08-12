@@ -1,10 +1,14 @@
 @model Source.Models.Order
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Thanh Toán";
+    var isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
     var cart = ViewBag.Cart as List<Source.Models.CartItem> ?? new List<Source.Models.CartItem>();
     decimal subtotal = ViewBag.Subtotal ?? cart.Sum(i => i.TotalPrice);
     string? appliedPromo = ViewBag.PromoCode as string;
     decimal promoDiscount = ViewBag.PromoDiscount ?? 0m;
+    decimal shippingFee = 15000m;
+    decimal grandTotal = subtotal - promoDiscount + shippingFee;
 }
 
 <div class="container py-5">
@@ -16,8 +20,7 @@
         <p class="text-muted" style="font-size:.92rem;">Vui lòng kiểm tra lại thông tin người nhận và xác nhận đặt hàng</p>
     </div>
 
-    <form asp-controller="Cart" asp-action="Checkout" method="post">
-        @Html.AntiForgeryToken()
+    <div id="checkoutFormWrap">
         <div class="row g-4">
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
@@ -25,36 +28,58 @@
                         <i class="fa-solid fa-truck-ramp-box text-danger"></i> Thông Tin Giao Hàng
                     </h5>
 
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
-
-                    <div class="mb-3">
-                        <label asp-for="ReceiverName" class="form-label"></label>
-                        <input asp-for="ReceiverName" class="form-control form-control-custom" placeholder="Nhập tên người nhận..." />
-                        <span asp-validation-for="ReceiverName" class="text-danger small"></span>
+                    <!-- Loại đơn: Giao hàng / Tự đến lấy -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="font-size:.85rem;"><i class="fa-solid fa-circle-dot text-dark me-1"></i> Hình thức nhận hàng</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="orderType" id="otDelivery" value="Delivery" checked>
+                                <label for="otDelivery" class="btn btn-outline-danger w-100 py-2 rounded-3" style="font-size:.85rem;">
+                                    <i class="fa-solid fa-truck-fast me-1"></i> Giao hàng tận nơi
+                                    <div class="small fw-normal text-muted mt-1" style="font-size:.75rem;">Phí 15.000 ₫</div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <input type="radio" class="btn-check" name="orderType" id="otPickup" value="Pickup">
+                                <label for="otPickup" class="btn btn-outline-danger w-100 py-2 rounded-3" style="font-size:.85rem;">
+                                    <i class="fa-solid fa-store me-1"></i> Tự đến lấy
+                                    <div class="small fw-normal text-muted mt-1" style="font-size:.75rem;">Miễn phí vận chuyển</div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="ReceiverPhone" class="form-label"></label>
-                        <input asp-for="ReceiverPhone" class="form-control form-control-custom" placeholder="Nhập số điện thoại người nhận..." />
-                        <span asp-validation-for="ReceiverPhone" class="text-danger small"></span>
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Tên người nhận <span class="text-danger">*</span></label>
+                        <input type="text" id="receiverName" class="form-control form-control-custom" placeholder="Nhập tên người nhận..." value="@Model.ReceiverName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="text" id="receiverPhone" class="form-control form-control-custom" placeholder="Nhập số điện thoại người nhận..." value="@Model.ReceiverPhone" />
+                    </div>
+
+                    <div class="mb-3" id="addressField">
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Địa chỉ giao hàng <span class="text-danger">*</span></label>
+                        <textarea id="receiverAddress" class="form-control form-control-custom" rows="3" placeholder="Nhập địa chỉ giao hàng cụ thể..." value="@Model.ReceiverAddress"></textarea>
+                        <div class="form-text small">Bắt buộc khi chọn Giao hàng tận nơi</div>
+                    </div>
+
+                    <div class="mb-4 d-none" id="pickupTimeField">
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Thời gian đến lấy</label>
+                        <input type="datetime-local" id="pickupTime" class="form-control form-control-custom" />
+                        <div class="form-text small">Khoảng thời gian bạn muốn đến lấy món</div>
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="ReceiverAddress" class="form-label"></label>
-                        <textarea asp-for="ReceiverAddress" class="form-control form-control-custom" rows="3" placeholder="Nhập địa chỉ giao hàng cụ thể..."></textarea>
-                        <span asp-validation-for="ReceiverAddress" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-4">
-                        <label asp-for="Note" class="form-label"></label>
-                        <textarea asp-for="Note" class="form-control form-control-custom" rows="2" placeholder="Ghi chú cho cửa hàng (không bắt buộc)..."></textarea>
-                        <span asp-validation-for="Note" class="text-danger small"></span>
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Ghi chú</label>
+                        <textarea id="note" class="form-control form-control-custom" rows="2" placeholder="Ghi chú cho cửa hàng (không bắt buộc)..." value="@Model.Note"></textarea>
                     </div>
 
                     <div class="p-3 bg-light rounded-3 border">
                         <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size:.85rem;"><i class="fa-solid fa-wallet text-success"></i>Phương Thức Thanh Toán</h6>
                         <div class="form-check payment-option mb-2 p-3 border rounded-3 bg-white">
-                            <input class="form-check-input ms-0 me-2" type="radio" asp-for="PaymentMethod" value="COD" id="payCod" checked>
+                            <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" value="COD" id="payCod" checked>
                             <label class="form-check-label fw-600 w-100" for="payCod" style="font-size:.88rem;">
                                 <i class="fa-solid fa-hand-holding-dollar text-warning me-1"></i>
                                 Thanh toán khi nhận hàng (COD)
@@ -62,7 +87,7 @@
                             </label>
                         </div>
                         <div class="form-check payment-option p-3 border rounded-3 bg-white">
-                            <input class="form-check-input ms-0 me-2" type="radio" asp-for="PaymentMethod" value="Bank" id="payBank">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" value="Bank" id="payBank">
                             <label class="form-check-label fw-600 w-100" for="payBank" style="font-size:.88rem;">
                                 <i class="fa-solid fa-building-columns text-primary me-1"></i>
                                 Chuyển khoản ngân hàng
@@ -80,15 +105,28 @@
                     <div class="pe-1" style="max-height: 300px; overflow-y: auto;">
                         @foreach (var item in cart)
                         {
-                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;">
-                                    <div>
-                                        <h6 class="fw-bold mb-0 text-dark" style="font-size:.85rem;">@item.Name</h6>
-                                        <span class="text-muted small">x @item.Quantity</span>
+                            <div class="mb-3 pb-2 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark" style="font-size:.85rem;">@item.Name</h6>
+                                            <span class="text-muted small">x @item.Quantity</span>
+                                        </div>
                                     </div>
+                                    <span class="fw-bold text-danger" style="font-size:.85rem;">@item.TotalPrice.ToString("N0") ₫</span>
                                 </div>
-                                <span class="fw-bold text-danger" style="font-size:.85rem;">@item.TotalPrice.ToString("N0") ₫</span>
+                                @if (item.Modifiers.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1 mt-1 ps-2">
+                                        @foreach (var m in item.Modifiers)
+                                        {
+                                            <span class="badge bg-light border text-muted rounded-pill small" style="font-size:.68rem;">
+                                                @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
+                                            </span>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
@@ -120,16 +158,16 @@
 
                     <div class="d-flex justify-content-between mt-1">
                         <span class="fw-bold text-muted" style="font-size:.9rem;">Phí vận chuyển:</span>
-                        <span class="badge bg-success">FREE</span>
+                        <span id="ck-shipping" class="fw-bold" style="font-size:.9rem;">@shippingFee.ToString("N0") ₫</span>
                     </div>
 
                     <div class="d-flex justify-content-between mt-2 pt-2 border-top">
                         <span class="fw-bold text-dark" style="font-size:1rem;">Tổng cộng:</span>
-                        <span id="ck-total" class="fw-800 text-danger" style="font-size:1.5rem;">@((subtotal - promoDiscount).ToString("N0")) ₫</span>
+                        <span id="ck-total" class="fw-800 text-danger" style="font-size:1.5rem;">@grandTotal.ToString("N0") ₫</span>
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
+                        <button type="button" id="btnPlaceOrder" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
                             <i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng
                         </button>
                         <a asp-action="Index" class="btn btn-secondary-custom btn-custom w-100 py-2 rounded-pill mt-2">
@@ -139,52 +177,153 @@
                 </div>
             </div>
         </div>
-    </form>
+    </div>
+
+    <!-- Kết quả đặt hàng (ẩn, hiện sau khi đặt thành công) -->
+    <div id="orderSuccessWrap" class="d-none">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5 text-center">
+                    <div class="success-check mb-3">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-2">Đặt hàng thành công!</h3>
+                    <p class="text-muted mb-4">Đơn hàng <strong>#<span id="sc-order-id"></span></strong> của bạn đã được ghi nhận.</p>
+
+                    <div id="sc-bank-block" class="d-none">
+                        <div class="alert alert-warning border-0 rounded-3 small text-start d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Vui lòng chuyển khoản <strong>đúng số tiền</strong> và <strong>đúng nội dung</strong> để đơn được xác nhận tự động.</span>
+                        </div>
+                        <div class="row g-3 mb-3 text-start">
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3 h-100">
+                                    <div class="text-muted small mb-1"><i class="fa-solid fa-building-columns me-1"></i> Ngân hàng</div>
+                                    <div class="fw-bold text-dark">Vietcombank — CN Đồng Nai</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3 h-100">
+                                    <div class="text-muted small mb-1"><i class="fa-solid fa-user me-1"></i> Chủ tài khoản</div>
+                                    <div class="fw-bold text-dark">CONG TY TNHH POLYFOOD</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="text-muted small mb-1"><i class="fa-solid fa-hashtag me-1"></i> Số tài khoản</div>
+                                    <div class="fw-bold text-dark">0123456789012</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="text-muted small mb-1"><i class="fa-solid fa-money-bill-wave me-1"></i> Số tiền cần chuyển</div>
+                                    <div class="fw-800 text-danger fs-5" id="sc-bank-amount"></div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3">
+                                    <div class="text-muted small mb-1"><i class="fa-solid fa-message me-1"></i> Nội dung chuyển khoản</div>
+                                    <div class="fw-bold text-dark">POLYFOOD <span id="sc-bank-content"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="text-muted small mb-2">Hoặc quét mã QR để nhập thông tin chuyển khoản:</div>
+                            <div id="sc-qr" class="d-inline-block bg-white p-3 border rounded-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-center">
+                        @if (isAuthenticated)
+                        {
+                            <a id="sc-track-link" href="#" class="btn btn-primary-custom btn-custom flex-fill py-3 rounded-pill shadow">
+                                <i class="fa-solid fa-truck-fast me-2"></i> Theo dõi đơn hàng
+                            </a>
+                            <a asp-controller="Orders" asp-action="Index" class="btn btn-secondary-custom btn-custom flex-fill py-3 rounded-pill">
+                                <i class="fa-solid fa-receipt me-2"></i> Đơn hàng của tôi
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-primary-custom btn-custom flex-fill py-3 rounded-pill shadow">
+                                <i class="fa-solid fa-utensils me-2"></i> Về trang chủ
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/qrcodejs/qrcode.min.js"></script>
     <script>
-        // Chống double-submit khi bấm Xác Nhận Đặt Hàng
-        $('form').on('submit', function () {
-            var $btn = $(this).find('button[type="submit"]');
-            if ($(this).valid && !$(this).valid()) return;
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...');
-        });
-
-        // ─── Mã giảm giá ───
         (function () {
-            var token = $('input[name="__RequestVerificationToken"]').first().val() || '';
+            var shippingFee = 15000;
+            var currentPromo = '@Html.Raw(appliedPromo ?? "")';
+            var currentDiscount = @promoDiscount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
             function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' ₫'; }
-            function updateTotals(res) {
-                $('#ck-subtotal').text(fmt(res.subtotal));
-                $('#ck-total').text(fmt(res.total));
-                if (res.discount > 0) {
-                    $('#ck-discount').text('-' + fmt(res.discount));
-                    $('#ck-discount-row').show();
-                } else {
-                    $('#ck-discount-row').hide();
-                }
+
+            function computeTotals() {
+                var subtotal = parseFloat($('#ck-subtotal').data('subtotal')) || parseFloat(@subtotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+                var $ship = $('#ck-shipping').text($('input[name="orderType"]:checked').val() === 'Pickup' ? fmt(0) : fmt(shippingFee));
+                var fee = $('input[name="orderType"]:checked').val() === 'Pickup' ? 0 : shippingFee;
+                $('#ck-total').text(fmt(subtotal - currentDiscount + fee));
             }
+
+            // Lưu subtotal vào data attribute
+            $('#ck-subtotal').data('subtotal', @subtotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+
+            // Chuyển đổi Delivery / Pickup
+            $('input[name="orderType"]').on('change', function () {
+                var isPickup = $(this).val() === 'Pickup';
+                $('#addressField').toggleClass('d-none', isPickup);
+                $('#addressField .form-label .text-danger').toggleClass('d-none', isPickup);
+                $('#pickupTimeField').toggleClass('d-none', !isPickup);
+                computeTotals();
+            });
+            if ($('#pickupTime').length) {
+                var now = new Date(); now.setMinutes(now.getMinutes() + 30);
+                now.setSeconds(0, 0);
+                var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+                $('#pickupTime').val(now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes()));
+            }
+
+            // ─── Mã giảm giá qua API ───
             function feedback(html, ok) {
                 $('#promoFeedback').removeClass('d-none text-success text-danger')
                     .addClass(ok ? 'text-success' : 'text-danger').html(html);
             }
             function applyPromo() {
                 var code = $.trim($('#promoInput').val());
+                if (!code) return;
                 var $btn = $('#btnApplyPromo').prop('disabled', true);
-                $.post('/Cart/ApplyPromo', { promoCode: code, __RequestVerificationToken: token })
+                $.post('/api/cart/promo', { code: code })
                     .done(function (res) {
-                        updateTotals(res);
                         if (res.success) {
+                            currentPromo = res.promoCode || code;
+                            currentDiscount = res.discount || 0;
+                            $('#ck-subtotal').data('subtotal', res.subtotal);
+                            $('#ck-discount').text('-' + fmt(res.discount));
+                            $('#ck-discount-row').show();
                             feedback('<i class="fa-solid fa-circle-check me-1"></i>' + res.message +
                                 ' <a href="#" id="btnRemovePromo" class="text-danger ms-2">Bỏ mã</a>', true);
                             if (window.showToast) showToast(res.message, 'success');
                         } else {
+                            currentDiscount = 0; currentPromo = '';
+                            $('#ck-discount-row').hide();
                             feedback('<i class="fa-solid fa-circle-exclamation me-1"></i>' + res.message, false);
                         }
+                        computeTotals();
                     })
-                    .fail(function () { feedback('Có lỗi xảy ra. Vui lòng thử lại.', false); })
+                    .fail(function (xhr) {
+                        currentDiscount = 0; $('#ck-discount-row').hide();
+                        var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        feedback('<i class="fa-solid fa-circle-exclamation me-1"></i>' + msg, false);
+                    })
                     .always(function () { $btn.prop('disabled', false); });
             }
             $('#btnApplyPromo').on('click', applyPromo);
@@ -193,12 +332,93 @@
             });
             $(document).on('click', '#btnRemovePromo', function (e) {
                 e.preventDefault();
-                $.post('/Cart/RemovePromo', { __RequestVerificationToken: token })
+                $.post('/api/cart/remove-promo', {})
                     .done(function (res) {
-                        updateTotals(res);
+                        currentPromo = ''; currentDiscount = 0;
                         $('#promoInput').val('');
+                        $('#ck-discount-row').hide();
+                        computeTotals();
                         feedback('<i class="fa-solid fa-circle-info me-1"></i>' + res.message, true);
                     });
+            });
+
+            // ─── Đặt hàng ───
+            function showSuccess(result) {
+                $('#checkoutFormWrap').addClass('d-none');
+                $('#orderSuccessWrap').removeClass('d-none');
+                $('#sc-order-id').text(result.orderId);
+                var isBank = result.paymentMethod === 'Bank';
+                if (isBank) {
+                    $('#sc-bank-block').removeClass('d-none');
+                    var content = 'POLYFOOD ' + result.orderId;
+                    var amount = result.total;
+                    $('#sc-bank-amount').text(fmt(amount));
+                    $('#sc-bank-content').text(content);
+                    if (window.QRCode) {
+                        new QRCode(document.getElementById('sc-qr'), {
+                            text: 'https://qrcode.vietqr.vn/0123456789012|CONG TY TNHH POLYFOOD|' + amount + '|' + content,
+                            width: 180, height: 180
+                        });
+                    }
+                }
+                @if (isAuthenticated)
+                {
+                    <text>$('#sc-track-link').attr('href', '/Orders/Tracking/' + result.orderId);</text>
+                }
+                $('html, body').animate({ scrollTop: 0 }, 400);
+            }
+
+            $('#btnPlaceOrder').on('click', function () {
+                var $btn = $(this).prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...');
+
+                var orderType = $('input[name="orderType"]:checked').val();
+                var paymentMethod = $('input[name="paymentMethod"]:checked').val();
+                var receiverName = $.trim($('#receiverName').val());
+                var receiverPhone = $.trim($('#receiverPhone').val());
+                var receiverAddress = $.trim($('#receiverAddress').val());
+                var pickupTime = $('#pickupTime').val();
+                var note = $.trim($('#note').val());
+
+                // Validate client
+                if (!receiverName) { showToast('Vui lòng nhập tên người nhận.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return; }
+                if (!receiverPhone) { showToast('Vui lòng nhập số điện thoại.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return; }
+                if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(receiverPhone.replace(/\s/g, ''))) {
+                    showToast('Số điện thoại Việt Nam không hợp lệ.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return;
+                }
+                if (orderType === 'Delivery' && !receiverAddress) { showToast('Vui lòng nhập địa chỉ giao hàng.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return; }
+
+                var payload = {
+                    receiverName: receiverName,
+                    receiverPhone: receiverPhone,
+                    receiverAddress: receiverAddress,
+                    orderType: orderType,
+                    pickupTime: orderType === 'Pickup' && pickupTime ? new Date(pickupTime).toISOString() : null,
+                    paymentMethod: paymentMethod,
+                    note: note,
+                    promoCode: currentPromo || null
+                };
+
+                $.ajax({
+                    url: '/api/orders',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload)
+                }).done(function (res) {
+                    if (res.success) {
+                        if (window.updateCartBadge) updateCartBadge();
+                        else document.querySelector('#cart-badge').textContent = '0';
+                        showSuccess(res);
+                    } else {
+                        showToast(res.message || 'Không thể đặt hàng.', 'danger');
+                    }
+                }).fail(function (xhr) {
+                    var msg = 'Không thể đặt hàng. Vui lòng thử lại.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    showToast(msg, 'danger');
+                }).always(function () {
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng');
+                });
             });
         })();
     </script>

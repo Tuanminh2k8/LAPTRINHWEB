@@ -16,6 +16,10 @@ namespace Source.Models
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
 
+        /// <summary>Emoji / icon hiển thị bên cạnh tên món, lấy từ bộ ảnh local.</summary>
+        [Display(Name = "Biểu tượng")]
+        public string Icon { get; set; } = "🍔";
+
         // Navigation property
         public ICollection<FastFood> FastFoods { get; set; } = new List<FastFood>();
     }

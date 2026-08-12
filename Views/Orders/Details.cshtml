@@ -61,8 +61,8 @@
                         <span class="text-muted small"><i class="fa-solid fa-calendar me-1"></i>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
                     </div>
                     <div>
-                        <span class="badge @GetStatusBadgeClass(Model.Status) px-3 py-2 rounded-pill">
-                            <i class="fa-solid @GetStatusIcon(Model.Status) me-1"></i>@GetStatusLabel(Model.Status)
+                        <span class="badge @Source.Models.OrderStatus.GetBadgeClass(Model.Status) px-3 py-2 rounded-pill">
+                            <i class="fa-solid @GetStatusIcon(Model.Status) me-1"></i>@Source.Models.OrderStatus.GetLabel(Model.Status)
                         </span>
                     </div>
                 </div>
@@ -149,17 +149,31 @@
                                 {
                                     var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
                                     var img = detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
+                                    var modifierTotal = detail.Modifiers.Sum(m => m.OptionPrice);
 
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="@img" alt="@name" class="rounded-3" style="width: 42px; height: 42px; object-fit: cover;">
-                                                <span class="fw-bold text-dark" style="font-size:.85rem;">@name</span>
+                                                <div>
+                                                    <div class="fw-bold text-dark" style="font-size:.85rem;">@name</div>
+                                                    @if (detail.Modifiers.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                                            @foreach (var m in detail.Modifiers)
+                                                            {
+                                                                <span class="badge bg-light border text-muted rounded-pill" style="font-size:.65rem;">
+                                                                    @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
                                             </div>
                                         </td>
-                                        <td class="text-center small">@detail.Price.ToString("N0") ₫</td>
+                                        <td class="text-center small">@((detail.Price + modifierTotal).ToString("N0")) ₫</td>
                                         <td class="text-center fw-bold">x @detail.Quantity</td>
-                                        <td class="text-end fw-bold text-danger small">@((detail.Price * detail.Quantity).ToString("N0")) ₫</td>
+                                        <td class="text-end fw-bold text-danger small">@(((detail.Price + modifierTotal) * detail.Quantity).ToString("N0")) ₫</td>
                                     </tr>
                                 }
                             </tbody>
@@ -168,7 +182,7 @@
 
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top">
                         <span class="fw-bold text-dark" style="font-size:1rem;">Tổng tiền món ăn:</span>
-                        <span class="fw-800 text-danger" style="font-size:1.4rem;">@Model.OrderDetails.Sum(d => d.Price * d.Quantity).ToString("N0") ₫</span>
+                        <span class="fw-800 text-danger" style="font-size:1.4rem;">@Model.OrderDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity).ToString("N0") ₫</span>
                     </div>
                 </div>
             </div>
@@ -191,10 +205,19 @@
                                 <p class="fw-bold text-dark mb-0">@Model.ReceiverPhone</p>
                             </div>
                         </div>
-                        <div class="col-12">
+                        <div class="col-md-6">
                             <div class="p-3 bg-light rounded-3">
-                                <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2"></i>Địa chỉ giao hàng</p>
-                                <p class="fw-bold text-dark mb-0">@Model.ReceiverAddress</p>
+                                <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2"></i>@(Model.OrderType == "Pickup" ? "Hình thức nhận" : "Địa chỉ giao hàng")</p>
+                                <p class="fw-bold text-dark mb-0">
+                                    @if (Model.OrderType == "Pickup")
+                                    {
+                                        <text>Tự đến lấy tại cửa hàng @(Model.PickupTime.HasValue ? "— " + Model.PickupTime.Value.ToString("dd/MM HH:mm") : "")</text>
+                                    }
+                                    else
+                                    {
+                                        @Model.ReceiverAddress
+                                    }
+                                </p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -221,7 +244,7 @@
                     <div class="row g-2">
                         <div class="col-6">
                             <p class="text-muted small mb-0">Tổng tiền món ăn:</p>
-                            <p class="fw-bold text-dark mb-0">@Model.OrderDetails.Sum(d => d.Price * d.Quantity).ToString("N0") ₫</p>
+                            <p class="fw-bold text-dark mb-0">@Model.OrderDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity).ToString("N0") ₫</p>
                         </div>
                         <div class="col-6 text-md-end">
                             @if (Model.Discount > 0)
@@ -268,6 +291,43 @@
                     </div>
                 </div>
             }
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                    <div class="card-header bg-light p-3 border-0 rounded-top-4">
+                        <h5 class="fw-bold text-dark mb-0 pb-2" style="font-size:1rem;">Đã Nhận Món? Hãy Đánh Giá!</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        @foreach (var detail in Model.OrderDetails.Where(d => d.FastFoodId.HasValue))
+                        {
+                            var name = detail.FastFood?.Name ?? detail.FastFoodName ?? "Món ăn";
+                            var img = detail.FastFood?.ImageUrl ?? "/images/default_food.svg";
+                            var isDelivered = Model.Status == Source.Models.OrderStatus.Delivered;
+                            <div class="d-flex align-items-center justify-content-between py-2 @(detail != Model.OrderDetails.Where(d => d.FastFoodId.HasValue).First() ? "border-top" : "")">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="@img" alt="@name" class="rounded-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <span class="fw-bold text-dark" style="font-size:.85rem;">@name</span>
+                                    @if (!isDelivered)
+                                    {
+                                        <span class="badge bg-light text-muted border rounded-pill small">Chỉ đánh giá khi đơn đã giao</span>
+                                    }
+                                </div>
+                                <button type="button"
+                                        class="btn @(isDelivered ? "btn-outline-warning" : "btn-outline-secondary disabled") rounded-pill px-3 py-1 d-flex align-items-center gap-1"
+                                        style="font-size:.8rem;"
+                                        @(isDelivered ? $"data-bs-toggle=\"modal\" data-bs-target=\"#reviewModal\" onclick=\"openReview({Model.Id},{detail.FastFoodId.GetValueOrDefault()},'{name.Replace("'", "\\'")}')\"" : "disabled")>
+                                    <i class="fa-solid fa-star"></i> Đánh giá
+                                </button>
+                            </div>
+                        }
+                        @if (!Model.OrderDetails.Any(d => d.FastFoodId.HasValue))
+                        {
+                            <p class="text-muted small mb-0">Đơn có món combo nên chưa hỗ trợ đánh giá từng món.</p>
+                        }
+                    </div>
+                </div>
+            }
         </div>
 
         <div class="col-lg-4">
@@ -278,7 +338,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">Tổng tiền món ăn</span>
-                        <span class="fw-bold text-dark">@Model.OrderDetails.Sum(d => d.Price * d.Quantity).ToString("N0") ₫</span>
+                        <span class="fw-bold text-dark">@Model.OrderDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity).ToString("N0") ₫</span>
                     </div>
                     @if (Model.Discount > 0)
                     {
@@ -344,6 +404,44 @@
     </div>
 </div>
 
+<!-- Modal đánh giá sản phẩm -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning-subtle border-0 rounded-top-4">
+                <h5 class="modal-title fw-600 text-dark" id="reviewModalLabel">
+                    <i class="fa-solid fa-star text-warning me-2"></i>Đánh giá món ăn
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="fw-bold text-dark mb-1" id="reviewFoodName" style="font-size:1rem;"></div>
+                    <div class="review-stars d-flex justify-content-center gap-1 fs-2">
+                        <i class="fa-regular fa-star text-warning review-star" data-value="1"></i>
+                        <i class="fa-regular fa-star text-warning review-star" data-value="2"></i>
+                        <i class="fa-regular fa-star text-warning review-star" data-value="3"></i>
+                        <i class="fa-regular fa-star text-warning review-star" data-value="4"></i>
+                        <i class="fa-regular fa-star text-warning review-star" data-value="5"></i>
+                    </div>
+                    <div class="text-muted small mt-1">Chạm để chọn số sao</div>
+                </div>
+                <div class="mb-3">
+                    <label for="reviewComment" class="form-label fw-bold small">Nhận xét của bạn</label>
+                    <textarea id="reviewComment" class="form-control form-control-custom" rows="3" maxlength="1000" placeholder="Món ăn ngon, đóng gói cẩn thận..."></textarea>
+                    <div class="form-text small text-end"><span id="reviewCommentCount">0</span>/1000</div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning rounded-pill px-4 fw-600 text-dark" id="btnSubmitReview">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Gửi đánh giá
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <style>
         .timeline-status { position: relative; }
@@ -392,12 +490,86 @@
                     }
                 });
             });
+
+            // ─── Đánh giá sản phẩm ───
+            var reviewOrderId = 0, reviewFoodId = 0, reviewRating = 5;
+
+            window.openReview = function (orderId, foodId, name) {
+                reviewOrderId = orderId;
+                reviewFoodId = foodId;
+                reviewRating = 5;
+                $('#reviewFoodName').text(name);
+                $('#reviewComment').val('');
+                $('#reviewCommentCount').text('0');
+                $('.review-star').each(function (i) {
+                    $(this).removeClass('fa-solid').addClass('fa-regular');
+                });
+                setStars(5);
+            };
+
+            function setStars(rating) {
+                reviewRating = rating;
+                $('.review-star').each(function () {
+                    var v = $(this).data('value');
+                    if (v <= rating) {
+                        $(this).removeClass('fa-regular').addClass('fa-solid');
+                    } else {
+                        $(this).removeClass('fa-solid').addClass('fa-regular');
+                    }
+                });
+            }
+
+            $('.review-star').on('click', function () {
+                setStars($(this).data('value'));
+            });
+            $('.review-star').on('mouseenter', function () {
+                var v = $(this).data('value');
+                $('.review-star').each(function () {
+                    if ($(this).data('value') <= v) $(this).removeClass('fa-regular').addClass('fa-solid');
+                    else $(this).removeClass('fa-solid').addClass('fa-regular');
+                });
+            });
+            $('#reviewModal').on('mouseleave', function () {
+                setStars(reviewRating);
+            });
+
+            $('#reviewComment').on('input', function () {
+                $('#reviewCommentCount').text($(this).val().length);
+            });
+
+            $('#btnSubmitReview').on('click', function () {
+                var $btn = $(this).prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang gửi...');
+                $.ajax({
+                    url: '/api/reviews',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        orderId: reviewOrderId,
+                        foodId: reviewFoodId,
+                        rating: reviewRating,
+                        comment: $('#reviewComment').val()
+                    })
+                }).done(function (res) {
+                    if (res.success) {
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+                        if (modal) modal.hide();
+                        PolyFood.showToast('Cảm ơn bạn đã đánh giá!', 'success');
+                        setTimeout(function () { window.location.reload(); }, 800);
+                    } else {
+                        PolyFood.showToast(res.message || 'Có lỗi xảy ra.', 'danger');
+                    }
+                }).fail(function (xhr) {
+                    var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    PolyFood.showToast(msg, 'danger');
+                }).always(function () {
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-paper-plane me-1"></i> Gửi đánh giá');
+                });
+            });
         });
     </script>
 }
 
 @functions {
-    string GetStatusLabel(string status) => status switch { "Pending" => "Chờ xác nhận", "Preparing" => "Đang chuẩn bị", "Shipping" => "Đang giao", "Delivered" => "Đã giao", "Cancelled" => "Đã hủy", "Refunded" => "Hoàn tiền", _ => status };
-    string GetStatusBadgeClass(string status) => status switch { "Pending" => "bg-warning text-dark", "Preparing" => "bg-info text-dark", "Shipping" => "bg-primary", "Delivered" => "bg-success", "Cancelled" => "bg-danger", "Refunded" => "bg-secondary", _ => "bg-secondary" };
     string GetStatusIcon(string status) => status switch { "Pending" => "fa-hourglass-start", "Preparing" => "fa-utensils", "Shipping" => "fa-motorcycle", "Delivered" => "fa-circle-check", "Cancelled" => "fa-xmark-circle", "Refunded" => "fa-rotate-left", _ => "fa-question" };
 }

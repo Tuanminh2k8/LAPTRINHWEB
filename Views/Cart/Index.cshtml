@@ -5,6 +5,22 @@
     var isAuthenticated = HttpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true;
 }
 
+@functions {
+    string RowKey(Source.Models.CartItem item)
+    {
+        var optKey = string.Join("-", item.Modifiers.Select(m => m.OptionId));
+        return item.IsCombo ? $"c{item.ComboId.GetValueOrDefault()}" : $"f{item.FastFoodId.GetValueOrDefault()}-{optKey}";
+    }
+
+    string CartStateLine(Source.Models.CartItem item)
+    {
+        var foodId = item.IsCombo ? "null" : (item.FastFoodId?.ToString() ?? "null");
+        var comboId = item.IsCombo ? (item.ComboId?.ToString() ?? "null") : "null";
+        var optionIds = string.Join(",", item.Modifiers.Select(m => m.OptionId));
+        return $"{{ key: '{RowKey(item)}', foodId: {foodId}, comboId: {comboId}, optionIds: [{optionIds}], isCombo: {item.IsCombo.ToString().ToLower()} }},";
+    }
+}
+
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
@@ -48,8 +64,8 @@
                             <tbody>
                                 @foreach (var item in Model)
                                 {
-                                    var itemId = item.IsCombo ? item.ComboId!.Value : item.FastFoodId!.Value;
-                                    <tr id="cart-row-@itemId-@item.IsCombo">
+                                    var rowKey = RowKey(item);
+                                    <tr id="cart-row-@rowKey">
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
                                                 <img src="@item.ImageUrl" alt="@item.Name" class="rounded-3 shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" loading="lazy">
@@ -63,22 +79,33 @@
                                                     {
                                                         <span class="badge bg-light text-muted border rounded-pill small mt-1">Món lẻ</span>
                                                     }
+                                                    @if (item.Modifiers.Any())
+                                                    {
+                                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                                            @foreach (var m in item.Modifiers)
+                                                            {
+                                                                <span class="badge bg-light border text-muted rounded-pill small" style="font-size:.68rem;">
+                                                                    @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    }
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="fw-bold text-secondary" style="font-size:.9rem;">@item.Price.ToString("N0") ₫</td>
+                                        <td class="fw-bold text-secondary" style="font-size:.9rem;">@item.UnitPrice.ToString("N0") ₫</td>
                                         <td class="text-center">
                                             <div class="quantity-control mx-auto" style="height:34px;">
-                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity - 1))" style="width:34px;height:34px;font-size:.85rem;">-</button>
-                                                <input type="number" id="qty-input-@itemId-@item.IsCombo" value="@item.Quantity" readonly style="width:40px;height:34px;font-size:.85rem;">
-                                                <button type="button" onclick="updateQuantity(@itemId, @item.IsCombo.ToString().ToLower(), @(item.Quantity + 1))" style="width:34px;height:34px;font-size:.85rem;">+</button>
+                                                <button type="button" onclick="updateQuantity('@rowKey', @(item.Quantity - 1))" style="width:34px;height:34px;font-size:.85rem;">-</button>
+                                                <input type="number" id="qty-input-@rowKey" value="@item.Quantity" readonly style="width:40px;height:34px;font-size:.85rem;">
+                                                <button type="button" onclick="updateQuantity('@rowKey', @(item.Quantity + 1))" style="width:34px;height:34px;font-size:.85rem;">+</button>
                                             </div>
                                         </td>
-                                        <td class="text-end fw-bold text-danger fs-6" id="item-total-@itemId-@item.IsCombo" style="font-size:1rem;">
+                                        <td class="text-end fw-bold text-danger fs-6" id="item-total-@rowKey" style="font-size:1rem;">
                                             @item.TotalPrice.ToString("N0") ₫
                                         </td>
                                         <td class="text-center">
-                                            <button onclick="removeItem(@itemId, @item.IsCombo.ToString().ToLower())" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2">
+                                            <button onclick="removeItem('@rowKey')" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2">
                                                 <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                         </td>
@@ -89,12 +116,9 @@
                     </div>
 
                     <div class="p-3 bg-light d-flex justify-content-between align-items-center border-top">
-                        <form asp-controller="Cart" asp-action="ClearCart" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="return confirm('Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?');" style="font-size:.82rem;">
-                                <i class="fa-solid fa-broom me-1"></i> Xóa toàn bộ
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="clearCart()" style="font-size:.82rem;">
+                            <i class="fa-solid fa-broom me-1"></i> Xóa toàn bộ
+                        </button>
                         <span class="text-muted small">Tự động lưu giỏ hàng</span>
                     </div>
                 </div>
@@ -111,7 +135,7 @@
 
                     <div class="d-flex justify-content-between mb-3 text-secondary" style="font-size:.9rem;">
                         <span>Phí giao hàng:</span>
-                        <span class="badge bg-success">Miễn Phí</span>
+                        <span class="badge bg-success">Tính khi đặt</span>
                     </div>
 
                     <hr class="my-3">
@@ -121,66 +145,135 @@
                         <span class="fw-800 text-danger" id="cart-total-amount" style="font-size:1.4rem;">@Model.Sum(i => i.TotalPrice).ToString("N0") ₫</span>
                     </div>
 
-                    @if (isAuthenticated)
-                    {
-                        <a asp-controller="Cart" asp-action="Checkout" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
-                            <i class="fa-solid fa-credit-card me-2"></i> Tiến Hành Thanh Toán
-                        </a>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Index", "Cart")" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow">
-                            <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập để thanh toán
-                        </a>
-                    }
+                    <a asp-action="Checkout" class="btn btn-primary-custom btn-custom w-100 py-3 rounded-pill shadow" id="btnGoCheckout">
+                        <i class="fa-solid fa-credit-card me-2"></i> Tiến Hành Thanh Toán
+                    </a>
+                    <p class="text-muted small text-center mt-2 mb-0">Khách vãng lai vẫn thanh toán được, không cần tài khoản.</p>
                 </div>
             </div>
         </div>
     }
 </div>
 
-@Html.AntiForgeryToken()
-
 @section Scripts {
     <script>
         $(document).ready(function () {
-            window.updateQuantity = function (id, isCombo, newQty) {
+            // Dữ liệu gốc render từ server để thao tác giỏ bằng API
+            var cartState = [
+                @foreach (var item in Model ?? new List<Source.Models.CartItem>())
+                {
+                    @Html.Raw(CartStateLine(item))
+                }
+            ];
+
+            function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' ₫'; }
+            function findItem(key) {
+                return cartState.find(i => i.key === key) || null;
+            }
+
+            function reloadTotals() {
+                $.getJSON('/api/cart')
+                    .done(function (data) {
+                        $('#cart-total-count').text(data.count + ' món');
+                        $('#cart-total-amount').text(fmt(data.total));
+                        var badge = $('#cart-badge');
+                        if (data.isEmpty) { badge.addClass('d-none'); }
+                        else { badge.text(data.count).removeClass('d-none'); }
+                        // Cập nhật lại đơn giá/ thành tiền từng dòng
+                        data.items.forEach(function (it) {
+                            var optKey = (it.modifiers || []).map(m => m.optionId).join('-');
+                            var key = it.isCombo ? 'c' + it.comboId : 'f' + it.fastFoodId + '-' + optKey;
+                            var $total = $('#item-total-' + key);
+                            if ($total.length) $total.text(fmt(it.totalPrice));
+                            var $input = $('#qty-input-' + key);
+                            if ($input.length) $input.val(it.quantity);
+                        });
+                    });
+            }
+
+            window.updateQuantity = function (key, newQty) {
+                var item = findItem(key);
+                if (!item) return;
+                if (newQty < 0) newQty = 0;
                 $.ajax({
-                    url: '@Url.Action("UpdateQuantity", "Cart")',
+                    url: '/api/cart/update',
                     type: 'POST',
-                    data: {
-                        id: id,
-                        isCombo: isCombo,
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        foodId: item.isCombo ? null : item.foodId,
+                        comboId: item.isCombo ? item.comboId : null,
                         quantity: newQty,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        optionIds: item.optionIds
+                    }),
                     success: function (res) {
-                        if (res.success) {
-                            if (res.isEmpty) { location.reload(); return; }
-                            if (newQty <= 0) {
-                                $('#cart-row-' + id + '-' + isCombo).fadeOut(300, function() { $(this).remove(); });
-                            } else {
-                                $('#qty-input-' + id + '-' + isCombo).val(newQty);
-                                $('#item-total-' + id + '-' + isCombo).text(res.itemTotal.toLocaleString('vi-VN') + ' ₫');
-                            }
-                            $('#cart-total-amount').text(res.cartTotal.toLocaleString('vi-VN') + ' ₫');
-                            $('#cart-total-count').text(res.cartCount + ' món');
-                            var badge = $('#cart-badge');
-                            badge.text(res.cartCount);
-                            if (res.cartCount > 0) badge.removeClass('d-none');
-                            else badge.addClass('d-none');
-                            showToast('Cập nhật giỏ hàng thành công.', 'success');
+                        if (!res.success) return;
+                        if (res.isEmpty) { location.reload(); return; }
+                        if (newQty === 0) {
+                            $('#cart-row-' + key).fadeOut(300, function () {
+                                $(this).remove();
+                                $('#cart-total-count').text(res.count + ' món');
+                                $('#cart-total-amount').text(fmt(res.total));
+                            });
+                        } else {
+                            $('#qty-input-' + key).val(newQty);
+                            reloadTotals();
                         }
                     },
+                    error: function (xhr) {
+                        var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        showToast(msg, 'danger');
+                    }
+                });
+            };
+
+            window.removeItem = function (key) {
+                if (!confirm('Bạn có chắc muốn xóa món này khỏi giỏ hàng?')) return;
+                var item = findItem(key);
+                if (!item) return;
+                $.ajax({
+                    url: '/api/cart/remove',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        foodId: item.isCombo ? null : item.foodId,
+                        comboId: item.isCombo ? item.comboId : null,
+                        optionIds: item.optionIds
+                    }),
+                    success: function (res) {
+                        $('#cart-row-' + key).fadeOut(300, function () { $(this).remove(); });
+                        refreshSummary(res);
+                    },
+                    error: function (xhr) {
+                        var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        showToast(msg, 'danger');
+                    }
+                });
+            };
+
+            window.clearCart = function () {
+                if (!confirm('Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?')) return;
+                $.ajax({
+                    url: '/api/cart/clear',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({}),
+                    success: function () { location.reload(); },
                     error: function () { showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'danger'); }
                 });
             };
 
-            window.removeItem = function (id, isCombo) {
-                if (!confirm('Bạn có chắc muốn xóa món này khỏi giỏ hàng?')) return;
-                window.updateQuantity(id, isCombo, 0);
-            };
+            function refreshSummary(res) {
+                $('#cart-total-count').text(res.count + ' món');
+                $('#cart-total-amount').text(fmt(res.total));
+                var badge = $('#cart-badge');
+                if (res.count > 0) { badge.text(res.count).removeClass('d-none'); }
+                else { badge.addClass('d-none'); if (res.isEmpty) { location.reload(); } }
+                if (res.total !== undefined) {
+                    showToast('Cập nhật giỏ hàng thành công.', 'success');
+                }
+            }
         });
     </script>
 }

@@ -1565,3 +1565,27 @@ small { font-size: 0.85rem; }
 
 /* ─── Focus states (accessibility) ─── */
 .form-control-custom:focus { border-color: #dc3545; box-shadow: 0 0 0 .2rem rgba(220,53,69,.12); }
+
+/* ─── Food Customize Modal ─── */
+#foodCustomizeModal .modal-content { font-family: var(--font); }
+.cm-option-chip { cursor: pointer; }
+.cm-option-chip-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-width: 150px; padding: 10px 14px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+  background: var(--white); transition: all var(--transition-fast);
+}
+.cm-option-chip:hover .cm-option-chip-inner { border-color: var(--primary-light); background: var(--primary-light); }
+.cm-option-chip .cm-opt-input:checked + .cm-option-chip-inner {
+  border-color: var(--primary); background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(255, 56, 56, 0.12);
+}
+.cm-option-name { font-size: 0.85rem; font-weight: 600; color: var(--gray-800); }
+.cm-option-tail { display: flex; align-items: center; gap: 8px; }
+.cm-option-price { font-size: 0.78rem; font-weight: 600; color: var(--primary); }
+.cm-option-check { color: var(--primary); font-size: 0.8rem; opacity: 0; transform: scale(0.6); transition: all var(--transition-fast); }
+.cm-option-chip .cm-opt-input:checked + .cm-option-chip-inner .cm-option-check { opacity: 1; transform: scale(1); }
+.cm-group { border-bottom: 1px dashed var(--gray-200); padding-bottom: 14px; }
+.cm-group:last-child { border-bottom: none; padding-bottom: 0; }
+#cm-add-btn { font-size: 0.92rem; }
+#cm-add-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }

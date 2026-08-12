@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
@@ -472,6 +472,23 @@ namespace Source.Controllers
             return View();
         }
 
+        // GET: Admin/Modifiers - quản lý nhóm tùy chọn (size/topping/độ cay) theo món (AJAX)
+        public async Task<IActionResult> Modifiers()
+        {
+            ViewBag.ApiFoods = await _context.FastFoods
+                .AsNoTracking()
+                .OrderBy(f => f.Name)
+                .Select(f => new
+                {
+                    id = f.Id,
+                    name = f.Name,
+                    hasGroups = f.ModifierGroups.Any()
+                })
+                .ToListAsync();
+
+            return View();
+        }
+
         #endregion
 
         #region Combo Management
@@ -854,36 +871,8 @@ namespace Source.Controllers
                 return Json(new { success = true, newStatus = status, orderId = id });
             }
 
-            TempData["SuccessMessage"] = $"Đơn hàng #{id} đã chuyển sang trạng thái: {GetStatusLabel(status)}";
+            TempData["SuccessMessage"] = $"Đơn hàng #{id} đã chuyển sang trạng thái: {OrderStatus.GetLabel(status)}";
             return RedirectToAction(nameof(Orders));
-        }
-
-        private string GetStatusLabel(string status)
-        {
-            return status switch
-            {
-                OrderStatus.Pending => "Chờ xác nhận",
-                OrderStatus.Preparing => "Đang chuẩn bị",
-                OrderStatus.Shipping => "Đang giao",
-                OrderStatus.Delivered => "Đã giao",
-                OrderStatus.Cancelled => "Đã hủy",
-                OrderStatus.Refunded => "Hoàn tiền",
-                _ => status
-            };
-        }
-
-        private string GetStatusBadgeClass(string status)
-        {
-            return status switch
-            {
-                OrderStatus.Pending => "bg-warning text-dark",
-                OrderStatus.Preparing => "bg-info text-dark",
-                OrderStatus.Shipping => "bg-primary",
-                OrderStatus.Delivered => "bg-success",
-                OrderStatus.Cancelled => "bg-danger",
-                OrderStatus.Refunded => "bg-secondary",
-                _ => "bg-secondary"
-            };
         }
 
         // GET: Admin/OrderDetail/5
@@ -899,8 +888,8 @@ namespace Source.Controllers
 
             if (order == null) return NotFound();
 
-            ViewBag.StatusBadgeClass = GetStatusBadgeClass(order.Status);
-            ViewBag.StatusLabel = GetStatusLabel(order.Status);
+            ViewBag.StatusBadgeClass = OrderStatus.GetBadgeClass(order.Status);
+            ViewBag.StatusLabel = OrderStatus.GetLabel(order.Status);
 
             var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
             ViewBag.Subtotal = subtotal;
@@ -922,7 +911,7 @@ namespace Source.Controllers
 
             if (order == null) return NotFound();
 
-            ViewBag.StatusLabel = GetStatusLabel(order.Status);
+            ViewBag.StatusLabel = OrderStatus.GetLabel(order.Status);
             var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
             ViewBag.Subtotal = subtotal;
             ViewBag.GrandTotal = subtotal + order.ShippingFee - order.Discount;

@@ -8,11 +8,24 @@ namespace Source.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
+        // Nullable: khách đặt hàng không cần tài khoản (guest checkout)
+        public int? UserId { get; set; }
 
         [ForeignKey("UserId")]
         public User? User { get; set; }
+
+        /// <summary>Delivery = Giao tận nơi, Pickup = Tự đến lấy.</summary>
+        [Required]
+        [Display(Name = "Loại đơn")]
+        public string OrderType { get; set; } = "Delivery";
+
+        [Display(Name = "Giờ hẹn đến lấy")]
+        public DateTime? PickupTime { get; set; }
+
+        /// <summary>Chờ thanh toán / Đã thanh toán / Hoàn tiền (cho đơn chuyển khoản).</summary>
+        [Required]
+        [Display(Name = "Trạng thái thanh toán")]
+        public string PaymentStatus { get; set; } = "Unpaid";
 
         [Display(Name = "Ngày đặt hàng")]
         public DateTime OrderDate { get; set; } = DateTime.Now;

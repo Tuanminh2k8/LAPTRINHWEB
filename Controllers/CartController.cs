@@ -211,15 +211,8 @@ namespace Source.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> Checkout()
         {
-            var userId = UserClaimsHelper.GetUserId(User);
-            if (!userId.HasValue)
-            {
-                return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Checkout", "Cart") });
-            }
-
             var cart = _cartService.GetCart();
             if (cart.Count == 0)
             {
@@ -227,8 +220,8 @@ namespace Source.Controllers
                 return RedirectToAction("Index");
             }
 
-            var user = await _context.Users.FindAsync(userId.Value);
-            if (user == null) return RedirectToAction("Logout", "Account");
+            var userId = UserClaimsHelper.GetUserId(User);
+            User? user = userId.HasValue ? await _context.Users.FindAsync(userId.Value) : null;
 
             var subtotal = cart.Sum(i => i.TotalPrice);
             var promoCode = HttpContext.Session.GetString(PromoSessionKey);
@@ -237,10 +230,10 @@ namespace Source.Controllers
 
             var order = new Order
             {
-                UserId = user.Id,
-                ReceiverName = user.FullName,
-                ReceiverPhone = user.PhoneNumber,
-                ReceiverAddress = user.Address,
+                UserId = user?.Id,
+                ReceiverName = user?.FullName ?? string.Empty,
+                ReceiverPhone = user?.PhoneNumber ?? string.Empty,
+                ReceiverAddress = user?.Address ?? string.Empty,
                 Discount = promoResult.Success ? promoResult.DiscountAmount : 0,
                 TotalAmount = subtotal - (promoResult.Success ? promoResult.DiscountAmount : 0)
             };

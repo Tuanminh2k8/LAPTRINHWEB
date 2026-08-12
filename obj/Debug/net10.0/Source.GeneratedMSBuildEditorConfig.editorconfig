@@ -95,6 +95,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/LAPTRINHWEB/Views/Admin/Modifiers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cTW9kaWZpZXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/LAPTRINHWEB/Views/Admin/OrderDetail.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cT3JkZXJEZXRhaWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -201,6 +205,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/LAPTRINHWEB/Views/Shared/_AdminLayout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/LAPTRINHWEB/Views/Shared/_FoodCustomizeModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Gb29kQ3VzdG9taXplTW9kYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/LAPTRINHWEB/Views/Shared/_Layout.mobile.cshtml]

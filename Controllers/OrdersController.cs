@@ -68,6 +68,8 @@ namespace Source.Controllers
                 .ThenInclude(od => od.FastFood)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Combo)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Modifiers)
                 .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value && !o.IsDeleted);
 
             if (order == null)
@@ -91,6 +93,8 @@ namespace Source.Controllers
                 .ThenInclude(od => od.FastFood)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Combo)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Modifiers)
                 .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value);
 
             if (order == null)

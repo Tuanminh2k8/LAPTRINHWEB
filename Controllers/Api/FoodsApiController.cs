@@ -70,10 +70,42 @@ namespace Source.Controllers.Api
                     f.Description,
                     f.ImageUrl,
                     f.CategoryId,
+                    f.SoldCount,
+                    f.IsAvailable,
+                    f.IsBestSeller,
+                    avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
+                    reviewCount = f.Reviews.Count,
                     CategoryName = f.Category != null ? f.Category.Name : ""
                 })
                 .ToListAsync();
 
+            return Ok(foods);
+        }
+
+        // GET: api/foods/bestsellers — món bán chạy cho trang chủ / widget
+        [HttpGet("bestsellers")]
+        public async Task<ActionResult> GetBestsellers()
+        {
+            var foods = await _context.FastFoods
+                .AsNoTracking()
+                .Where(f => f.IsBestSeller && f.IsAvailable)
+                .OrderByDescending(f => f.SoldCount)
+                .Take(8)
+                .Select(f => new
+                {
+                    f.Id,
+                    f.Name,
+                    f.Price,
+                    f.Description,
+                    f.ImageUrl,
+                    f.CategoryId,
+                    f.SoldCount,
+                    f.Theme,
+                    avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
+                    reviewCount = f.Reviews.Count,
+                    CategoryName = f.Category != null ? f.Category.Name : ""
+                })
+                .ToListAsync();
             return Ok(foods);
         }
 
@@ -93,7 +125,32 @@ namespace Source.Controllers.Api
                     f.ImageUrl,
                     f.CategoryId,
                     f.Theme,
-                    CategoryName = f.Category != null ? f.Category.Name : ""
+                    f.SoldCount,
+                    f.IsAvailable,
+                    f.IsBestSeller,
+                    avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
+                    reviewCount = f.Reviews.Count,
+                    CategoryName = f.Category != null ? f.Category.Name : "",
+                    modifierGroups = f.ModifierGroups
+                        .OrderBy(g => g.SortOrder)
+                        .Select(g => new
+                        {
+                            g.Id,
+                            g.Name,
+                            g.Description,
+                            g.IsMultiple,
+                            g.MaxOptions,
+                            options = g.Options
+                                .OrderBy(o => o.SortOrder)
+                                .Select(o => new
+                                {
+                                    o.Id,
+                                    o.Name,
+                                    o.Price,
+                                    o.IsDefault,
+                                    o.IsAvailable
+                                })
+                        })
                 })
                 .FirstOrDefaultAsync();
 
