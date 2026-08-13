@@ -242,6 +242,8 @@ namespace Source.Controllers
             ViewBag.Subtotal = subtotal;
             ViewBag.PromoCode = promoResult.Success ? promoResult.Promo!.Code : null;
             ViewBag.PromoDiscount = promoResult.Success ? promoResult.DiscountAmount : 0m;
+            ViewBag.Branches = await _context.Branches.AsNoTracking().ToListAsync();
+            ViewBag.UserPoints = user?.Points ?? 0;
             return View(order);
         }
 

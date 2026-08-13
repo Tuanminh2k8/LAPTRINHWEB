@@ -1,0 +1,114 @@
+@model IEnumerable<Source.Models.PointTransaction>
+@using Source.Models
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Khách Hàng Thân Thiết";
+}
+
+<div class="mb-4">
+    <h3 class="fw-bold text-dark mb-1">Khách Hàng Thân Thiết</h3>
+    <p class="text-muted small mb-0">Theo dõi điểm tích lũy và lịch sử giao dịch thành viên</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="small text-muted">Tỷ lệ tích điểm</div>
+            <div class="fw-bold text-dark fs-5">@LoyaltySettings.EarnPerVnd.ToString("N0") ₫ / 1 điểm</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="small text-muted">Đổi tối thiểu</div>
+            <div class="fw-bold text-dark fs-5">@LoyaltySettings.MinRedeemPoints điểm</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="small text-muted">Tổng điểm đã phát</div>
+            <div class="fw-bold text-success fs-5">@((long)ViewBag.TotalPointsIssued) điểm</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="small text-muted">Tổng điểm đã đổi</div>
+            <div class="fw-bold text-primary fs-5">@((long)ViewBag.TotalPointsRedeemed) điểm</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+    <h6 class="fw-bold text-dark mb-3">Top thành viên theo điểm</h6>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>Thành viên</th>
+                    <th class="text-end">Điểm hiện tại</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in (IEnumerable<User>)ViewBag.TopUsers)
+                {
+                    <tr>
+                        <td class="fw-bold text-dark">@u.FullName (@u.Username)</td>
+                        <td class="text-end"><span class="badge bg-warning rounded-pill px-3 py-1">@u.Points</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="bg-dark text-white">
+                <tr>
+                    <th>Thời Gian</th>
+                    <th>Thành Viên</th>
+                    <th>Loại</th>
+                    <th>Lý Do</th>
+                    <th class="text-end">Điểm</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Chưa có giao dịch điểm nào.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td class="small text-muted">@t.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="fw-bold text-dark">@(t.User?.FullName ?? "N/A")</td>
+                            <td>
+                                @if (t.Type == "Earn")
+                                {
+                                    <span class="badge bg-success rounded-pill px-3 py-1">Tích điểm</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-primary rounded-pill px-3 py-1">Đổi điểm</span>
+                                }
+                            </td>
+                            <td class="small text-muted">@t.Note</td>
+                            <td class="text-end fw-bold @(t.Type == "Earn" ? "text-success" : "text-primary")">
+                                @(t.Type == "Earn" ? "+" : "-")@t.Points
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="d-flex justify-content-between align-items-center p-3">
+        <a asp-action="Loyalty" asp-route-page="@((int)ViewBag.CurrentPage - 1)" class="btn btn-sm btn-outline-secondary @((int)ViewBag.CurrentPage <= 1 ? "disabled" : "")">Trước</a>
+        <span class="small text-muted">Trang @ViewBag.CurrentPage</span>
+        <a asp-action="Loyalty" asp-route-page="@((int)ViewBag.CurrentPage + 1)" class="btn btn-sm btn-outline-secondary @(!(bool)ViewBag.HasNext ? "disabled" : "")">Sau</a>
+    </div>
+</div>

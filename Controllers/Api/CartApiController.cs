@@ -15,12 +15,14 @@ namespace Source.Controllers.Api
         private readonly AppDbContext _context;
         private readonly ICartSessionService _cartService;
         private readonly IPromoCodeService _promoService;
+        private readonly ILoyaltyService _loyalty;
 
-        public CartApiController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService)
+        public CartApiController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, ILoyaltyService loyalty)
         {
             _context = context;
             _cartService = cartService;
             _promoService = promoService;
+            _loyalty = loyalty;
         }
 
         public class AddItemRequest
@@ -219,6 +221,31 @@ namespace Source.Controllers.Api
             HttpContext.Session.Remove(PromoSessionKey);
             var subtotal = _cartService.GetCart().Sum(i => i.TotalPrice);
             return Ok(new { success = true, message = "Đã bỏ mã giảm giá.", discount = 0, subtotal, total = subtotal });
+        }
+
+        [HttpPost("points")]
+        public async Task<ActionResult> ApplyPoints(int points)
+        {
+            var userId = UserClaimsHelper.GetUserId(User);
+            if (!userId.HasValue)
+                return BadRequest(new { success = false, message = "Vui lòng đăng nhập để sử dụng điểm thưởng." });
+
+            var cart = _cartService.GetCart();
+            if (cart.Count == 0)
+                return BadRequest(new { success = false, message = "Giỏ hàng đang trống." });
+
+            var subtotal = cart.Sum(i => i.TotalPrice);
+            var promoCode = HttpContext.Session.GetString(PromoSessionKey);
+            var promoResult = string.IsNullOrEmpty(promoCode)
+                ? new PromoValidationResult(false, "", 0, null)
+                : await _promoService.ValidateAsync(promoCode, subtotal);
+            var afterPromo = subtotal - (promoResult.Success ? promoResult.DiscountAmount : 0);
+
+            var pr = _loyalty.PreviewRedeem(userId.Value, points, afterPromo);
+            if (!pr.ok)
+                return Ok(new { success = false, message = pr.message, discount = 0m, pointsUsed = 0 });
+
+            return Ok(new { success = true, message = "Đã áp dụng điểm thưởng.", discount = pr.discount, pointsUsed = pr.pointsUsed, afterPromo });
         }
 
         private static CartItem? FindByKey(List<CartItem> cart, CartItemRequest r)

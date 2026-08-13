@@ -1,0 +1,75 @@
+@model IEnumerable<Source.Models.Branch>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Chi Nhánh";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Quản Lý Chi Nhánh</h3>
+        <p class="text-muted small mb-0">Quản lý các điểm nhận hàng (Collection Point)</p>
+    </div>
+    <a asp-action="BranchCreate" class="btn btn-primary-custom btn-custom rounded-pill px-4 py-2">
+        <i class="fa-solid fa-plus me-2"></i> Thêm Chi Nhánh
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="bg-dark text-white">
+                <tr>
+                    <th>ID</th>
+                    <th>Tên Chi Nhánh</th>
+                    <th>Địa Chỉ</th>
+                    <th>Quận / Huyện</th>
+                    <th>Giờ Mở - Đóng</th>
+                    <th class="text-center">Trạng Thái</th>
+                    <th class="text-center">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Chưa có chi nhánh nào.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var b in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold text-muted">#@b.Id</td>
+                            <td class="fw-bold text-dark">@b.Name</td>
+                            <td class="small text-muted">@b.Address</td>
+                            <td class="small text-muted">@b.District</td>
+                            <td class="small text-muted">@b.OpenTime.ToString(@"hh\:mm") - @b.CloseTime.ToString(@"hh\:mm")</td>
+                            <td class="text-center">
+                                @if (b.IsActive)
+                                {
+                                    <span class="badge bg-success rounded-pill px-3 py-1">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary rounded-pill px-3 py-1">Tạm ngưng</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="BranchEdit" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2 me-1" title="Sửa">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form asp-action="BranchDelete" asp-route-id="@b.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa chi nhánh này?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" title="Xóa">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

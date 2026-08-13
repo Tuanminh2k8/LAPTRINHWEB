@@ -107,9 +107,9 @@
             'use strict';
 
             var container = $('#apiDataContainer');
-            var foods = JSON.parse(container.data('foods') || '[]');
-            var categories = JSON.parse(container.data('categories') || '[]');
-            var combos = JSON.parse(container.data('combos') || '[]');
+            var foods = JSON.parse(container.attr('data-foods') || '[]');
+            var categories = JSON.parse(container.attr('data-categories') || '[]');
+            var combos = JSON.parse(container.attr('data-combos') || '[]');
             var csrfToken = $('input[name="__RequestVerificationToken"]').first().val() || '';
 
             var numberFmt = function (n) {
@@ -283,6 +283,7 @@
             $(document).ready(function () {
                 renderTable();
                 showComboSummary();
+                loadAllApi();
             });
         })();
     </script>

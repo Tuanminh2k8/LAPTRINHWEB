@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Source.Models
@@ -46,8 +47,19 @@ namespace Source.Models
 
         public string? GoogleId { get; set; }
 
+        /// <summary>Số dư điểm thưởng hiện tại (Membership / Loyalty).</summary>
+        [Display(Name = "Điểm thưởng")]
+        public int Points { get; set; } = 0;
+
+        /// <summary>Tổng chi tiêu tích lũy (dùng xếp hạng thành viên / thống kê).</summary>
+        [Display(Name = "Tổng chi tiêu")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalSpent { get; set; } = 0;
+
         // Navigation property
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public ICollection<PointTransaction> PointTransactions { get; set; } = new List<PointTransaction>();
+        public ICollection<FavoriteItem> Favorites { get; set; } = new List<FavoriteItem>();
     }
 }

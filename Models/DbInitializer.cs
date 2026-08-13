@@ -6,67 +6,13 @@ namespace Source.Models
 {
     public static class DbInitializer
     {
-        // Local image paths (relative to wwwroot)
-        private static readonly string[] LocalBurger = {
-            "/images/products/product-burger-1.jpg",
-            "/images/products/product-burger-2.jpg",
-            "/images/products/product-burger-3.jpg",
-            "/images/products/product-burger-4.jpg",
-            "/images/products/product-burger-5.jpg",
-            "/images/products/burger-bbq-bacon.jpg",
-            "/images/products/burger-cheese-double.jpg"
-        };
-        private static readonly string[] LocalPizza = {
-            "/images/products/product-pizza-1.jpg",
-            "/images/products/product-pizza-2.jpg",
-            "/images/products/product-pizza-3.jpg",
-            "/images/products/product-pizza-4.jpg",
-            "/images/products/product-pizza-5.jpg",
-            "/images/products/pizza-seafood.jpg",
-            "/images/products/pizza-pepperoni.jpg"
-        };
-        private static readonly string[] LocalChicken = {
-            "/images/products/product-chicken-1.jpg",
-            "/images/products/product-chicken-2.jpg",
-            "/images/products/product-chicken-3.jpg",
-            "/images/products/product-chicken-4.jpg",
-            "/images/products/product-chicken-5.jpg",
-            "/images/products/chicken-crispy.jpg",
-            "/images/products/chicken-spicy-wings.jpg"
-        };
-        private static readonly string[] LocalDrink = {
-            "/images/products/drink-coca.jpg",
-            "/images/products/drink-coke.jpg",
-            "/images/products/drink-lemonade.jpg",
-            "/images/products/drink-matcha.jpg",
-            "/images/products/drink-milktea.jpg",
-            "/images/products/drink-pepsi.jpg",
-            "/images/products/drink-tea.jpg"
-        };
-        private static readonly string[] LocalSide = {
-            "/images/products/side-fries-1.jpg",
-            "/images/products/side-fries-2.jpg",
-            "/images/products/side-rings.jpg",
-            "/images/products/side-salad.jpg",
-            "/images/products/side-soup.jpg"
-        };
-        private static readonly string[] LocalDessert = {
-            "/images/products/dessert-donut.jpg",
-            "/images/products/dessert-icecream.jpg",
-            "/images/products/dessert-pie.jpg"
-        };
-        private static readonly string[] LocalCombo = {
-            "/images/combos/combo-family.jpg",
-            "/images/combos/combo-party.jpg",
-            "/images/combos/combo-couple.jpg",
-            "/images/combos/combo-snack.jpg",
-            "/images/combos/combo-solo.jpg",
-            "/images/combos/combo-weekend.jpg",
-            "/images/combos/combo-office.jpg",
-            "/images/combos/combo-kids.jpg"
-        };
+        // Ảnh Unsplash thật theo từng chủng loại (verify tồn tại); seed giúp mỗi món có ảnh riêng.
+        private static string RemoteImg(string keyword, int seed) =>
+            UnsplashImage.ForKeyword(keyword, seed);
+
         private static readonly string[] Themes = { "Gia đình", "Tiệc tùng", "Ăn vặt", "Trẻ em", "Văn phòng", "Ăn sáng" };
         private static readonly Random _rng = new();
+        private static int _imgSeed = 1000;
 
         public static Task SeedAsync(AppDbContext context)
         {
@@ -82,7 +28,9 @@ namespace Source.Models
                 SeedUsers(context);
                 SeedOrders(context);
                 SeedFoods(context);
+                SeedModifiers(context);
                 SeedCombos(context);
+                SeedBranches(context);
                 SeedPromoCodes(context);
             }
             catch (Exception ex)
@@ -111,6 +59,10 @@ namespace Source.Models
                 newCats.Add(new Category { Name = "Món Kèm", Description = "Khoai tây, salad và các món ăn kèm" });
             if (!existingNames.Contains("Tráng Miệng"))
                 newCats.Add(new Category { Name = "Tráng Miệng", Description = "Các món tráng miệng ngọt ngào" });
+            if (!existingNames.Contains("Đồ ăn sáng"))
+                newCats.Add(new Category { Name = "Đồ ăn sáng", Description = "Bữa sáng tiện lợi, đầy đủ dinh dưỡng" });
+            if (!existingNames.Contains("Salad & Wrap"))
+                newCats.Add(new Category { Name = "Salad & Wrap", Description = "Salad tươi mát và bánh cuốn healthy" });
 
             if (newCats.Any())
             {
@@ -219,7 +171,7 @@ namespace Source.Models
 
         private static void SeedFoods(AppDbContext context)
         {
-            if (context.FastFoods.Count() >= 120) return;
+            if (context.FastFoods.Count() >= 150) return;
 
             var existingNames = new HashSet<string>(context.FastFoods.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
 
@@ -370,31 +322,53 @@ namespace Source.Models
             };
 
             var foodList = new List<FastFood>();
-            int idx = 0;
 
-            void AddIfNotExists((string Name, int Price, string Desc)[] items, int catId, string[] unsplash)
+            void AddIfNotExists((string Name, int Price, string Desc)[] items, int catId, string keyword)
             {
                 foreach (var (name, price, desc) in items)
                 {
                     if (!existingNames.Contains(name))
                     {
-                        foodList.Add(new FastFood { Name = name, Price = price, Description = desc, ImageUrl = unsplash[idx % unsplash.Length], CategoryId = catId, Theme = Themes[_rng.Next(Themes.Length)] });
+                        foodList.Add(new FastFood
+                        {
+                            Name = name,
+                            Price = price,
+                            Description = desc,
+                            ImageUrl = RemoteImg(keyword, _imgSeed++),
+                            CategoryId = catId,
+                            Theme = Themes[_rng.Next(Themes.Length)],
+                            IsAvailable = true,
+                            IsBestSeller = _rng.Next(100) < 30,
+                            SoldCount = _rng.Next(0, 400)
+                        });
                         existingNames.Add(name);
                     }
-                    idx++;
                 }
             }
 
-            idx = 0; AddIfNotExists(burgers, catBurgers, LocalBurger);
-            idx = 0; AddIfNotExists(pizzas, catPizzas, LocalPizza);
-            idx = 0; AddIfNotExists(chickens, catChicken, LocalChicken);
-            idx = 0; AddIfNotExists(drinks, catDrinks, LocalDrink);
-            idx = 0; AddIfNotExists(sides, catSides, LocalSide);
-            idx = 0; AddIfNotExists(desserts, catDessert, LocalDessert);
+            AddIfNotExists(burgers, catBurgers, "burger");
+            AddIfNotExists(pizzas, catPizzas, "pizza");
+            AddIfNotExists(chickens, catChicken, "friedchicken");
+            AddIfNotExists(drinks, catDrinks, "drink");
+            AddIfNotExists(sides, catSides, "fries");
+            AddIfNotExists(desserts, catDessert, "dessert");
 
             context.FastFoods.AddRange(foodList);
             context.SaveChanges();
-            Console.WriteLine($"[DbInitializer] Added {foodList.Count} foods. Total: {context.FastFoods.Count()}");
+            Console.WriteLine($"[DbInitializer] Added {foodList.Count} curated foods. Total: {context.FastFoods.Count()}");
+
+            // Đảm bảo có ít nhất 150 món có thể đặt được (sinh tự động trong code)
+            EnsureMinFoods(context, existingNames, 150);
+            Console.WriteLine($"[DbInitializer] Total foods after ensure: {context.FastFoods.Count()}");
+
+            // Đảm bảo MỌI món đều có thể đặt được (yêu cầu: tất cả món đều đặt được)
+            var unavailable = context.FastFoods.Where(f => !f.IsAvailable).ToList();
+            if (unavailable.Any())
+            {
+                foreach (var f in unavailable) f.IsAvailable = true;
+                context.SaveChanges();
+                Console.WriteLine($"[DbInitializer] Set {unavailable.Count} foods to Available (tất cả đặt được).");
+            }
         }
 
         private static void SeedCombos(AppDbContext context)
@@ -511,14 +485,7 @@ namespace Source.Models
                     Name = name,
                     Description = desc,
                     Price = (int)(totalPrice * 0.8m),
-                    ImageUrl = imgType switch
-                    {
-                        "burger" => LocalCombo[comboIdx % LocalCombo.Length],
-                        "pizza" => LocalCombo[comboIdx % LocalCombo.Length],
-                        "chicken" => LocalCombo[comboIdx % LocalCombo.Length],
-                        "side" => LocalCombo[comboIdx % LocalCombo.Length],
-                        _ => LocalCombo[comboIdx % LocalCombo.Length]
-                    }
+                    ImageUrl = RemoteImg(imgType, 500 + comboIdx)
                 };
 
                 context.Combos.Add(combo);
@@ -578,6 +545,153 @@ namespace Source.Models
                 });
             context.SaveChanges();
             Console.WriteLine($"[DbInitializer] Seeded promo codes. Total: {context.PromoCodes.Count()}");
+        }
+
+        /// <summary>Sinh tự động thêm món cho đến khi đạt ít nhất minCount món có thể đặt được.</summary>
+        private static void EnsureMinFoods(AppDbContext context, HashSet<string> existingNames, int minCount)
+        {
+            var cats = context.Categories.ToList();
+            if (context.FastFoods.Count() >= minCount) return;
+
+            var flavors = new Dictionary<string, string[]>
+            {
+                ["Burgers"] = new[] { "Sốt BBQ", "Phô Mai Xanh", "Tỏi Ớt", "Hạt Tiêu", "Nấm Truffle", "Cay Hàn Quốc", "Teriyaki", "Tôm", "Bơ Lạt", "Xông Khói", "Trứng Bác", "Rau Sống" },
+                ["Pizzas"] = new[] { "Hải Sản", "Thập Cẩm", "Pepperoni", "Phô Mai", "Rau Củ", "Gà BBQ", "Bò Nướng", "Xúc Xích", "Nấm", "Hawaii", "Carbonara", "Cá Ngừ" },
+                ["Gà Rán"] = new[] { "Giòn Cay", "Truyền Thống", "Sốt Mật Ong", "Phô Mai", "Tỏi Bơ", "Hàn Quốc", "Muối Ớt", "Nước Mắm", "Chua Ngọt", "Không Xương", "Teriyaki", "Popcorn" },
+                ["Thức uống & Tráng miệng"] = new[] { "Đào", "Matcha", "Sữa Trân Châu", "Cam", "Chanh", "Bơ", "Xoài", "Cà Phê Sữa", "Cà Phê Đen", "Soda", "Sữa Chua", "Táo" },
+                ["Món Kèm"] = new[] { "Phô Mai", "Lắc Cay", "Lắc Phô Mai", "Salad", "Súp", "Vòng Hành Tây", "Que", "Khoai Lang", "Nghiền", "Chả Giò", "Bánh Mì Tỏi", "Địa Trung Hải" },
+                ["Tráng Miệng"] = new[] { "Vani", "Socola", "Dâu", "Donut", "Tart Trứng", "Brownie", "Pudding", "Ba Màu", "Cheesecake", "Flan", "Crepe", "Xôi Dừa" },
+                ["Đồ ăn sáng"] = new[] { "Bánh Mì Trứng", "Xôi", "Bánh Cuốn", "Phở", "Mì", "Trứng Ốp La", "Ngũ Cốc", "Sữa", "Bánh Ngọt", "Trà Sáng" },
+                ["Salad & Wrap"] = new[] { "Gà", "Bò", "Tôm", "Chay", "Caesar", "Địa Trung Hải", "Trái Cây", "Đậu Gà", "Thịt Nướng", "Cá Ngừ" }
+            };
+
+            int seed = 3000;
+            int safety = 0;
+            while (context.FastFoods.Count() < minCount && safety < 3000)
+            {
+                safety++;
+                foreach (var cat in cats)
+                {
+                    if (context.FastFoods.Count() >= minCount) break;
+                    if (!flavors.TryGetValue(cat.Name, out var pool)) continue;
+
+                    var flavor = pool[_rng.Next(pool.Length)];
+                    var noun = cat.Name switch
+                    {
+                        "Burgers" => "Burger",
+                        "Pizzas" => "Pizza",
+                        "Gà Rán" => "Gà",
+                        "Thức uống & Tráng miệng" => "Nước",
+                        "Món Kèm" => "Món",
+                        "Tráng Miệng" => "Món",
+                        "Đồ ăn sáng" => "Món Sáng",
+                        "Salad & Wrap" => "Salad",
+                        _ => cat.Name
+                    };
+                    var name = $"{noun} {flavor}";
+                    if (existingNames.Contains(name)) continue;
+
+                    var (price, keyword) = cat.Name switch
+                    {
+                        "Pizzas" => (90000 + _rng.Next(0, 70000), "pizza"),
+                        "Gà Rán" => (25000 + _rng.Next(0, 30000), "friedchicken"),
+                        "Thức uống & Tráng miệng" => (10000 + _rng.Next(0, 25000), "drink"),
+                        "Tráng Miệng" => (15000 + _rng.Next(0, 20000), "dessert"),
+                        "Đồ ăn sáng" => (20000 + _rng.Next(0, 30000), "breakfast"),
+                        "Salad & Wrap" => (35000 + _rng.Next(0, 40000), "salad"),
+                        _ => (30000 + _rng.Next(0, 50000), "food")
+                    };
+
+                    context.FastFoods.Add(new FastFood
+                    {
+                        Name = name,
+                        Price = price,
+                        Description = $"{name} thơm ngon, chế biến tươi nóng hổi từ bếp PolyFood.",
+                        ImageUrl = RemoteImg(keyword, seed++),
+                        CategoryId = cat.Id,
+                        Theme = Themes[_rng.Next(Themes.Length)],
+                        IsAvailable = true,
+                        IsBestSeller = _rng.Next(100) < 25,
+                        SoldCount = _rng.Next(0, 300)
+                    });
+                    existingNames.Add(name);
+                }
+                context.SaveChanges();
+            }
+        }
+
+        /// <summary>Sinh nhóm tùy biến (Size / Topping / Độ cay) cho các món theo chủng loại — nền tảng cho F1 (tùy biến hoàn chỉnh).</summary>
+        private static void SeedModifiers(AppDbContext context)
+        {
+            if (context.ModifierGroups.Any()) return;
+
+            var cats = context.Categories.ToList();
+            var groups = new List<ModifierGroup>();
+            int go = 0, oo = 0;
+
+            ModifierGroup G(string name, string desc, int foodId, bool multiple, int max, params (string n, decimal p, bool d)[] opts)
+            {
+                var g = new ModifierGroup
+                {
+                    Name = name,
+                    Description = desc,
+                    FastFoodId = foodId,
+                    IsMultiple = multiple,
+                    MaxOptions = max,
+                    SortOrder = ++go,
+                    Options = new List<ModifierOption>()
+                };
+                foreach (var (n, p, d) in opts)
+                    g.Options.Add(new ModifierOption { Name = n, Price = p, IsDefault = d, IsAvailable = true, SortOrder = ++oo });
+                return g;
+            }
+
+            foreach (var food in context.FastFoods.AsNoTracking().ToList())
+            {
+                var catName = cats.First(c => c.Id == food.CategoryId).Name;
+                if (catName == "Burgers")
+                {
+                    groups.Add(G("Size", "Chọn kích cỡ", food.Id, false, 1,
+                        ("Nhỏ", 0, false), ("Vừa", 10000, true), ("Lớn", 20000, false)));
+                    groups.Add(G("Topping", "Thêm nhân / phô mai", food.Id, true, 4,
+                        ("Thêm phô mai", 8000, false), ("Thêm thịt bò", 15000, false), ("Thêm rau & xà lách", 3000, false)));
+                }
+                else if (catName == "Pizzas")
+                {
+                    groups.Add(G("Size", "Chọn kích cỡ", food.Id, false, 1,
+                        ("Vừa (9 inch)", 0, true), ("Lớn (12 inch)", 30000, false), ("Đại (15 inch)", 55000, false)));
+                }
+                else if (catName == "Gà Rán")
+                {
+                    groups.Add(G("Độ cay", "Chọn độ cay", food.Id, false, 1,
+                        ("Không cay", 0, true), ("Cay nhẹ", 0, false), ("Cay nồng", 5000, false)));
+                }
+                else if (catName == "Thức uống & Tráng miệng")
+                {
+                    groups.Add(G("Size", "Chọn kích cỡ", food.Id, false, 1,
+                        ("Nhỏ", 0, false), ("Vừa", 0, true), ("Lớn", 5000, false)));
+                }
+            }
+
+            context.ModifierGroups.AddRange(groups);
+            context.SaveChanges();
+            Console.WriteLine($"[DbInitializer] Seeded {groups.Count} modifier groups, {groups.Sum(g => g.Options.Count)} options.");
+        }
+
+        /// <summary>Seed chi nhánh (phục vụ Pickup / Collection Point).</summary>
+        private static void SeedBranches(AppDbContext context)
+        {
+            if (context.Branches.Any()) return;
+
+            context.Branches.AddRange(
+                new Branch { Name = "PolyFood Biên Hòa", Address = "Khu Công Nghệ Cao, Biên Hòa, Đồng Nai", Phone = "02513 999 111", District = "Biên Hòa", OpenTime = new TimeSpan(7, 0, 0), CloseTime = new TimeSpan(22, 0, 0), IsActive = true, SortOrder = 1 },
+                new Branch { Name = "PolyFood Quận 1", Address = "12 Lê Lợi, Quận 1, TP.HCM", Phone = "028 3822 3333", District = "Quận 1", OpenTime = new TimeSpan(7, 0, 0), CloseTime = new TimeSpan(22, 0, 0), IsActive = true, SortOrder = 2 },
+                new Branch { Name = "PolyFood Gò Vấp", Address = "45 Nguyễn Kiệm, Gò Vấp, TP.HCM", Phone = "028 3944 5555", District = "Gò Vấp", OpenTime = new TimeSpan(8, 0, 0), CloseTime = new TimeSpan(22, 0, 0), IsActive = true, SortOrder = 3 },
+                new Branch { Name = "PolyFood Thủ Đức", Address = "88 Võ Văn Ngân, TP Thủ Đức, TP.HCM", Phone = "028 3722 6666", District = "Thủ Đức", OpenTime = new TimeSpan(8, 0, 0), CloseTime = new TimeSpan(21, 0, 0), IsActive = true, SortOrder = 4 },
+                new Branch { Name = "PolyFood Bình Dương", Address = "2 Đại lộ Bình Dương, Thủ Dầu Một", Phone = "0274 388 7777", District = "Thủ Dầu Một", OpenTime = new TimeSpan(7, 0, 0), CloseTime = new TimeSpan(22, 0, 0), IsActive = true, SortOrder = 5 }
+            );
+            context.SaveChanges();
+            Console.WriteLine($"[DbInitializer] Seeded {context.Branches.Count()} branches.");
         }
     }
 }

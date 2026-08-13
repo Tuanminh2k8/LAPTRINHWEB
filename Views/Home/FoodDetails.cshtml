@@ -30,7 +30,12 @@
                         }
                     </div>
                     
-                    <h1 class="fw-bold text-dark mb-3" style="font-size:1.8rem;">@Model.Name</h1>
+                    <h1 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size:1.8rem;">
+                        @Model.Name
+                        <button type="button" id="favBtn" class="btn btn-link p-0 fs-4" data-food-id="@Model.Id" title="Thêm vào món yêu thích">
+                            <i id="favIcon" class="fa-regular fa-heart text-danger"></i>
+                        </button>
+                    </h1>
                     <h2 class="text-danger fw-800 mb-4">@Model.Price.ToString("N0") ₫</h2>
                     
                     <hr class="my-4">
@@ -102,4 +107,35 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var foodId = @Model.Id;
+            var $icon = $('#favIcon');
+            var $btn = $('#favBtn');
+
+            $.getJSON('/api/favorites/ids')
+                .done(function (res) {
+                    if (res.foods && res.foods.indexOf(foodId) >= 0) {
+                        $icon.removeClass('fa-regular').addClass('fa-solid');
+                    }
+                });
+
+            $btn.on('click', function () {
+                $.ajax({
+                    url: '/api/favorites/toggle',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ fastFoodId: foodId })
+                }).done(function (r) {
+                    if (r.success) {
+                        if (r.isFavorited) { $icon.removeClass('fa-regular').addClass('fa-solid'); showToast(r.message, 'success'); }
+                        else { $icon.removeClass('fa-solid').addClass('fa-regular'); showToast(r.message, 'info'); }
+                    } else {
+                        if (r.message && r.message.indexOf('đăng nhập') >= 0) { window.location.href = '/Account/Login'; }
+                        else { showToast(r.message || 'Lỗi', 'danger'); }
+                    }
+                }).fail(function () { showToast('Lỗi kết nối.', 'danger'); });
+            });
+        })();
+    </script>
 }

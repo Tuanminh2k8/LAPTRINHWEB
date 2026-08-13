@@ -327,12 +327,18 @@
         if (val >= min && val <= max) { $input.val(val); }
     };
 
-    /* ─── Image fallback ─── */
+    /* ─── Image fallback (category-aware, offline-safe) ─── */
     document.addEventListener('error', function (e) {
         var target = e.target;
-        if (target.tagName === 'IMG' && !target.hasAttribute('data-fallback-set')) {
+        if (target && target.tagName === 'IMG' && !target.hasAttribute('data-fallback-set')) {
             target.setAttribute('data-fallback-set', 'true');
-            target.src = '/images/default_food.svg';
+            var cat = (target.getAttribute('data-category') || '').trim().toLowerCase();
+            var map = {
+                'burgers': 'burger', 'pizzas': 'pizza', 'gà rán': 'chicken',
+                'thức uống & tráng miệng': 'drink', 'món kèm': 'side', 'tráng miệng': 'dessert',
+                'đồ ăn sáng': 'breakfast', 'salad & wrap': 'salad', 'combos': 'combo'
+            };
+            target.src = '/images/category-' + (map[cat] || 'default_food') + '.svg';
         }
     }, true);
 

@@ -22,6 +22,23 @@ namespace Source.Models
         [Display(Name = "Giờ hẹn đến lấy")]
         public DateTime? PickupTime { get; set; }
 
+        /// <summary>Chi nhánh nhận hàng (bắt buộc khi OrderType = Pickup).</summary>
+        [Display(Name = "Chi nhánh")]
+        public int? BranchId { get; set; }
+
+        [ForeignKey("BranchId")]
+        [Display(Name = "Chi nhánh")]
+        public Branch? Branch { get; set; }
+
+        /// <summary>Mã tham chiếu thanh toán (sandbox: Guid tự sinh).</summary>
+        [StringLength(100)]
+        [Display(Name = "Mã thanh toán")]
+        public string? PaymentReference { get; set; }
+
+        /// <summary>Thời điểm thanh toán thành công.</summary>
+        [Display(Name = "Ngày thanh toán")]
+        public DateTime? PaidAt { get; set; }
+
         /// <summary>Chờ thanh toán / Đã thanh toán / Hoàn tiền (cho đơn chuyển khoản).</summary>
         [Required]
         [Display(Name = "Trạng thái thanh toán")]

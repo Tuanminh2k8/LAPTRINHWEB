@@ -40,8 +40,10 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICartSessionService, CartSessionService>();
-builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
+    builder.Services.AddScoped<ICartSessionService, CartSessionService>();
+    builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
+    builder.Services.AddScoped<IPaymentService, PaymentService>();
+    builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
 
 // Demo DI lifetimes
 builder.Services.AddSingleton<ISingletonOperation, OperationService>();

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
 using Source.Models;
+using Source.Services;
 
 namespace Source.Controllers
 {
@@ -13,12 +14,14 @@ namespace Source.Controllers
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AdminController> _logger;
+        private readonly ILoyaltyService _loyalty;
 
-        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger)
+        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger, ILoyaltyService loyalty)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
+            _loyalty = loyalty;
         }
 
         public async Task<IActionResult> Index()
@@ -765,6 +768,7 @@ namespace Source.Controllers
             if (order == null) return NotFound();
 
             order.Status = status;
+            if (status == OrderStatus.Delivered) _loyalty.Award(order);
             order.UpdatedAt = DateTime.Now;
             _context.Update(order);
             await _context.SaveChangesAsync();
@@ -862,6 +866,7 @@ namespace Source.Controllers
             if (order == null) return NotFound();
 
             order.Status = status;
+            if (status == OrderStatus.Delivered) _loyalty.Award(order);
             order.UpdatedAt = DateTime.Now;
             _context.Update(order);
             await _context.SaveChangesAsync();
@@ -917,6 +922,94 @@ namespace Source.Controllers
             ViewBag.GrandTotal = subtotal + order.ShippingFee - order.Discount;
 
             return View(order);
+        }
+
+        #endregion
+
+        #region Quản lý chi nhánh & khách hàng thân thiết
+
+        public async Task<IActionResult> Branches()
+        {
+            var branches = await _context.Branches
+                .OrderBy(b => b.SortOrder)
+                .ThenBy(b => b.Name)
+                .ToListAsync();
+            return View(branches);
+        }
+
+        [HttpGet]
+        public IActionResult BranchCreate() => View(new Branch());
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BranchCreate(Branch branch)
+        {
+            if (!ModelState.IsValid) return View(branch);
+            _context.Branches.Add(branch);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Branches));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BranchEdit(int id)
+        {
+            var branch = await _context.Branches.FindAsync(id);
+            if (branch == null) return NotFound();
+            return View(branch);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BranchEdit(int id, Branch branch)
+        {
+            if (id != branch.Id) return NotFound();
+            if (!ModelState.IsValid) return View(branch);
+            _context.Update(branch);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Branches));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BranchDelete(int id)
+        {
+            var branch = await _context.Branches.FindAsync(id);
+            if (branch != null)
+            {
+                _context.Branches.Remove(branch);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Branches));
+        }
+
+        public async Task<IActionResult> Loyalty(int page = 1)
+        {
+            const int pageSize = 25;
+            var transactions = await _context.PointTransactions
+                .Include(t => t.User)
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.TopUsers = await _context.Users
+                .Where(u => u.Points > 0)
+                .OrderByDescending(u => u.Points)
+                .Take(10)
+                .ToListAsync();
+
+            ViewBag.TotalPointsIssued = await _context.PointTransactions
+                .Where(t => t.Type == "Earn")
+                .SumAsync(t => (long?)t.Points) ?? 0;
+
+            ViewBag.TotalPointsRedeemed = await _context.PointTransactions
+                .Where(t => t.Type == "Redeem")
+                .SumAsync(t => (long?)t.Points) ?? 0;
+
+            ViewBag.CurrentPage = page;
+            ViewBag.HasNext = transactions.Count == pageSize;
+
+            return View(transactions);
         }
 
         #endregion

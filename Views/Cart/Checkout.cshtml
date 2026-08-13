@@ -71,6 +71,18 @@
                         <div class="form-text small">Khoảng thời gian bạn muốn đến lấy món</div>
                     </div>
 
+                    <div class="mb-4 d-none" id="pickupBranchField">
+                        <label class="form-label fw-bold" style="font-size:.85rem;">Chọn chi nhánh nhận hàng</label>
+                        <select id="branchId" class="form-select form-control-custom">
+                            <option value="">-- Chọn chi nhánh --</option>
+                            @foreach (var b in (ViewBag.Branches as List<Source.Models.Branch>) ?? new List<Source.Models.Branch>())
+                            {
+                                <option value="@b.Id">@b.Name — @b.Address</option>
+                            }
+                        </select>
+                        <div class="form-text small">Bắt buộc khi tự đến lấy</div>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label fw-bold" style="font-size:.85rem;">Ghi chú</label>
                         <textarea id="note" class="form-control form-control-custom" rows="2" placeholder="Ghi chú cho cửa hàng (không bắt buộc)..." value="@Model.Note"></textarea>
@@ -92,6 +104,22 @@
                                 <i class="fa-solid fa-building-columns text-primary me-1"></i>
                                 Chuyển khoản ngân hàng
                                 <div class="text-muted fw-normal small">Chuyển khoản VNĐ theo hướng dẫn sau khi đặt hàng</div>
+                            </label>
+                        </div>
+                        <div class="form-check payment-option p-3 border rounded-3 bg-white">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" value="VNPay" id="payVnpay">
+                            <label class="form-check-label fw-600 w-100" for="payVnpay" style="font-size:.88rem;">
+                                <i class="fa-solid fa-credit-card text-info me-1"></i>
+                                Thanh toán qua VNPAY (sandbox)
+                                <div class="text-muted fw-normal small">Chuyển hướng đến cổng thanh toán VNPAY</div>
+                            </label>
+                        </div>
+                        <div class="form-check payment-option p-3 border rounded-3 bg-white">
+                            <input class="form-check-input ms-0 me-2" type="radio" name="paymentMethod" value="MoMo" id="payMomo">
+                            <label class="form-check-label fw-600 w-100" for="payMomo" style="font-size:.88rem;">
+                                <i class="fa-solid fa-wallet text-danger me-1"></i>
+                                Thanh toán qua MoMo (sandbox)
+                                <div class="text-muted fw-normal small">Chuyển hướng đến ví MoMo</div>
                             </label>
                         </div>
                     </div>
@@ -146,6 +174,18 @@
                         </div>
                     </div>
 
+                    @if (isAuthenticated)
+                    {
+                        <div class="mt-3 pt-3 border-top">
+                            <label class="form-label fw-bold" style="font-size:.85rem;"><i class="fa-solid fa-coins text-warning me-1"></i> Điểm thưởng (<span id="userPoints">@(ViewBag.UserPoints ?? 0)</span> điểm)</label>
+                            <div class="input-group">
+                                <input type="number" id="pointsInput" class="form-control form-control-custom" placeholder="Số điểm muốn dùng" min="0" />
+                                <button type="button" id="btnApplyPoints" class="btn btn-dark px-3">Dùng điểm</button>
+                            </div>
+                            <div id="pointsFeedback" class="small mt-2 d-none"></div>
+                        </div>
+                    }
+
                     <div class="d-flex justify-content-between mt-3 pt-2">
                         <span class="text-muted" style="font-size:.9rem;">Tạm tính:</span>
                         <span id="ck-subtotal" class="fw-bold" style="font-size:.9rem;">@subtotal.ToString("N0") ₫</span>
@@ -154,6 +194,11 @@
                     <div class="d-flex justify-content-between mt-1" id="ck-discount-row" style="@(promoDiscount > 0 ? "" : "display:none;")">
                         <span class="text-success" style="font-size:.9rem;">Giảm giá:</span>
                         <span id="ck-discount" class="fw-bold text-success" style="font-size:.9rem;">-@promoDiscount.ToString("N0") ₫</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-1" id="ck-points-row" style="display:none;">
+                        <span class="text-info" style="font-size:.9rem;">Điểm thưởng:</span>
+                        <span id="ck-points" class="fw-bold text-info" style="font-size:.9rem;">-0 ₫</span>
                     </div>
 
                     <div class="d-flex justify-content-between mt-1">
@@ -263,6 +308,8 @@
             var shippingFee = 15000;
             var currentPromo = '@Html.Raw(appliedPromo ?? "")';
             var currentDiscount = @promoDiscount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            var pointsDisc = 0;
+            var pointsUsed = 0;
 
             function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' ₫'; }
 
@@ -270,7 +317,7 @@
                 var subtotal = parseFloat($('#ck-subtotal').data('subtotal')) || parseFloat(@subtotal.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
                 var $ship = $('#ck-shipping').text($('input[name="orderType"]:checked').val() === 'Pickup' ? fmt(0) : fmt(shippingFee));
                 var fee = $('input[name="orderType"]:checked').val() === 'Pickup' ? 0 : shippingFee;
-                $('#ck-total').text(fmt(subtotal - currentDiscount + fee));
+                $('#ck-total').text(fmt(subtotal - currentDiscount - pointsDisc + fee));
             }
 
             // Lưu subtotal vào data attribute
@@ -282,6 +329,7 @@
                 $('#addressField').toggleClass('d-none', isPickup);
                 $('#addressField .form-label .text-danger').toggleClass('d-none', isPickup);
                 $('#pickupTimeField').toggleClass('d-none', !isPickup);
+                $('#pickupBranchField').toggleClass('d-none', !isPickup);
                 computeTotals();
             });
             if ($('#pickupTime').length) {
@@ -335,12 +383,45 @@
                 $.post('/api/cart/remove-promo', {})
                     .done(function (res) {
                         currentPromo = ''; currentDiscount = 0;
+                        pointsDisc = 0; pointsUsed = 0;
                         $('#promoInput').val('');
                         $('#ck-discount-row').hide();
+                        $('#ck-points-row').hide();
                         computeTotals();
                         feedback('<i class="fa-solid fa-circle-info me-1"></i>' + res.message, true);
                     });
             });
+
+            // ─── Đổi điểm thưởng ───
+            function applyPoints() {
+                var pts = parseInt($.trim($('#pointsInput').val())) || 0;
+                if (pts <= 0) {
+                    pointsDisc = 0; pointsUsed = 0;
+                    $('#ck-points-row').hide();
+                    $('#pointsFeedback').addClass('d-none').text('');
+                    computeTotals();
+                    return;
+                }
+                $.post('/api/cart/points', { points: pts })
+                    .done(function (res) {
+                        if (res.success) {
+                            pointsDisc = res.discount; pointsUsed = res.pointsUsed;
+                            $('#ck-points').text('-' + fmt(res.discount));
+                            $('#ck-points-row').show();
+                            $('#pointsFeedback').removeClass('d-none text-danger').addClass('text-success')
+                                .text('Đã dùng ' + res.pointsUsed + ' điểm, giảm ' + fmt(res.discount));
+                        } else {
+                            pointsDisc = 0; pointsUsed = 0;
+                            $('#ck-points-row').hide();
+                            $('#pointsFeedback').removeClass('d-none text-success').addClass('text-danger').text(res.message);
+                        }
+                        computeTotals();
+                    })
+                    .fail(function () {
+                        $('#pointsFeedback').removeClass('d-none text-success').addClass('text-danger').text('Lỗi khi áp dụng điểm thưởng.');
+                    });
+            }
+            $('#btnApplyPoints').on('click', applyPoints);
 
             // ─── Đặt hàng ───
             function showSuccess(result) {
@@ -387,6 +468,7 @@
                     showToast('Số điện thoại Việt Nam không hợp lệ.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return;
                 }
                 if (orderType === 'Delivery' && !receiverAddress) { showToast('Vui lòng nhập địa chỉ giao hàng.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return; }
+                if (orderType === 'Pickup' && !$('#branchId').val()) { showToast('Vui lòng chọn chi nhánh nhận hàng.', 'danger'); $btn.prop('disabled', false).html('<i class="fa-solid fa-check-circle me-2"></i> Xác Nhận Đặt Hàng'); return; }
 
                 var payload = {
                     receiverName: receiverName,
@@ -395,7 +477,9 @@
                     orderType: orderType,
                     pickupTime: orderType === 'Pickup' && pickupTime ? new Date(pickupTime).toISOString() : null,
                     paymentMethod: paymentMethod,
+                    branchId: orderType === 'Pickup' ? (parseInt($('#branchId').val()) || null) : null,
                     note: note,
+                    pointsToRedeem: pointsUsed,
                     promoCode: currentPromo || null
                 };
 
@@ -408,6 +492,10 @@
                     if (res.success) {
                         if (window.updateCartBadge) updateCartBadge();
                         else document.querySelector('#cart-badge').textContent = '0';
+                        if (res.paymentUrl) {
+                            window.location.href = res.paymentUrl;
+                            return;
+                        }
                         showSuccess(res);
                     } else {
                         showToast(res.message || 'Không thể đặt hàng.', 'danger');

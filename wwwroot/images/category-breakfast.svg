@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#FFF9C4"/>
+  <circle cx="200" cy="150" r="90" fill="#FFF176"/>
+  <text x="200" y="158" font-size="100" text-anchor="middle" dominant-baseline="central">🍳</text>
+</svg>

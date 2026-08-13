@@ -369,6 +369,9 @@
                     <a asp-action="Index" class="btn btn-outline-danger rounded-pill px-4 py-2 w-100 fw-600">
                         <i class="fa-solid fa-list me-1"></i> Xem tất cả đơn hàng
                     </a>
+                    <button type="button" id="reorderBtn" class="btn btn-danger rounded-pill px-4 py-2 w-100 fw-600 mt-2">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Đặt lại đơn này
+                    </button>
                 </div>
             </div>
         </div>
@@ -488,6 +491,28 @@
                         $btn.prop('disabled', false).html(originalHtml);
                         $overlay.css('display', 'none');
                     }
+                });
+            });
+
+            // ─── Đặt lại đơn hàng (reorder) ───
+            $('#reorderBtn').on('click', function () {
+                var $btn = $(this).prop('disabled', true);
+                $btn.html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...');
+                $.ajax({
+                    url: '/api/orders/@Model.Id/reorder',
+                    type: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).done(function (res) {
+                    if (res.success) {
+                        PolyFood.showToast(res.message || 'Đã thêm vào giỏ hàng.', 'success');
+                        setTimeout(function () { window.location.href = '@Url.Action("Index", "Cart")'; }, 800);
+                    } else {
+                        PolyFood.showToast(res.message || 'Không thể đặt lại đơn.', 'danger');
+                        $btn.prop('disabled', false).html('<i class="fa-solid fa-rotate-left me-1"></i> Đặt lại đơn này');
+                    }
+                }).fail(function () {
+                    PolyFood.showToast('Lỗi kết nối.', 'danger');
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-rotate-left me-1"></i> Đặt lại đơn này');
                 });
             });
 

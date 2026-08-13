@@ -1,0 +1,86 @@
+@model List<Source.Models.FavoriteItem>
+@{
+    ViewData["Title"] = "Món yêu thích";
+}
+
+<div class="container my-5">
+    <h2 class="fw-bold mb-4"><i class="fa-solid fa-heart text-danger me-2"></i>Món ăn yêu thích</h2>
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info border-0 rounded-3">
+            Bạn chưa lưu món nào. Hãy nhấn biểu tượng <i class="fa-solid fa-heart text-danger"></i> trên món ăn để lưu lại nhé!
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="favList">
+            @foreach (var f in Model)
+            {
+                var name = f.FastFood?.Name ?? f.Combo?.Name ?? "Món";
+                var img = f.FastFood?.ImageUrl ?? f.Combo?.ImageUrl ?? "/images/default_food.jpg";
+                var price = f.FastFood?.Price ?? f.Combo?.Price ?? 0m;
+                var foodId = f.FastFoodId;
+                var comboId = f.ComboId;
+
+                <div class="col" data-fav-id="@f.Id">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <img src="@img" class="card-img-top" style="height:160px;object-fit:cover;" alt="@name">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="fw-bold mb-1">@name</h5>
+                            <p class="text-danger fw-bold mb-3">@price.ToString("N0") ₫</p>
+                            <div class="d-flex gap-2 mt-auto">
+                                <button class="btn btn-danger flex-grow-1 rounded-pill add-fav" data-food-id="@foodId" data-combo-id="@comboId">
+                                    <i class="fa-solid fa-cart-plus me-1"></i> Thêm giỏ
+                                </button>
+                                <button class="btn btn-outline-secondary rounded-pill remove-fav" data-food-id="@foodId" data-combo-id="@comboId">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            $('.add-fav').on('click', function () {
+                var $b = $(this);
+                var foodId = $b.data('food-id') || null;
+                var comboId = $b.data('combo-id') || null;
+                $.ajax({
+                    url: '/api/cart/add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ foodId: foodId, comboId: comboId, quantity: 1, optionIds: [] })
+                }).done(function (r) {
+                    if (r.success) {
+                        if (window.updateCartBadge) updateCartBadge();
+                        showToast('Đã thêm vào giỏ hàng!', 'success');
+                    } else showToast(r.message || 'Không thể thêm.', 'danger');
+                }).fail(function () { showToast('Lỗi kết nối.', 'danger'); });
+            });
+
+            $('.remove-fav').on('click', function () {
+                var $b = $(this);
+                var foodId = $b.data('food-id') || null;
+                var comboId = $b.data('combo-id') || null;
+                $.ajax({
+                    url: '/api/favorites/toggle',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ fastFoodId: foodId, comboId: comboId })
+                }).done(function (r) {
+                    if (r.success) {
+                        $b.closest('[data-fav-id]').remove();
+                        showToast(r.message, 'info');
+                    } else showToast(r.message || 'Lỗi', 'danger');
+                });
+            });
+        })();
+    </script>
+}

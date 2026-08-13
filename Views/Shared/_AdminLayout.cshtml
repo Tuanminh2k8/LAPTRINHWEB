@@ -88,6 +88,16 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Branches" ? "active" : "")" asp-controller="Admin" asp-action="Branches">
+                        <i class="fa-solid fa-location-dot me-2"></i> Chi nhánh
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-polyfood @(currentAction == "Loyalty" ? "active" : "")" asp-controller="Admin" asp-action="Loyalty">
+                        <i class="fa-solid fa-star me-2"></i> Khách hàng thân thiết
+                    </a>
+                </li>
+                <li class="nav-item">
                     <hr class="dropdown-divider my-2">
                 </li>
                 <li class="nav-item">
@@ -139,6 +149,12 @@
             </a>
             <a class="nav-link nav-link-polyfood @(currentAction == "Orders" ? "active" : "")" asp-controller="Admin" asp-action="Orders">
                 <i class="fa-solid fa-receipt me-2"></i> Đơn hàng
+            </a>
+            <a class="nav-link nav-link-polyfood @(currentAction == "Branches" ? "active" : "")" asp-controller="Admin" asp-action="Branches">
+                <i class="fa-solid fa-location-dot me-2"></i> Chi nhánh
+            </a>
+            <a class="nav-link nav-link-polyfood @(currentAction == "Loyalty" ? "active" : "")" asp-controller="Admin" asp-action="Loyalty">
+                <i class="fa-solid fa-star me-2"></i> Khách hàng thân thiết
             </a>
             <hr class="border-white border-opacity-10 my-2">
             <a class="nav-link nav-link-polyfood" asp-controller="Home" asp-action="Index">
