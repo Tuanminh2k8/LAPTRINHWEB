@@ -73,6 +73,16 @@
     </div>
 </div>
 
+<div class="container my-5">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 p-4 d-flex align-items-center justify-content-between">
+            <h4 class="fw-bold mb-0"><i class="fa-solid fa-star text-warning me-2"></i>Đánh giá từ khách hàng</h4>
+            <span id="reviewSummary" class="text-muted small"></span>
+        </div>
+        <div id="foodReviews" class="card-body px-4 pb-4 pt-0 text-muted small">Đang tải đánh giá...</div>
+    </div>
+</div>
+
 @{
     var relatedFoods = ViewBag.RelatedFoods as IEnumerable<Source.Models.FastFood> ?? new List<Source.Models.FastFood>();
 }
@@ -136,6 +146,22 @@
                     }
                 }).fail(function () { showToast('Lỗi kết nối.', 'danger'); });
             });
+
+            function escapeHtml(value) { return $('<div>').text(value || '').html(); }
+            $.getJSON('/api/reviews/food/' + foodId).done(function (data) {
+                var summary = data.summary || {};
+                $('#reviewSummary').html('<strong class="text-dark">' + (summary.avgRating || 0).toFixed(1) + '</strong> / 5 · ' + (summary.totalReviews || 0) + ' đánh giá');
+                if (!data.reviews || !data.reviews.length) {
+                    $('#foodReviews').html('<div class="py-3 text-center text-muted">Chưa có đánh giá nào cho món này.</div>');
+                    return;
+                }
+                var html = data.reviews.map(function (review) {
+                    var stars = '<span class="text-warning">' + '★'.repeat(review.rating) + '</span><span class="text-muted">' + '☆'.repeat(5 - review.rating) + '</span>';
+                    var images = (review.imageUrls || []).map(function (url) { return '<a href="' + escapeHtml(url) + '" target="_blank"><img src="' + escapeHtml(url) + '" alt="Ảnh đánh giá" class="rounded-3 border me-2 mt-2" style="width:72px;height:72px;object-fit:cover"></a>'; }).join('');
+                    return '<div class="py-3 border-top"><div class="d-flex justify-content-between gap-3"><strong class="text-dark">' + escapeHtml(review.reviewerName) + '</strong><small>' + new Date(review.createdAt).toLocaleDateString('vi-VN') + '</small></div><div class="mt-1">' + stars + '</div>' + (review.comment ? '<p class="text-dark mb-0 mt-2">' + escapeHtml(review.comment) + '</p>' : '') + (images ? '<div>' + images + '</div>' : '') + '</div>';
+                }).join('');
+                $('#foodReviews').html(html);
+            }).fail(function () { $('#foodReviews').html('<div class="py-3 text-muted">Chưa thể tải đánh giá.</div>'); });
         })();
     </script>
 }

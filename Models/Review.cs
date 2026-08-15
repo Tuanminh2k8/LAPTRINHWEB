@@ -43,5 +43,7 @@ namespace Source.Models
         // Xác nhận đơn đã giao thành công thì được đánh giá
         [Display(Name = "Đã kiểm duyệt")]
         public bool IsApproved { get; set; } = true;
+
+        public ICollection<ReviewImage> Images { get; set; } = new List<ReviewImage>();
     }
 }

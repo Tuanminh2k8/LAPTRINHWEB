@@ -2,6 +2,7 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = "Quản Lý Tùy Chọn Món";
     var foods = (IEnumerable<dynamic>)ViewBag.ApiFoods;
+    var selectedFoodId = ViewBag.SelectedFoodId as int?;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -235,6 +236,13 @@
                 $('#groupsTitle').html('<i class="fa-solid fa-sliders me-2"></i> Tùy Chọn — ' + $('<div>').text(name).html());
                 loadGroups();
             });
+
+            var selectedFoodId = @(selectedFoodId?.ToString() ?? "null");
+            if (selectedFoodId) {
+                $('#foodList .js-select-food').filter(function () {
+                    return parseInt($(this).data('id'), 10) === selectedFoodId;
+                }).first().trigger('click');
+            }
 
             // ─── Nhóm: thêm / sửa / xóa ───
             $('#btnAddGroup').on('click', function () {

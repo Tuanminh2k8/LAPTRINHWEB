@@ -147,8 +147,8 @@
                             <tbody>
                                 @foreach (var detail in Model.OrderDetails)
                                 {
-                                    var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
-                                    var img = detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
+                                    var name = detail.FastFoodName ?? detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                                    var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
                                     var modifierTotal = detail.Modifiers.Sum(m => m.OptionPrice);
 
                                     <tr>
@@ -301,8 +301,8 @@
                     <div class="card-body p-4">
                         @foreach (var detail in Model.OrderDetails.Where(d => d.FastFoodId.HasValue))
                         {
-                            var name = detail.FastFood?.Name ?? detail.FastFoodName ?? "Món ăn";
-                            var img = detail.FastFood?.ImageUrl ?? "/images/default_food.svg";
+                            var name = detail.FastFoodName ?? detail.FastFood?.Name ?? "Món ăn";
+                            var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? "/images/default_food.svg";
                             var isDelivered = Model.Status == Source.Models.OrderStatus.Delivered;
                             <div class="d-flex align-items-center justify-content-between py-2 @(detail != Model.OrderDetails.Where(d => d.FastFoodId.HasValue).First() ? "border-top" : "")">
                                 <div class="d-flex align-items-center gap-2">
@@ -434,6 +434,12 @@
                     <textarea id="reviewComment" class="form-control form-control-custom" rows="3" maxlength="1000" placeholder="Món ăn ngon, đóng gói cẩn thận..."></textarea>
                     <div class="form-text small text-end"><span id="reviewCommentCount">0</span>/1000</div>
                 </div>
+                <div class="mb-1">
+                    <label for="reviewImages" class="form-label fw-bold small">Hình ảnh thực tế <span class="text-muted fw-normal">(tối đa 5 ảnh)</span></label>
+                    <input id="reviewImages" type="file" class="form-control form-control-custom" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+                    <div class="form-text">JPG, PNG, WEBP hoặc GIF; tối đa 5MB mỗi ảnh.</div>
+                    <div id="reviewImagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                </div>
             </div>
             <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
                 <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
@@ -526,6 +532,8 @@
                 $('#reviewFoodName').text(name);
                 $('#reviewComment').val('');
                 $('#reviewCommentCount').text('0');
+                $('#reviewImages').val('');
+                $('#reviewImagePreview').empty();
                 $('.review-star').each(function (i) {
                     $(this).removeClass('fa-solid').addClass('fa-regular');
                 });
@@ -562,19 +570,33 @@
                 $('#reviewCommentCount').text($(this).val().length);
             });
 
+            $('#reviewImages').on('change', function () {
+                var files = Array.prototype.slice.call(this.files || []);
+                var $preview = $('#reviewImagePreview').empty();
+                if (files.length > 5) { PolyFood.showToast('Bạn chỉ có thể chọn tối đa 5 ảnh.', 'warning'); $(this).val(''); return; }
+                files.forEach(function (file) {
+                    if (file.type.indexOf('image/') !== 0) return;
+                    var reader = new FileReader();
+                    reader.onload = function (event) { $preview.append($('<img>', { src: event.target.result, alt: 'Ảnh đánh giá', class: 'rounded-3 border', css: { width: '70px', height: '70px', objectFit: 'cover' } })); };
+                    reader.readAsDataURL(file);
+                });
+            });
+
             $('#btnSubmitReview').on('click', function () {
                 var $btn = $(this).prop('disabled', true);
                 $btn.html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang gửi...');
+                var data = new FormData();
+                data.append('orderId', reviewOrderId);
+                data.append('foodId', reviewFoodId);
+                data.append('rating', reviewRating);
+                data.append('comment', $('#reviewComment').val());
+                Array.prototype.slice.call($('#reviewImages')[0].files || []).forEach(function (file) { data.append('images', file); });
                 $.ajax({
                     url: '/api/reviews',
                     type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        orderId: reviewOrderId,
-                        foodId: reviewFoodId,
-                        rating: reviewRating,
-                        comment: $('#reviewComment').val()
-                    })
+                    data: data,
+                    contentType: false,
+                    processData: false
                 }).done(function (res) {
                     if (res.success) {
                         var modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));

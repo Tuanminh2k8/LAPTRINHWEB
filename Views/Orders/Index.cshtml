@@ -93,8 +93,8 @@
                                     <div class="d-flex flex-column gap-1">
                                         @foreach (var detail in order.OrderDetails)
                                         {
-                                            var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
-                                            var img = detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
+                                            var name = detail.FastFoodName ?? detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                                            var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="@img" alt="@name" class="rounded-3" style="width: 36px; height: 36px; object-fit: cover;" />
                                                 <div>

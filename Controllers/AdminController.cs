@@ -413,17 +413,32 @@ namespace Source.Controllers
             var food = await _context.FastFoods.FindAsync(id);
             if (food != null)
             {
-                var inOrders = await _context.OrderDetails.AnyAsync(od => od.FastFoodId == id);
-                var inCombos = await _context.ComboDetails.AnyAsync(cd => cd.FastFoodId == id);
-                if (inOrders || inCombos)
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+
+                // Giữ hóa đơn đã phát sinh: OrderDetail đã có Price/FastFoodName là snapshot,
+                // nên chỉ ngắt liên kết tới món bị xóa thay vì xóa lịch sử đơn hàng.
+                var orderDetails = await _context.OrderDetails
+                    .Where(od => od.FastFoodId == id)
+                    .ToListAsync();
+                foreach (var detail in orderDetails)
                 {
-                    TempData["ErrorMessage"] = "Không thể xóa món ăn đang được sử dụng trong combo hoặc đơn hàng.";
-                    return RedirectToAction(nameof(Foods));
+                    detail.FastFoodId = null;
+                    detail.FastFoodName ??= food.Name;
+                    detail.ProductImageUrl ??= food.ImageUrl;
+                    detail.ProductDescription ??= food.Description;
                 }
+
+                // Combo và mục yêu thích không còn được phép tham chiếu đến món đã xóa.
+                var comboDetails = await _context.ComboDetails.Where(cd => cd.FastFoodId == id).ToListAsync();
+                var favorites = await _context.FavoriteItems.Where(f => f.FastFoodId == id).ToListAsync();
+                _context.ComboDetails.RemoveRange(comboDetails);
+                _context.FavoriteItems.RemoveRange(favorites);
 
                 _context.FastFoods.Remove(food);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Xóa món ăn thành công!";
+                await transaction.CommitAsync();
+                _logger.LogWarning("Admin permanently deleted food: {FoodId} ({FoodName})", food.Id, food.Name);
+                TempData["SuccessMessage"] = "Đã xóa món ăn và các dữ liệu liên quan. Lịch sử hóa đơn vẫn được giữ lại.";
             }
             return RedirectToAction(nameof(Foods));
         }
@@ -476,9 +491,9 @@ namespace Source.Controllers
         }
 
         // GET: Admin/Modifiers - quản lý nhóm tùy chọn (size/topping/độ cay) theo món (AJAX)
-        public async Task<IActionResult> Modifiers()
+        public async Task<IActionResult> Modifiers(int? foodId)
         {
-            ViewBag.ApiFoods = await _context.FastFoods
+            var apiFoods = await _context.FastFoods
                 .AsNoTracking()
                 .OrderBy(f => f.Name)
                 .Select(f => new
@@ -488,6 +503,11 @@ namespace Source.Controllers
                     hasGroups = f.ModifierGroups.Any()
                 })
                 .ToListAsync();
+
+            ViewBag.ApiFoods = apiFoods;
+            ViewBag.SelectedFoodId = foodId is > 0 && apiFoods.Any(f => f.id == foodId)
+                ? foodId
+                : null;
 
             return View();
         }

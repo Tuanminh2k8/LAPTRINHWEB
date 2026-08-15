@@ -12,10 +12,12 @@ namespace Source.Controllers.Api
     public class ReviewsApiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public ReviewsApiController(AppDbContext context)
+        public ReviewsApiController(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         public class CreateReviewRequest
@@ -32,6 +34,8 @@ namespace Source.Controllers.Api
 
             [StringLength(1000)]
             public string? Comment { get; set; }
+
+            public List<IFormFile> Images { get; set; } = new();
         }
 
         // GET: api/reviews/food/5 — danh sách đánh giá của một món ăn (public)
@@ -51,7 +55,8 @@ namespace Source.Controllers.Api
                     r.Rating,
                     r.Comment,
                     r.CreatedAt,
-                    reviewerName = r.User != null ? r.User.FullName : "Khách hàng"
+                    reviewerName = r.User != null ? r.User.FullName : "Khách hàng",
+                    imageUrls = r.Images.OrderBy(i => i.SortOrder).Select(i => i.ImageUrl).ToList()
                 })
                 .ToListAsync();
 
@@ -84,7 +89,7 @@ namespace Source.Controllers.Api
         // POST: api/reviews — khách đánh giá món đã mua (đơn phải Delivered và có món này)
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult> CreateReview([FromBody] CreateReviewRequest request)
+        public async Task<ActionResult> CreateReview([FromForm] CreateReviewRequest request)
         {
             if (request == null || !ModelState.IsValid)
             {
@@ -93,6 +98,13 @@ namespace Source.Controllers.Api
 
             var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue) return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
+            if (request.Images.Count > 5) return BadRequest(new { message = "Bạn chỉ có thể đính kèm tối đa 5 ảnh." });
+            foreach (var image in request.Images)
+            {
+                var validation = ImageUploadHelper.Validate(image);
+                if (!validation.IsValid) return BadRequest(new { message = validation.ErrorMessage });
+            }
 
             var hasDelivered = await _context.Orders
                 .AnyAsync(o => o.Id == request.OrderId &&
@@ -117,13 +129,19 @@ namespace Source.Controllers.Api
             };
 
             _context.Reviews.Add(review);
+            for (var index = 0; index < request.Images.Count; index++)
+            {
+                var imageUrl = await ImageUploadHelper.SaveToWwwRootAsync(request.Images[index], _environment.WebRootPath, "images/reviews");
+                if (!string.IsNullOrWhiteSpace(imageUrl)) review.Images.Add(new ReviewImage { ImageUrl = imageUrl, SortOrder = index });
+            }
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 success = true,
                 message = "Cảm ơn bạn đã đánh giá!",
-                reviewId = review.Id
+                reviewId = review.Id,
+                imageUrls = review.Images.OrderBy(i => i.SortOrder).Select(i => i.ImageUrl)
             });
         }
     }

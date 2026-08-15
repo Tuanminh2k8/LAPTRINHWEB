@@ -15,9 +15,9 @@ namespace Source.Models
         [Display(Name = "Chi tiết đơn")]
         public OrderDetail? OrderDetail { get; set; }
 
-        [Required]
         [Display(Name = "Tùy chọn")]
-        public int ModifierOptionId { get; set; }
+        // Có thể null khi admin đã xóa món/tùy chọn gốc; OptionName và OptionPrice vẫn là snapshot đơn hàng.
+        public int? ModifierOptionId { get; set; }
 
         [Display(Name = "Tùy chọn")]
         public ModifierOption? ModifierOption { get; set; }

@@ -38,6 +38,13 @@ namespace Source.Models
         [StringLength(100)]
         public string? FastFoodName { get; set; }
 
+        // Thông tin sản phẩm tại thời điểm đặt hàng, không thay đổi khi admin sửa/xóa món.
+        [StringLength(500)]
+        public string? ProductImageUrl { get; set; }
+
+        [StringLength(1000)]
+        public string? ProductDescription { get; set; }
+
         public ICollection<OrderDetailModifier> Modifiers { get; set; } = new List<OrderDetailModifier>();
     }
 }

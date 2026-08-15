@@ -298,14 +298,33 @@ namespace Source.Controllers
 
                     foreach (var item in cart)
                     {
-                        _context.OrderDetails.Add(new OrderDetail
+                        var detail = new OrderDetail
                         {
                             OrderId = model.Id,
                             FastFoodId = item.FastFoodId,
                             ComboId = item.ComboId,
                             Quantity = item.Quantity,
-                            Price = item.Price
-                        });
+                            Price = item.Price,
+                            FastFoodName = item.Name,
+                            ProductImageUrl = item.ImageUrl
+                        };
+
+                        if (item.FastFoodId.HasValue)
+                        {
+                            detail.ProductDescription = await _context.FastFoods
+                                .Where(f => f.Id == item.FastFoodId.Value)
+                                .Select(f => f.Description)
+                                .FirstOrDefaultAsync();
+                        }
+                        else if (item.ComboId.HasValue)
+                        {
+                            detail.ProductDescription = await _context.Combos
+                                .Where(c => c.Id == item.ComboId.Value)
+                                .Select(c => c.Description)
+                                .FirstOrDefaultAsync();
+                        }
+
+                        _context.OrderDetails.Add(detail);
                     }
 
                     // Ghi nhận lượt dùng mã trong cùng transaction

@@ -64,6 +64,16 @@
             <span asp-validation-for="Description" class="text-danger small"></span>
         </div>
 
+        <div class="d-flex align-items-center justify-content-between gap-3 rounded-3 border border-warning-subtle bg-warning-subtle p-3 mb-4">
+            <div>
+                <div class="fw-bold text-dark small"><i class="fa-solid fa-sliders me-2 text-warning-emphasis"></i>Phân loại & tùy chọn món</div>
+                <div class="small text-muted mt-1">Thiết lập Size, topping và giá cộng thêm cho món này.</div>
+            </div>
+            <a asp-action="Modifiers" asp-route-foodId="@Model.Id" class="btn btn-warning btn-sm rounded-pill px-3 text-dark fw-bold text-nowrap">
+                Thiết lập ngay <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+
         <div class="d-flex justify-content-end gap-2 pt-3 border-top">
             <a asp-action="Foods" class="btn btn-secondary-custom btn-custom">Hủy bỏ</a>
             <button type="submit" class="btn btn-primary-custom btn-custom rounded-pill px-4">Lưu Thay Đổi</button>

@@ -181,8 +181,8 @@
                     <tbody>
                         @foreach (var detail in Model.OrderDetails)
                         {
-                            var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
-                            var img = detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
+                            var name = detail.FastFoodName ?? detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                            var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">

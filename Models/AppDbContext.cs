@@ -23,6 +23,7 @@ namespace Source.Models
         public DbSet<ModifierOption> ModifierOptions { get; set; } = null!;
         public DbSet<OrderDetailModifier> OrderDetailModifiers { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
+        public DbSet<ReviewImage> ReviewImages { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -42,6 +43,13 @@ namespace Source.Models
                 .HasOne(cd => cd.FastFood)
                 .WithMany(f => f.ComboDetails)
                 .HasForeignKey(cd => cd.FastFoodId);
+
+            // Giữ snapshot Size/Topping trong hóa đơn khi tùy chọn gốc bị xóa.
+            modelBuilder.Entity<OrderDetailModifier>()
+                .HasOne(odm => odm.ModifierOption)
+                .WithMany()
+                .HasForeignKey(odm => odm.ModifierOptionId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Categories, Combos, Users, ComboDetails seed remain
             // Foods are seeded dynamically via DbInitializer

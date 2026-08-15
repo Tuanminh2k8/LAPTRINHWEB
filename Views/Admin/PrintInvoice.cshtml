@@ -77,7 +77,7 @@
             <tbody>
                 @foreach (var detail in Model.OrderDetails)
                 {
-                    var name = detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
+                    var name = detail.FastFoodName ?? detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
                     <tr>
                         <td>@name</td>
                         <td style="text-align:center;">@detail.Price.ToString("N0")</td>

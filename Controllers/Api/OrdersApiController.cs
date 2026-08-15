@@ -155,8 +155,9 @@ namespace Source.Controllers.Api
                         FastFoodId = item.FastFoodId,
                         ComboId = item.ComboId,
                         Quantity = item.Quantity,
-                        Price = item.UnitPrice,
-                        FastFoodName = item.Name
+                        Price = item.Price,
+                        FastFoodName = item.Name,
+                        ProductImageUrl = item.ImageUrl
                     };
                     _context.OrderDetails.Add(detail);
                     await _context.SaveChangesAsync();
@@ -179,9 +180,17 @@ namespace Source.Controllers.Api
                         var food = await _context.FastFoods.FindAsync(item.FastFoodId.Value);
                         if (food != null)
                         {
+                            detail.ProductDescription = food.Description;
                             food.SoldCount += item.Quantity;
                             _context.Update(food);
                         }
+                    }
+                    else if (item.ComboId.HasValue)
+                    {
+                        detail.ProductDescription = await _context.Combos
+                            .Where(c => c.Id == item.ComboId.Value)
+                            .Select(c => c.Description)
+                            .FirstOrDefaultAsync();
                     }
                 }
 
@@ -331,7 +340,7 @@ namespace Source.Controllers.Api
                 {
                     d.Id,
                     name = d.FastFoodName ?? d.FastFood?.Name ?? d.Combo?.Name ?? "Sản phẩm",
-                    imageUrl = d.FastFood?.ImageUrl ?? d.Combo?.ImageUrl ?? "/images/default_food.jpg",
+                    imageUrl = d.ProductImageUrl ?? d.FastFood?.ImageUrl ?? d.Combo?.ImageUrl ?? "/images/default_food.jpg",
                     d.Quantity,
                     d.Price,
                     unitTotal = d.Price + d.Modifiers.Sum(m => m.OptionPrice),
@@ -375,10 +384,12 @@ namespace Source.Controllers.Api
                 }
                 else
                 {
+                    // Sản phẩm gốc đã bị admin xóa: chỉ hiển thị snapshot, không thể đặt lại.
+                    if (!d.FastFoodId.HasValue) continue;
                     var food = await _context.FastFoods.AsNoTracking().FirstOrDefaultAsync(f => f.Id == d.FastFoodId);
-                    var mods = d.Modifiers.Select(m => new CartItemModifier
+                    var mods = d.Modifiers.Where(m => m.ModifierOptionId.HasValue).Select(m => new CartItemModifier
                     {
-                        OptionId = m.ModifierOptionId,
+                        OptionId = m.ModifierOptionId!.Value,
                         OptionName = m.OptionName,
                         OptionPrice = m.OptionPrice
                     }).ToList();

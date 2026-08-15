@@ -46,10 +46,13 @@
                         </td>
                         <td class="fw-bold text-danger">@food.Price.ToString("N0") ₫</td>
                         <td class="text-center">
+                            <a asp-action="Modifiers" asp-route-foodId="@food.Id" class="btn btn-sm btn-outline-warning border-0 rounded-circle p-2 me-1" title="Phân loại & tùy chọn">
+                                <i class="fa-solid fa-sliders"></i>
+                            </a>
                             <a asp-action="FoodEdit" asp-route-id="@food.Id" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2 me-1" title="Sửa">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
-                            <form asp-action="FoodDelete" asp-route-id="@food.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa món ăn này?');">
+                            <form asp-action="FoodDelete" asp-route-id="@food.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa vĩnh viễn món này? Món sẽ bị gỡ khỏi combo và mục yêu thích; lịch sử hóa đơn vẫn được giữ lại.');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" title="Xóa">
                                     <i class="fa-solid fa-trash-can"></i>
