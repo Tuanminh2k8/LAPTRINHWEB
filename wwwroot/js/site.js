@@ -143,7 +143,7 @@
                 clearInterval(slideInterval);
                 slideInterval = setInterval(nextSlide, 5000);
             });
-        }
+        },
 
         animateStatCounters: function () {
             if (!('IntersectionObserver' in window)) return;
