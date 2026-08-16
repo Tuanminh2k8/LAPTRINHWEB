@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +76,16 @@ builder.Services.AddAntiforgery(options =>
 
 var app = builder.Build();
 
+// Chỉ bật HttpsRedirection khi app THỰC SỰ có endpoint HTTPS.
+// Nếu chạy HTTP-only (profile "http", `dotnet run --urls http://...`), bỏ qua để tránh
+// cảnh báo "Failed to determine the https port for redirect" và không redirect về port không tồn tại.
+string effectiveUrls = builder.Configuration["urls"]
+                       ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+                       ?? "";
+bool hasHttpsUrl = effectiveUrls.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                       .Any(u => u.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                   || !string.IsNullOrEmpty(builder.Configuration["https_port"]);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -86,7 +96,10 @@ else
     app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
+if (hasHttpsUrl)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -122,3 +135,6 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.Run();
+
+
+
