@@ -23,21 +23,27 @@ namespace Source.Controllers.Api
         {
             var now = DateTime.Now;
 
-            // Doanh thu theo ngày (7 ngày gần nhất) — chỉ tính đơn đã giao
-            var last7Days = Enumerable.Range(0, 7)
-                .Select(i => now.Date.AddDays(-i))
-                .ToList();
-
+            // Doanh thu theo ngày (7 ngày gần nhất) — GROUP BY ngay trong SQL, chỉ đơn đã giao
+            var fromDate = now.Date.AddDays(-6);
             var revenueByDay = await _context.Orders
-                .Where(o => o.Status == OrderStatus.Delivered && !o.IsDeleted && o.OrderDate >= now.Date.AddDays(-6))
+                .AsNoTracking()
+                .Where(o => o.Status == OrderStatus.Delivered && !o.IsDeleted && o.OrderDate >= fromDate)
+                .GroupBy(o => o.OrderDate.Date)
+                .Select(g => new { Date = g.Key, Revenue = g.Sum(o => o.TotalAmount), Orders = g.Count() })
                 .ToListAsync();
 
-            var revenueData = last7Days.Select(day => new
-            {
-                label = day.ToString("dd/MM"),
-                revenue = revenueByDay.Where(o => o.OrderDate.Date == day).Sum(o => o.TotalAmount),
-                orders = revenueByDay.Count(o => o.OrderDate.Date == day)
-            }).OrderBy(x => DateTime.ParseExact(x.label, "dd/MM", System.Globalization.CultureInfo.InvariantCulture)).ToList();
+            var revenueByDayMap = revenueByDay.ToDictionary(x => x.Date, x => x);
+
+            var revenueData = Enumerable.Range(0, 7)
+                .Select(i => now.Date.AddDays(-i))
+                .Select(day => new
+                {
+                    label = day.ToString("dd/MM"),
+                    revenue = revenueByDayMap.TryGetValue(day, out var r) ? r.Revenue : 0m,
+                    orders = revenueByDayMap.TryGetValue(day, out var o2) ? o2.Orders : 0
+                })
+                .OrderBy(x => DateTime.ParseExact(x.label, "dd/MM", System.Globalization.CultureInfo.InvariantCulture))
+                .ToList();
 
             // Doanh thu theo món (top 8 bán chạy theo SoldCount)
             var topFoods = await _context.FastFoods
@@ -47,11 +53,18 @@ namespace Source.Controllers.Api
                 .Select(f => new { f.Name, f.SoldCount })
                 .ToListAsync();
 
-            // Đơn theo trạng thái (donut)
+            // Đơn theo trạng thái (donut) — 1 query GROUP BY thay vì 13 COUNT riêng lẻ
+            var statusCountQuery = await _context.Orders
+                .AsNoTracking()
+                .Where(o => !o.IsDeleted)
+                .GroupBy(o => o.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
             var statusCounts = new Dictionary<string, int>();
             foreach (var s in OrderStatus.All)
             {
-                statusCounts[s] = await _context.Orders.CountAsync(o => o.Status == s && !o.IsDeleted);
+                statusCounts[s] = statusCountQuery.FirstOrDefault(x => x.Status == s)?.Count ?? 0;
             }
 
             return Ok(new

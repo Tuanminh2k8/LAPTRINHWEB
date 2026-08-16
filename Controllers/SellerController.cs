@@ -38,22 +38,31 @@ namespace Source.Controllers
 
             // Thống kê đơn hàng chứa món của Seller
             var sellerOrdersQuery = _context.Orders
+                .AsNoTracking()
                 .Where(o => !o.IsDeleted && o.OrderDetails.Any(d => d.FastFoodId != null && sellerFoodIds.Contains(d.FastFoodId.Value)));
 
-            ViewBag.TotalOrders = await sellerOrdersQuery.CountAsync();
-            ViewBag.PendingOrders = await sellerOrdersQuery.CountAsync(o => o.Status == OrderStatus.Pending);
-            ViewBag.PreparingOrders = await sellerOrdersQuery.CountAsync(o => o.Status == OrderStatus.Preparing);
-            ViewBag.ShippingOrders = await sellerOrdersQuery.CountAsync(o => o.Status == OrderStatus.Shipping);
-            ViewBag.DeliveredOrders = await sellerOrdersQuery.CountAsync(o => o.Status == OrderStatus.Delivered);
-
-            // Tính doanh thu: Tổng tiền các món ăn của Seller trong đơn đã giao thành công
-            var deliveredOrderDetails = await _context.OrderDetails
-                .Include(d => d.Order)
-                .Include(d => d.Modifiers)
-                .Where(d => d.FastFoodId != null && sellerFoodIds.Contains(d.FastFoodId.Value) && d.Order!.Status == OrderStatus.Delivered && !d.Order.IsDeleted)
+            var orderCounts = await sellerOrdersQuery
+                .GroupBy(o => o.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            ViewBag.TotalRevenue = deliveredOrderDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity);
+            int GetCount(string s) => orderCounts.FirstOrDefault(x => x.Status == s)?.Count ?? 0;
+
+            ViewBag.TotalOrders = orderCounts.Sum(x => x.Count);
+            ViewBag.PendingOrders = GetCount(OrderStatus.Pending);
+            ViewBag.PreparingOrders = GetCount(OrderStatus.Preparing);
+            ViewBag.ShippingOrders = GetCount(OrderStatus.Shipping);
+            ViewBag.DeliveredOrders = GetCount(OrderStatus.Delivered);
+
+            // Tính doanh thu: Tổng tiền các món ăn của Seller trong đơn đã giao thành công (tính ngay trong SQL)
+            var totalRevenue = await _context.OrderDetails
+                .AsNoTracking()
+                .Where(d => d.FastFoodId != null && sellerFoodIds.Contains(d.FastFoodId.Value)
+                            && d.Order!.Status == OrderStatus.Delivered && !d.Order.IsDeleted)
+                .Select(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity)
+                .SumAsync();
+
+            ViewBag.TotalRevenue = totalRevenue;
             ViewBag.TotalFoods = sellerFoodIds.Count;
 
             var recentOrders = await sellerOrdersQuery

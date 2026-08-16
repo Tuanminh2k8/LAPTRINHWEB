@@ -20,7 +20,7 @@ namespace Source.Controllers.Api
             _logger = logger;
         }
 
-        // GET: api/foods?name=&categoryId=&minPrice=&maxPrice=&categoryIds=1,2,3
+        // GET: api/foods?name=&categoryId=&minPrice=&maxPrice=&categoryIds=1,2,3&page=1&pageSize=20
         [HttpGet]
         public async Task<ActionResult> GetFoods(
             [FromQuery] string? name,
@@ -29,7 +29,9 @@ namespace Source.Controllers.Api
             [FromQuery] decimal? maxPrice,
             [FromQuery]
             [ModelBinder(BinderType = typeof(CommaSeparatedIntModelBinder))]
-            List<int>? categoryIds)
+            List<int>? categoryIds,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize)
         {
             var query = _context.FastFoods.AsNoTracking().AsQueryable();
 
@@ -60,25 +62,43 @@ namespace Source.Controllers.Api
                 query = query.Where(f => f.Price <= maxPrice.Value);
             }
 
-            var foods = await query
-                .OrderBy(f => f.Name)
-                .Select(f => new
-                {
-                    f.Id,
-                    f.Name,
-                    f.Price,
-                    f.Description,
-                    f.ImageUrl,
-                    f.CategoryId,
-                    f.SoldCount,
-                    f.IsAvailable,
-                    f.IsBestSeller,
-                    avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
-                    reviewCount = f.Reviews.Count,
-                    CategoryName = f.Category != null ? f.Category.Name : ""
-                })
-                .ToListAsync();
+            query = query.OrderBy(f => f.Name);
 
+            var projection = (IQueryable<object>)query.Select(f => new
+            {
+                f.Id,
+                f.Name,
+                f.Price,
+                f.Description,
+                f.ImageUrl,
+                f.CategoryId,
+                f.SoldCount,
+                f.IsAvailable,
+                f.IsBestSeller,
+                avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
+                reviewCount = f.Reviews.Count,
+                CategoryName = f.Category != null ? f.Category.Name : ""
+            });
+
+            // Nếu có pageSize → trả về dạng phân trang; ngược lại giữ nguyên array (tương thích cũ)
+            if (pageSize.HasValue && pageSize.Value > 0)
+            {
+                var safePage = Math.Max(1, page ?? 1);
+                var safeSize = Math.Min(100, pageSize.Value);
+                var totalItems = await projection.CountAsync();
+                var items = await projection.Skip((safePage - 1) * safeSize).Take(safeSize).ToListAsync();
+
+                return Ok(new
+                {
+                    items,
+                    totalItems,
+                    totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)safeSize)),
+                    page = safePage,
+                    pageSize = safeSize
+                });
+            }
+
+            var foods = await projection.ToListAsync();
             return Ok(foods);
         }
 

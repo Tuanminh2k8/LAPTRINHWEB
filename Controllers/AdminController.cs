@@ -908,6 +908,7 @@ namespace Source.Controllers
         public async Task<IActionResult> Orders(string? status, string? search, string? sort, int? page)
         {
             var query = _context.Orders
+                .AsNoTracking()
                 .Include(o => o.User)
                 .Where(o => !o.IsDeleted)
                 .AsQueryable();
@@ -952,15 +953,24 @@ namespace Source.Controllers
             ViewBag.SortOrder = sort;
             ViewBag.CurrentPage = pageNumber;
 
+            var countsByStatus = await _context.Orders
+                .AsNoTracking()
+                .Where(o => !o.IsDeleted)
+                .GroupBy(o => o.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            int GetCount(string s) => countsByStatus.FirstOrDefault(x => x.Status == s)?.Count ?? 0;
+
             ViewBag.StatusCounts = new Dictionary<string, int>
             {
-                { "All", await _context.Orders.CountAsync(o => !o.IsDeleted) },
-                { OrderStatus.Pending, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Pending && !o.IsDeleted) },
-                { OrderStatus.Preparing, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Preparing && !o.IsDeleted) },
-                { OrderStatus.Shipping, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Shipping && !o.IsDeleted) },
-                { OrderStatus.Delivered, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Delivered && !o.IsDeleted) },
-                { OrderStatus.Cancelled, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Cancelled && !o.IsDeleted) },
-                { OrderStatus.Refunded, await _context.Orders.CountAsync(o => o.Status == OrderStatus.Refunded && !o.IsDeleted) }
+                { "All", countsByStatus.Sum(x => x.Count) },
+                { OrderStatus.Pending, GetCount(OrderStatus.Pending) },
+                { OrderStatus.Preparing, GetCount(OrderStatus.Preparing) },
+                { OrderStatus.Shipping, GetCount(OrderStatus.Shipping) },
+                { OrderStatus.Delivered, GetCount(OrderStatus.Delivered) },
+                { OrderStatus.Cancelled, GetCount(OrderStatus.Cancelled) },
+                { OrderStatus.Refunded, GetCount(OrderStatus.Refunded) }
             };
 
             return View(orders);

@@ -299,56 +299,68 @@ namespace Source.Controllers
                     model.TotalAmount = subtotal - discount;
                     model.Status = OrderStatus.Pending;
 
-                    _context.Orders.Add(model);
+_context.Orders.Add(model);
                     await _context.SaveChangesAsync();
+
+                    // Batch-load dữ liệu món/combo để tránh N+1 query trong vòng lặp
+                    var foodIds = cart.Where(i => i.FastFoodId.HasValue).Select(i => i.FastFoodId!.Value).Distinct().ToList();
+                    var comboIds = cart.Where(i => i.ComboId.HasValue).Select(i => i.ComboId!.Value).Distinct().ToList();
+
+                    var foods = await _context.FastFoods
+                        .AsNoTracking()
+                        .Include(f => f.Seller)
+                        .Where(f => foodIds.Contains(f.Id))
+                        .ToDictionaryAsync(f => f.Id);
+
+                    var combos = await _context.Combos
+                        .AsNoTracking()
+                        .Where(c => comboIds.Contains(c.Id))
+                        .ToDictionaryAsync(c => c.Id);
+
+                    var comboFirstFoods = await _context.ComboDetails
+                        .AsNoTracking()
+                        .Include(cd => cd.FastFood).ThenInclude(f => f!.Seller)
+                        .Where(cd => comboIds.Contains(cd.ComboId))
+                        .GroupBy(cd => cd.ComboId)
+                        .Select(g => new { ComboId = g.Key, Food = g.Select(x => x.FastFood).FirstOrDefault() })
+                        .ToDictionaryAsync(x => x.ComboId, x => x.Food);
 
                     foreach (var item in cart)
                     {
-var sellerName = "";
-                if (item.FastFoodId.HasValue)
-                {
-                    var food = await _context.FastFoods.AsNoTracking()
-                        .Include(f => f.Seller)
-                        .FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
-                    sellerName = food?.Seller?.FullName ?? "";
-                }
-                else if (item.ComboId.HasValue)
-                {
-                    var comboFood = await _context.ComboDetails.AsNoTracking()
-                        .Where(cd => cd.ComboId == item.ComboId.Value)
-                        .Select(cd => cd.FastFood)
-                        .FirstOrDefaultAsync();
-                    sellerName = comboFood?.Seller?.FullName ?? "";
-                }
+                        var sellerName = "";
+                        string? productDescription = null;
 
-                var detail = new OrderDetail
-                    {
-                        OrderId = model.Id,
-                        FastFoodId = item.FastFoodId,
-                        ComboId = item.ComboId,
-                        Quantity = item.Quantity,
-                        Price = item.Price,
-                        FastFoodName = item.Name,
-                        ProductImageUrl = item.ImageUrl,
-                        Sku = item.Sku,
-                        VariantName = item.VariantName,
-                        SellerName = sellerName
-                    };
-
-                        if (item.FastFoodId.HasValue)
+                        if (item.FastFoodId.HasValue && foods.TryGetValue(item.FastFoodId.Value, out var food))
                         {
-                            detail.ProductDescription = await _context.FastFoods
-                                .Where(f => f.Id == item.FastFoodId.Value)
-                                .Select(f => f.Description)
-                                .FirstOrDefaultAsync();
+                            sellerName = food.Seller?.FullName ?? "";
+                            productDescription = food.Description;
                         }
                         else if (item.ComboId.HasValue)
                         {
-                            detail.ProductDescription = await _context.Combos
-                                .Where(c => c.Id == item.ComboId.Value)
-                                .Select(c => c.Description)
-                                .FirstOrDefaultAsync();
+                            if (combos.TryGetValue(item.ComboId.Value, out var combo))
+                            {
+                                productDescription = combo.Description;
+                            }
+                            if (comboFirstFoods.TryGetValue(item.ComboId.Value, out var firstFood))
+                            {
+                                sellerName = firstFood?.Seller?.FullName ?? "";
+                            }
                         }
+
+                        var detail = new OrderDetail
+                        {
+                            OrderId = model.Id,
+                            FastFoodId = item.FastFoodId,
+                            ComboId = item.ComboId,
+                            Quantity = item.Quantity,
+                            Price = item.Price,
+                            FastFoodName = item.Name,
+                            ProductImageUrl = item.ImageUrl,
+                            Sku = item.Sku,
+                            VariantName = item.VariantName,
+                            SellerName = sellerName,
+                            ProductDescription = productDescription
+                        };
 
                         _context.OrderDetails.Add(detail);
                     }

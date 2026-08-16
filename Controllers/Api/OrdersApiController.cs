@@ -147,29 +147,50 @@ namespace Source.Controllers.Api
             try
             {
                 _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
+await _context.SaveChangesAsync();
+
+                // Batch-load để tránh N+1 query trong vòng lặp
+                var foodIds = cart.Where(i => i.FastFoodId.HasValue).Select(i => i.FastFoodId!.Value).Distinct().ToList();
+                var comboIds = cart.Where(i => i.ComboId.HasValue).Select(i => i.ComboId!.Value).Distinct().ToList();
+                var variantIds = cart.Where(i => i.VariantId.HasValue).Select(i => i.VariantId!.Value).Distinct().ToList();
+
+                var foods = await _context.FastFoods
+                    .AsNoTracking()
+                    .Include(f => f.Seller)
+                    .Where(f => foodIds.Contains(f.Id))
+                    .ToDictionaryAsync(f => f.Id);
+
+                var combos = await _context.Combos
+                    .AsNoTracking()
+                    .Where(c => comboIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id);
+
+                var variants = await _context.FoodVariants
+                    .AsNoTracking()
+                    .Where(v => variantIds.Contains(v.Id))
+                    .ToDictionaryAsync(v => v.Id);
+
+                var comboFirstFoods = await _context.ComboDetails
+                    .AsNoTracking()
+                    .Include(cd => cd.FastFood).ThenInclude(f => f!.Seller)
+                    .Where(cd => comboIds.Contains(cd.ComboId))
+                    .GroupBy(cd => cd.ComboId)
+                    .Select(g => new { ComboId = g.Key, Food = g.Select(x => x.FastFood).FirstOrDefault() })
+                    .ToDictionaryAsync(x => x.ComboId, x => x.Food);
 
                 foreach (var item in cart)
                 {
-var sellerName = "";
-                if (item.FastFoodId.HasValue)
-                {
-                    var food = await _context.FastFoods.AsNoTracking()
-                        .Include(f => f.Seller)
-                        .FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
-                    sellerName = food?.Seller?.FullName ?? "";
-                }
-                else if (item.ComboId.HasValue)
-                {
-                    // Combo doesn't have direct seller, use first food's seller
-                    var comboFood = await _context.ComboDetails.AsNoTracking()
-                        .Where(cd => cd.ComboId == item.ComboId.Value)
-                        .Select(cd => cd.FastFood)
-                        .FirstOrDefaultAsync();
-                    sellerName = comboFood?.Seller?.FullName ?? "";
-                }
+                    var sellerName = "";
+                    if (item.FastFoodId.HasValue && foods.TryGetValue(item.FastFoodId.Value, out var fastFood))
+                    {
+                        sellerName = fastFood.Seller?.FullName ?? "";
+                    }
+                    else if (item.ComboId.HasValue && comboFirstFoods.TryGetValue(item.ComboId.Value, out var firstFood))
+                    {
+                        sellerName = firstFood?.Seller?.FullName ?? "";
+                    }
 
-                var detail = new OrderDetail
+                    var detail = new OrderDetail
                     {
                         OrderId = order.Id,
                         FastFoodId = item.FastFoodId,
@@ -198,35 +219,24 @@ var sellerName = "";
                         });
                     }
 
-// Tăng SoldCount cho món ăn (không tính combo)
-                    if (item.FastFoodId.HasValue)
+                    // Tăng SoldCount cho món ăn (không tính combo) + giảm tồn kho variant
+                    if (item.FastFoodId.HasValue && foods.TryGetValue(item.FastFoodId.Value, out var food))
                     {
-                        var food = await _context.FastFoods.FindAsync(item.FastFoodId.Value);
-                        if (food != null)
-                        {
-                            detail.ProductDescription = food.Description;
-                            food.SoldCount += item.Quantity;
-                            _context.Update(food);
-                        }
+                        detail.ProductDescription = food.Description;
+                        food.SoldCount += item.Quantity;
+                        _context.Update(food);
 
-                        // Giảm tồn kho của variant đã chọn (không bao giờ âm)
-                        if (item.VariantId.HasValue)
+                        if (item.VariantId.HasValue && variants.TryGetValue(item.VariantId.Value, out var variant)
+                            && variant.StockQuantity > 0)
                         {
-                            var variant = await _context.FoodVariants.FindAsync(item.VariantId.Value);
-                            if (variant != null && variant.StockQuantity > 0)
-                            {
-                                variant.StockQuantity = Math.Max(0, variant.StockQuantity - item.Quantity);
-                                variant.UpdatedAt = DateTime.Now;
-                                _context.Update(variant);
-                            }
+                            variant.StockQuantity = Math.Max(0, variant.StockQuantity - item.Quantity);
+                            variant.UpdatedAt = DateTime.Now;
+                            _context.Update(variant);
                         }
                     }
-                    else if (item.ComboId.HasValue)
+else if (item.ComboId.HasValue && combos.TryGetValue(item.ComboId.Value, out var combo))
                     {
-                        detail.ProductDescription = await _context.Combos
-                            .Where(c => c.Id == item.ComboId.Value)
-                            .Select(c => c.Description)
-                            .FirstOrDefaultAsync();
+                        detail.ProductDescription = combo.Description;
                     }
                 }
 
