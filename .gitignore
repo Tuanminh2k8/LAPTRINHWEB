@@ -38,5 +38,11 @@ appsettings.Development.local.json
 *.db-shm
 *.db-wal
 
+## Local junk / debug dumps (do not commit)
+.gitconfig
+.FullName
+se*.txt
+so*.txt
+
 ## Uploaded images (keep seed SVGs)
 wwwroot/images/uploads/

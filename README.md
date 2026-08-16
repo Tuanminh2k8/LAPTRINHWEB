@@ -117,7 +117,7 @@ LAPTRINHWEB/
 ## ⚙️ Cài đặt & Chạy dự án
 
 ### Yêu cầu
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET 11 SDK (Preview)](https://dotnet.microsoft.com/download/dotnet/11.0) — **bắt buộc**, dự án target `net11.0` và `global.json` yêu cầu SDK 11 (preview).
 - SQL Server (LocalDB, Express, hoặc Docker)
 - Visual Studio 2022 / VS Code + C# Dev Kit
 
@@ -127,7 +127,8 @@ git clone <repo-url>
 cd LAPTRINHWEB
 ```
 
-Chỉnh `appsettings.json` (hoặc `appsettings.Development.json`):
+Mặc định app dùng `Server=localhost\SQLEXPRESS` (ở `appsettings.Development.json`).
+Mỗi thành viên muốn dùng DB khác (VD: LocalDB) thì tạo file `appsettings.Development.local.json` (đã gitignore, không đẩy lên git):
 ```json
 {
   "ConnectionStrings": {
@@ -145,7 +146,7 @@ dotnet ef database update
 sqlcmd -S (localdb)\mssqllocaldb -i Database/database.sql
 ```
 
-Ứng dụng sẽ tự động `MigrateAsync()` + `SeedAsync()` khi khởi động (`Program.cs`).
+Ứng dụng sẽ tự động `MigrateAsync()` khi khởi động (`Program.cs`). **Seed data chạy nền** sau khi app đã lắng nghe request (không chặn khởi động).
 
 ### 3. Chạy ứng dụng
 ```bash
