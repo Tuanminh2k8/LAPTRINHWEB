@@ -25,16 +25,19 @@ public class DeviceController : Controller
         if (string.Equals(mode, DeviceDetectionHelper.Mobile, StringComparison.OrdinalIgnoreCase))
         {
             Response.Cookies.Append(DeviceDetectionHelper.CookieName, DeviceDetectionHelper.Mobile,
-                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true });
+                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, SameSite = SameSiteMode.Lax });
         }
         else if (string.Equals(mode, DeviceDetectionHelper.Desktop, StringComparison.OrdinalIgnoreCase))
         {
             Response.Cookies.Append(DeviceDetectionHelper.CookieName, DeviceDetectionHelper.Desktop,
-                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true });
+                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, SameSite = SameSiteMode.Lax });
         }
 
+        // Open-redirect guard: chỉ redirect về Referer NẾU cùng host với request (chống dẫn user sang trang độc hại)
         var referer = Request.Headers.Referer.ToString();
-        if (!string.IsNullOrEmpty(referer))
+        if (!string.IsNullOrEmpty(referer)
+            && Uri.TryCreate(referer, UriKind.Absolute, out var refererUri)
+            && string.Equals(refererUri.Host, Request.Host.Host, StringComparison.OrdinalIgnoreCase))
         {
             return Redirect(referer);
         }

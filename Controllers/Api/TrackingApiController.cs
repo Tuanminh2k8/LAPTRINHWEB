@@ -32,7 +32,8 @@ namespace Source.Controllers.Api
             var userId = UserClaimsHelper.GetUserId(User);
             if (!userId.HasValue) return Unauthorized(new { message = "Vui lòng đăng nhập." });
 
-            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("Seller");
+            bool isAdmin = User.IsInRole("Admin");
+            bool isSeller = User.IsInRole("Seller");
 
             var order = await _context.Orders
                 .AsNoTracking()
@@ -46,7 +47,9 @@ namespace Source.Controllers.Api
 
             bool isOwner = order.UserId == userId.Value;
             bool isDriver = order.Driver != null && order.Driver.UserId == userId.Value;
-            if (!isOwner && !isAdmin && !isDriver)
+            // Seller chỉ xem được đơn CÓ chứa món ăn của chính mình (chống rò rỉ dữ liệu đơn khác)
+            bool isSellerAccess = isSeller && order.OrderDetails.Any(d => d.FastFood != null && d.FastFood.SellerId == userId.Value);
+            if (!isOwner && !isAdmin && !isDriver && !isSellerAccess)
                 return Forbid();
 
             var events = await _context.OrderTrackingEvents

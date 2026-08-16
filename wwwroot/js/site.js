@@ -5,6 +5,14 @@
         csrfToken: '',
         init: function () {
             this.csrfToken = $('input[name="__RequestVerificationToken"]').first().val() || '';
+
+            // Tự gắn CSRF token vào mọi AJAX nếu form có sẵn (hỗ trợ các action [ValidateAntiForgeryToken])
+            if (this.csrfToken) {
+                $.ajaxSetup({
+                    headers: { 'RequestVerificationToken': this.csrfToken }
+                });
+            }
+
             this.preloader();
             this.navbarScroll();
             this.scrollToTop();

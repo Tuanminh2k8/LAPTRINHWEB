@@ -1,6 +1,6 @@
 # FastFood Web Application
 
-Hệ thống đặt món ăn nhanh (Fast Food) được xây dựng bằng **ASP.NET Core 10** (MVC) với **Entity Framework Core** và **SQL Server**.
+Hệ thống đặt món ăn nhanh (Fast Food) được xây dựng bằng **ASP.NET Core 11 (MVC)** với **Entity Framework Core** và **SQL Server**.
 
 ## 🚀 Tính năng chính
 
@@ -127,15 +127,16 @@ git clone <repo-url>
 cd LAPTRINHWEB
 ```
 
-Mặc định app dùng `Server=localhost\SQLEXPRESS` (ở `appsettings.Development.json`).
-Mỗi thành viên muốn dùng DB khác (VD: LocalDB) thì tạo file `appsettings.Development.local.json` (đã gitignore, không đẩy lên git):
+Mặc định `appsettings.json` dùng `(localdb)\MSSQLLocalDB`, còn `appsettings.Development.json` dùng `localhost\SQLEXPRESS` (để team dùng nhiều SQL Server khác nhau).
+Mỗi thành viên muốn override thì tạo file `appsettings.Development.local.json` (đã gitignore, không đẩy lên git):
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=FastFoodDb;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Server=my-server;Database=FastFoodDb;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }
 ```
+Không bao giờ commit connection string chứa mật khẩu hoặc tài khoản admin thật.
 
 ### 2. Chạy Migration & Seed Data
 ```bash
@@ -172,7 +173,11 @@ Mở trình duyệt: `https://localhost:5001` (hoặc port hiển thị trong co
    - Tạo `Order` (Status = Pending)
    - Tạo `OrderDetail` cho từng item trong cart
    - `SaveChangesAsync()` → `CommitAsync()`
-5. Xóa Session Cart → Redirect `/Orders/Tracking/{id}`
+5. Xóa Session Cart:
+   - **COD** → Redirect `/Orders/Tracking/{id}`
+   - **Bank** → Redirect `/Orders/BankTransfer/{id}` (hướng dẫn chuyển khoản)
+   - **VNPay / MoMo** → gọi cổng thanh toán (NGOÀI transaction) rồi redirect tới `paymentUrl`
+6. Guest (không đăng nhập) theo dõi đơn bằng số điện thoại qua `/Orders/GuestTrack/{id}`
 
 ### Hủy đơn hàng (Customer)
 - Chỉ cho phép khi `Status == "Pending"`
@@ -184,9 +189,18 @@ Mở trình duyệt: `https://localhost:5001` (hoặc port hiển thị trong co
 - Hiển thị chi tiết combo kèm món ăn thành phần
 
 ### Tìm kiếm nâng cao (AJAX)
-- GET `/Home/AdvancedSearch?name=&minPrice=&maxPrice=&categoryId=&theme=&description=`
+- POST `/Home/AdvancedSearch?name=&minPrice=&maxPrice=&categoryId=&theme=&description=` (nút "Tìm kiếm ngay" trên trang chủ)
 - Header `X-Requested-With: XMLHttpRequest` → Trả về `PartialView("_FoodListPartial")`
 - Không phải AJAX → Trả về `View("Index", results)`
+
+## 🔒 Bảo mật đã triển khai
+
+- **CSRF**: `[ValidateAntiForgeryToken]` trên các POST MVC; cookie auth + session đặt `SameSite=Lax` (chặn POST cross-site); `site.js` tự gắn `RequestVerificationToken` vào AJAX khi form có sẵn token.
+- **Open redirect**: `DeviceController` chỉ redirect về Referer khi cùng host; `AccountController.Login` dùng `Url.IsLocalUrl`.
+- **Phân quyền dữ liệu**: Seller chỉ xem/tracking được đơn có chứa món của mình (API + SignalR); dashboard chỉ dành cho Admin.
+- **Thanh toán**: IPN MoMo nhận cả form + JSON, verify chữ ký **và** số tiền với `Order.TotalAmount`; không tin client ở bất kỳ bước tính tiền nào.
+- **Mock Google login**: chỉ hoạt động ở môi trường `Development`.
+- **Secrets**: connection string có thông tin nhạy phải để trong `appsettings.Development.local.json` (gitignored), không commit lên repo.
 
 ## 🔧 Cấu hình quan trọng (Program.cs)
 

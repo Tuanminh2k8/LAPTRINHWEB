@@ -33,7 +33,8 @@ namespace Source.Hubs
             var userId = UserClaimsHelper.GetUserId(Context.User);
             if (!userId.HasValue) return;
 
-            bool isAdmin = Context.User.IsInRole("Admin") || Context.User.IsInRole("Seller");
+            bool isAdmin = Context.User.IsInRole("Admin");
+            bool isSeller = Context.User.IsInRole("Seller");
 
             var isOwner = await _context.Orders
                 .AsNoTracking()
@@ -43,7 +44,12 @@ namespace Source.Hubs
                 .AsNoTracking()
                 .AnyAsync(o => o.Id == orderId && o.Driver != null && o.Driver.UserId == userId.Value);
 
-            if (isOwner || isAdmin || isDriver)
+            // Seller chỉ join được đơn có chứa món của chính mình (chống rò rỉ realtime đơn khác)
+            bool isSellerAccess = isSeller && await _context.Orders
+                .AsNoTracking()
+                .AnyAsync(o => o.Id == orderId && o.OrderDetails.Any(d => d.FastFood != null && d.FastFood.SellerId == userId.Value));
+
+            if (isOwner || isAdmin || isDriver || isSellerAccess)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, OrderGroupPrefix + orderId);
                 _logger.LogInformation("User {UserId} joined order group {OrderId}", userId.Value, orderId);
