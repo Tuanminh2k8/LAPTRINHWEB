@@ -20,16 +20,18 @@ namespace Source.Controllers.Api
         private readonly AppDbContext _context;
         private readonly ICartSessionService _cartService;
         private readonly IPromoCodeService _promoService;
+        private readonly IPromotionService _promotionService;
         private readonly IPaymentService _payment;
         private readonly ILoyaltyService _loyalty;
         private readonly IConfiguration _config;
         private readonly ILogger<OrdersApiController> _logger;
 
-        public OrdersApiController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, IPaymentService payment, ILoyaltyService loyalty, IConfiguration config, ILogger<OrdersApiController> logger)
+        public OrdersApiController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, IPromotionService promotionService, IPaymentService payment, ILoyaltyService loyalty, IConfiguration config, ILogger<OrdersApiController> logger)
         {
             _context = context;
             _cartService = cartService;
             _promoService = promoService;
+            _promotionService = promotionService;
             _payment = payment;
             _loyalty = loyalty;
             _config = config;
@@ -246,17 +248,11 @@ else if (item.ComboId.HasValue && combos.TryGetValue(item.ComboId.Value, out var
 
                 if (promoResult.Success && promoResult.Promo != null)
                 {
-                    // Tăng UsedCount ATOMIC — chỉ thành công khi chưa vượt MaxUsage (chống race hết lượt)
-                    var promoUpdated = await _context.PromoCodes
-                        .Where(p => p.Id == promoResult.Promo.Id && (p.MaxUsage == 0 || p.UsedCount < p.MaxUsage))
-                        .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount + 1));
-
-                    if (promoUpdated == 0)
+                    var usage = await _promotionService.RedeemAsync(promoResult.Promo.Id, userId, order.Id, subtotal, discount);
+                    if (usage == null)
                     {
                         await transaction.RollbackAsync();
-                        _cartService.ClearCart();
-                        HttpContext.Session.Remove(PromoSessionKey);
-                        return BadRequest(new { message = "Mã giảm giá vừa hết lượt sử dụng. Vui lòng thử lại." });
+                        return BadRequest(new { message = "Mã giảm giá không còn khả dụng. Vui lòng thử lại." });
                     }
                 }
 

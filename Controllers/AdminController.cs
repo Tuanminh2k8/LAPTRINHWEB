@@ -16,14 +16,16 @@ namespace Source.Controllers
         private readonly ILogger<AdminController> _logger;
         private readonly ILoyaltyService _loyalty;
         private readonly IOrderTrackingService _tracking;
+        private readonly IPromotionService _promotionService;
 
-        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger, ILoyaltyService loyalty, IOrderTrackingService tracking)
+        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger, ILoyaltyService loyalty, IOrderTrackingService tracking, IPromotionService promotionService)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
             _loyalty = loyalty;
             _tracking = tracking;
+            _promotionService = promotionService;
         }
 
         public async Task<IActionResult> Index()
@@ -1368,6 +1370,104 @@ namespace Source.Controllers
             ViewBag.HasNext = transactions.Count == pageSize;
 
             return View(transactions);
+        }
+
+        #endregion
+
+        #region Promotions (Khuyến mãi)
+
+        public async Task<IActionResult> Promotions(string? search, string? status)
+        {
+            var all = await _promotionService.GetAllAsync();
+            if (!string.IsNullOrWhiteSpace(status) && status != "All")
+                all = all.Where(p => p.Status == status).ToList();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim();
+                all = all.Where(p => p.Code.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                   || (p.Name ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            dynamic stats = await _promotionService.GetStatisticsAsync();
+            ViewBag.Kpi = new
+            {
+                Total = (await _promotionService.GetAllAsync()).Count,
+                Active = all.Count(p => p.Status == nameof(PromotionStatus.Active)),
+                Scheduled = all.Count(p => p.Status == nameof(PromotionStatus.Scheduled)),
+                Expired = all.Count(p => p.Status == nameof(PromotionStatus.Expired)),
+                TotalUsed = stats.TotalUsed,
+                TotalDiscount = stats.TotalDiscount
+            };
+            ViewBag.Search = search;
+            ViewBag.Status = status ?? "All";
+            return View(all);
+        }
+
+        public IActionResult PromotionCreate() => View(new PromoCode { StartDate = DateTime.Now, EndDate = DateTime.Now.AddMonths(1) });
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PromotionCreate(PromoCode model)
+        {
+            if (!ModelState.IsValid) return View(model);
+            if (string.IsNullOrWhiteSpace(model.Code))
+            {
+                ModelState.AddModelError("Code", "Vui lòng nhập mã giảm giá.");
+                return View(model);
+            }
+            await _promotionService.CreateAsync(model, nameof(PromotionOwnerRole.Admin), null, User.Identity?.Name);
+            TempData["SuccessMessage"] = "Tạo mã giảm giá thành công!";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        public async Task<IActionResult> PromotionEdit(int id)
+        {
+            var promo = await _promotionService.GetByIdAsync(id);
+            if (promo == null) return NotFound();
+            return View(promo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PromotionEdit(PromoCode model)
+        {
+            if (!ModelState.IsValid) return View(model);
+            var result = await _promotionService.UpdateAsync(model.Id, model, null, nameof(PromotionOwnerRole.Admin), User.Identity?.Name);
+            if (result == null) { TempData["ErrorMessage"] = "Không tìm thấy mã giảm giá."; return RedirectToAction(nameof(Promotions)); }
+            TempData["SuccessMessage"] = "Cập nhật mã giảm giá thành công!";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PromotionDelete(int id)
+        {
+            await _promotionService.SoftDeleteAsync(id, null, nameof(PromotionOwnerRole.Admin));
+            TempData["SuccessMessage"] = "Đã xóa mã giảm giá.";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PromotionToggle(int id)
+        {
+            var promo = await _promotionService.GetByIdAsync(id);
+            if (promo == null) { TempData["ErrorMessage"] = "Không tìm thấy mã giảm giá."; return RedirectToAction(nameof(Promotions)); }
+
+            if (promo.Status == nameof(PromotionStatus.Active))
+                await _promotionService.PauseAsync(id, null, nameof(PromotionOwnerRole.Admin));
+            else
+                await _promotionService.ActivateAsync(id, null, nameof(PromotionOwnerRole.Admin));
+
+            TempData["SuccessMessage"] = "Đã cập nhật trạng thái.";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        public async Task<IActionResult> PromotionDetail(int id)
+        {
+            var promo = await _promotionService.GetByIdAsync(id);
+            if (promo == null) return NotFound();
+            return View(promo);
         }
 
         #endregion

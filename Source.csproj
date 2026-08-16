@@ -26,4 +26,9 @@
     <None Remove="tests\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Source.Tests\**\*.cs" />
+    <Content Remove="Source.Tests\**" />
+  </ItemGroup>
+
 </Project>

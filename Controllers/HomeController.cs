@@ -11,11 +11,13 @@ namespace Source.Controllers
         private const int PageSize = 12;
         private readonly AppDbContext _context;
         private readonly ILogger<HomeController> _logger;
+        private readonly IPromotionService _promotionService;
 
-        public HomeController(AppDbContext context, ILogger<HomeController> logger)
+        public HomeController(AppDbContext context, ILogger<HomeController> logger, IPromotionService promotionService)
         {
             _context = context;
             _logger = logger;
+            _promotionService = promotionService;
         }
 
         public async Task<IActionResult> Index(string? searchName, int? categoryId, string? sortOrder, int? page)
@@ -68,6 +70,12 @@ namespace Source.Controllers
 
             var combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).AsNoTracking().ToListAsync();
             ViewBag.Combos = combos;
+            var homePromos = await _promotionService.GetPublicPromotionsAsync();
+            ViewBag.Promotions = homePromos;
+            ViewBag.ActiveTheme = homePromos
+                .Where(p => !string.IsNullOrEmpty(p.Theme))
+                .OrderByDescending(p => p.IsFeatured)
+                .FirstOrDefault()?.Theme;
             ViewBag.PageNumber = currentPage;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalItems = totalItems;
@@ -127,6 +135,12 @@ namespace Source.Controllers
 
             ViewBag.Categories = await _context.Categories.AsNoTracking().ToListAsync();
             ViewBag.Combos = await _context.Combos.Include(c => c.ComboDetails).ThenInclude(cd => cd.FastFood).AsNoTracking().ToListAsync();
+            var homePromos2 = await _promotionService.GetPublicPromotionsAsync();
+            ViewBag.Promotions = homePromos2;
+            ViewBag.ActiveTheme = homePromos2
+                .Where(p => !string.IsNullOrEmpty(p.Theme))
+                .OrderByDescending(p => p.IsFeatured)
+                .FirstOrDefault()?.Theme;
             ViewBag.SelectedCategory = categoryId;
             ViewBag.SearchName = name;
             return View("Index", results);

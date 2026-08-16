@@ -1660,3 +1660,246 @@ small { font-size: 0.85rem; }
 }
 .mod-option-name { font-size: 0.82rem; font-weight: 600; color: var(--gray-800); }
 .mod-option-price { font-size: 0.75rem; font-weight: 600; color: var(--primary); }
+
+/* ─── Coupon / Promo Grid ─── */
+.coupon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+.coupon-card {
+  display: flex;
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.coupon-card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(255,56,56,0.16); }
+.coupon-card-left {
+  flex: 0 0 110px;
+  background: linear-gradient(135deg, #FF3838 0%, #FF6B6B 100%);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 10px;
+  position: relative;
+}
+.coupon-card-left::after {
+  content: '';
+  position: absolute;
+  right: -7px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background-image: radial-gradient(circle at center, var(--white) 4px, transparent 4px);
+  background-size: 14px 14px;
+  background-repeat: repeat-y;
+}
+.coupon-card-discount { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.coupon-card-discount small { font-size: 0.85rem; font-weight: 700; }
+.coupon-card-type { font-size: 0.72rem; opacity: 0.9; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.coupon-card-body { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; }
+.coupon-card-name { font-weight: 700; font-size: 1rem; margin-bottom: 2px; color: var(--ink); }
+.coupon-card-desc { font-size: 0.82rem; color: var(--gray-500); margin-bottom: 10px; flex: 1; }
+.coupon-card-code-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.coupon-code-pill {
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: rgba(255,56,56,0.08);
+  color: var(--primary);
+  border: 1px dashed rgba(255,56,56,0.4);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+}
+.coupon-copy-btn {
+  border: none;
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+.coupon-copy-btn:hover { background: var(--primary); }
+.coupon-card-meta { font-size: 0.74rem; color: var(--gray-500); }
+
+/* ─── Seasonal decorations (driven by promo Theme) ─── */
+.season-decor {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    overflow: hidden;
+}
+.season-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 6;
+    text-align: center;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+}
+.decor-float {
+    position: absolute;
+    font-size: 2.2rem;
+    animation: decorFloat 4s ease-in-out infinite;
+}
+.decor-web-tl { top: 52px; left: 14px; font-size: 3rem; }
+.decor-web-tr { top: 52px; right: 14px; font-size: 3rem; }
+.decor-pumpkin { bottom: 90px; left: 26px; }
+.decor-bat { bottom: 130px; right: 26px; }
+.decor-snow { top: 22%; left: 12%; }
+.decor-snow-2 { top: 42%; left: 82%; animation-delay: 1.2s; }
+.decor-snow-3 { top: 66%; left: 32%; animation-delay: 2.1s; }
+.decor-tree { bottom: 90px; right: 26px; font-size: 2.6rem; }
+@keyframes decorFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+/* Theme tints */
+.theme-halloween .season-banner { background: linear-gradient(90deg, #ff7a00, #7b2ff7); color: #fff; }
+.theme-halloween.hero-section,
+.hero-section.theme-halloween {
+    background: radial-gradient(circle at 18% 18%, rgba(123,47,247,.18), transparent 42%), linear-gradient(135deg, #1a0b2e, #2d1b4e);
+}
+.theme-winter .season-banner { background: linear-gradient(90deg, #2b6cb0, #90cdf4); color: #fff; }
+.theme-winter.hero-section,
+.hero-section.theme-winter {
+    background: linear-gradient(135deg, #0b2e4a, #1a4a6e);
+}
+.theme-newyear .season-banner { background: linear-gradient(90deg, #c0392b, #f1c40f); color: #fff; }
+.theme-valentine .season-banner { background: linear-gradient(90deg, #e84393, #fd79a8); color: #fff; }
+.theme-summer .season-banner { background: linear-gradient(90deg, #f9a825, #ffd54f); color: #7a4b00; }
+
+/* ─── Effect animations per theme ─── */
+.banner-shine { background-size: 200% 100%; animation: shine 3s linear infinite; }
+.web-flicker { animation: flicker 2.5s ease-in-out infinite; }
+.pumpkin-glow { filter: drop-shadow(0 0 10px #ff7a00); animation: glowPulse 2s ease-in-out infinite; }
+.bat-fly { position: absolute; font-size: 2rem; animation: batFly 9s linear infinite; }
+.ghost-float { position: absolute; bottom: 18%; left: 38%; font-size: 2.4rem; opacity: .85; animation: ghostFloat 6s ease-in-out infinite; }
+.snow-fall { position: absolute; top: 0; animation: snowFall 9s linear infinite; }
+.tree-sway { animation: sway 3s ease-in-out infinite; }
+.firework-pop { position: absolute; font-size: 2.4rem; animation: fireworkPop 2.6s ease-in-out infinite; }
+.fw1 { top: 28%; left: 18%; }
+.fw2 { top: 44%; left: 68%; animation-delay: .8s; }
+.fw3 { top: 22%; left: 52%; animation-delay: 1.5s; }
+.heart-rise { position: absolute; bottom: -6%; font-size: 1.6rem; animation: heartRise 9s linear infinite; }
+.sun-pulse { position: absolute; top: 70px; right: 36px; font-size: 3rem; filter: drop-shadow(0 0 12px #ffd54f); animation: glowPulse 2.5s ease-in-out infinite; }
+.palm-sway { position: absolute; bottom: 60px; font-size: 2.2rem; animation: sway 4s ease-in-out infinite; }
+.decor-ghost { position: absolute; }
+.decor-heart { position: absolute; }
+.decor-sun { position: absolute; }
+.decor-beach { position: absolute; }
+.decor-firework { position: absolute; }
+
+@keyframes shine { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
+@keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes glowPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes batFly {
+    0% { transform: translate(-10vw, 12vh) scaleX(1); }
+    50% { transform: translate(50vw, -6vh) scaleX(-1); }
+    100% { transform: translate(110vw, 12vh) scaleX(1); }
+}
+@keyframes ghostFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+@keyframes snowFall {
+    0% { transform: translateY(-10vh) translateX(0); }
+    100% { transform: translateY(110vh) translateX(24px); }
+}
+@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes fireworkPop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+}
+@keyframes heartRise {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* ─── Scroll reveal & parallax ─── */
+.js .reveal { opacity: 0; transform: translateY(40px); transition: opacity .7s ease, transform .7s ease; }
+.js .reveal.in-view { opacity: 1; transform: none; }
+.hero-section { will-change: background-position; }
+.season-decor { will-change: transform; }
+
+/* ─── Real CSS spider web (corner) ─── */
+.css-web {
+    position: absolute;
+    width: 180px; height: 180px;
+    background:
+        repeating-conic-gradient(from 0deg at 0 0, rgba(255,255,255,.55) 0deg 1deg, transparent 1deg 22.5deg),
+        repeating-radial-gradient(circle at 0 0, transparent 0 14px, rgba(255,255,255,.45) 14px 15px, transparent 15px 30px, rgba(255,255,255,.45) 30px 31px);
+    pointer-events: none;
+}
+.css-web-tr { top: 0; right: 0; transform: scaleX(-1); }
+
+/* ─── Hanging CSS spider ─── */
+.css-spider-thread {
+    position: absolute; top: 0; left: 32%;
+    width: 1px; height: 46px;
+    background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,0));
+}
+.css-spider {
+    position: absolute; top: 44px; left: 32%;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #666 0 28%, #0a0a0a 30% 100%);
+    box-shadow: 0 0 0 2px #0a0a0a;
+    animation: spiderDangle 4s ease-in-out infinite;
+}
+.css-spider::before, .css-spider::after {
+    content: ''; position: absolute; top: 7px; width: 22px; height: 2px;
+    background: #0a0a0a; border-radius: 2px;
+}
+.css-spider::before { left: -20px; transform: rotate(18deg); box-shadow: 0 -5px #0a0a0a, 0 5px #0a0a0a; }
+.css-spider::after { right: -20px; transform: rotate(-18deg); box-shadow: 0 -5px #0a0a0a, 0 5px #0a0a0a; }
+@keyframes spiderDangle { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(14px) rotate(2deg); } }
+
+/* ─── Snow pile ─── */
+.snow-pile {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 70px;
+    background:
+        radial-gradient(120% 100% at 18% 100%, #fff 0 60%, rgba(255,255,255,0) 61%),
+        radial-gradient(120% 100% at 55% 100%, #fff 0 60%, rgba(255,255,255,0) 61%),
+        radial-gradient(120% 100% at 85% 100%, #fff 0 60%, rgba(255,255,255,0) 61%),
+        linear-gradient(to top, #fff, rgba(255,255,255,.85) 65%, rgba(255,255,255,0));
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    pointer-events: none; z-index: 5;
+}
+
+/* ─── Multi-layer fireworks ─── */
+.css-firework {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    background: #fff;
+}
+.css-firework::before, .css-firework::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    background:
+        radial-gradient(circle, #ffd54f 1px, transparent 2px) 0 0/16px 16px,
+        radial-gradient(circle, #ff5252 1px, transparent 2px) 10px 8px/16px 16px,
+        radial-gradient(circle, #4fc3f7 1px, transparent 2px) -8px 12px/16px 16px,
+        radial-gradient(circle, #fff 1px, transparent 2px) 8px -10px/16px 16px,
+        radial-gradient(circle, #b388ff 1px, transparent 2px) -10px -6px/16px 16px;
+    animation: fwBurst 1.1s ease-out infinite;
+}
+.css-firework::after { animation-delay: .55s; opacity: .8; }
+@keyframes fwBurst {
+    0% { transform: scale(.2) rotate(0); opacity: 1; }
+    100% { transform: scale(3.4) rotate(45deg); opacity: 0; }
+}

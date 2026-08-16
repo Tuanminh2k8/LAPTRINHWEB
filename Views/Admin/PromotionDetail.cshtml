@@ -1,0 +1,132 @@
+@using Source.Services
+@model PromoCode
+@{
+    ViewData["Title"] = "Chi tiết khuyến mãi";
+    dynamic stats = ViewBag.Stats;
+    var usages = (IEnumerable<PromotionUsage>)(ViewBag.Usages ?? Enumerable.Empty<PromotionUsage>());
+    var remaining = Model.MaxUsage == 0 ? int.MaxValue : Math.Max(0, Model.MaxUsage - Model.UsedCount);
+}
+
+<div class="container-fluid py-4" style="max-width:1100px;">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1" style="font-family:'Plus Jakarta Sans',sans-serif;">
+                <i class="fa-solid fa-ticket text-danger me-2"></i> <span class="font-monospace">@Model.Code</span>
+            </h2>
+            <p class="text-muted mb-0">@Model.Name</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == nameof(PromotionStatus.Draft) || Model.Status == nameof(PromotionStatus.Scheduled))
+            {
+                <form asp-action="PromotionPublish" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    <button class="btn btn-success rounded-3"><i class="fa-solid fa-check me-1"></i> Duyệt</button>
+                </form>
+            }
+            @if (Model.Status == nameof(PromotionStatus.Active))
+            {
+                <form asp-action="PromotionPause" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    <button class="btn btn-warning rounded-3"><i class="fa-solid fa-pause me-1"></i> Tạm dừng</button>
+                </form>
+            }
+            @if (Model.Status == nameof(PromotionStatus.Paused))
+            {
+                <form asp-action="PromotionActivate" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    <button class="btn btn-success rounded-3"><i class="fa-solid fa-play me-1"></i> Kích hoạt</button>
+                </form>
+            }
+            <form asp-action="PromotionEarlyPublish" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button class="btn btn-info rounded-3"><i class="fa-solid fa-arrow-up-right-dots me-1"></i> Đẩy lên trước</button>
+            </form>
+            <a class="btn btn-outline-dark rounded-3" asp-action="PromotionEdit" asp-route-id="@Model.Id">
+                <i class="fa-solid fa-pen me-1"></i> Sửa
+            </a>
+            <a class="btn btn-outline-danger rounded-3" asp-action="Promotions">Đóng</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3 border-0 shadow-sm">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card rounded-4 border-0 shadow-sm"><div class="card-body text-center">
+                <div class="fs-4 fw-bold">@stats?.TotalUsed</div><div class="small text-muted">Lượt sử dụng</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card rounded-4 border-0 shadow-sm"><div class="card-body text-center">
+                <div class="fs-4 fw-bold text-danger">@(string.Format("{0:N0}", stats?.TotalDiscount ?? 0) + "₫")</div><div class="small text-muted">Tổng giảm</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card rounded-4 border-0 shadow-sm"><div class="card-body text-center">
+                <div class="fs-4 fw-bold">@stats?.TotalOrders</div><div class="small text-muted">Đơn hàng</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card rounded-4 border-0 shadow-sm"><div class="card-body text-center">
+                <div class="fs-4 fw-bold text-success">@(remaining == int.MaxValue ? "∞" : remaining.ToString())</div><div class="small text-muted">Lượt còn lại</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card rounded-4 border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark text-white fw-semibold">Thông tin mã</div>
+        <div class="card-body">
+            <div class="row g-2 small">
+                <div class="col-md-3"><span class="text-muted">Trạng thái:</span> <strong>@Model.Status</strong></div>
+                @if (!string.IsNullOrEmpty(Model.Theme))
+                {
+                    <div class="col-md-3"><span class="text-muted">Chủ đề:</span> <strong>@Model.Theme</strong></div>
+                }
+                <div class="col-md-3"><span class="text-muted">Loại:</span> <strong>@Model.DiscountType</strong></div>
+                <div class="col-md-3"><span class="text-muted">Giá trị:</span> <strong>@Model.DiscountValue</strong></div>
+                <div class="col-md-3"><span class="text-muted">Đơn tối thiểu:</span> <strong>@(string.Format("{0:N0}", Model.MinOrderAmount) + "₫")</strong></div>
+                <div class="col-md-3"><span class="text-muted">Bắt đầu:</span> <strong>@Model.StartDate.ToString("dd/MM/yyyy HH:mm")</strong></div>
+                <div class="col-md-3"><span class="text-muted">Kết thúc:</span> <strong>@(Model.EndDate?.ToString("dd/MM/yyyy HH:mm") ?? "—")</strong></div>
+                <div class="col-md-3"><span class="text-muted">Tổng giới hạn:</span> <strong>@(Model.MaxUsage == 0 ? "∞" : Model.MaxUsage.ToString())</strong></div>
+                <div class="col-md-3"><span class="text-muted">/ Người dùng:</span> <strong>@(Model.MaxUsagePerUser == 0 ? "∞" : Model.MaxUsagePerUser.ToString())</strong></div>
+                <div class="col-md-3"><span class="text-muted">Nổi bật:</span> <strong>@(Model.IsFeatured ? "Có" : "Không")</strong></div>
+                <div class="col-md-3"><span class="text-muted">Đẩy trước:</span> <strong>@(Model.IsEarlyPublished ? "Có" : "Không")</strong></div>
+                <div class="col-md-6"><span class="text-muted">Mô tả:</span> @(Model.Description ?? "—")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card rounded-4 border-0 shadow-sm">
+        <div class="card-header bg-dark text-white fw-semibold">Lịch sử sử dụng</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Người dùng</th>
+                            <th>Đơn hàng</th>
+                            <th class="text-end">Giảm</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!usages.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-4">Chưa có lượt sử dụng nào.</td></tr>
+                        }
+                        @foreach (var u in usages)
+                        {
+                            <tr>
+                                <td>@u.UsedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(u.UserId?.ToString() ?? "—")</td>
+                                <td>@(u.OrderId?.ToString() ?? "—")</td>
+                                <td class="text-end">@(string.Format("{0:N0}", u.DiscountAmount) + "₫")</td>
+                                <td><span class="badge bg-light text-muted border">@u.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

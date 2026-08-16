@@ -20,6 +20,7 @@ namespace Source.Models
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderDetail> OrderDetails { get; set; } = null!;
         public DbSet<PromoCode> PromoCodes { get; set; } = null!;
+        public DbSet<PromotionUsage> PromotionUsages { get; set; } = null!;
         public DbSet<ModifierGroup> ModifierGroups { get; set; } = null!;
         public DbSet<ModifierOption> ModifierOptions { get; set; } = null!;
         public DbSet<FoodVariant> FoodVariants { get; set; } = null!;
@@ -176,6 +177,53 @@ namespace Source.Models
 
             modelBuilder.Entity<Order>()
                 .HasIndex(o => o.OrderDate);
+
+            // ---- Promotion (PromoCode) configuration ----
+            modelBuilder.Entity<PromoCode>(b =>
+            {
+                b.Property(p => p.Status).HasMaxLength(20).HasDefaultValue("Active");
+                b.Property(p => p.OwnerRole).HasMaxLength(20).HasDefaultValue("Admin");
+                b.Property(p => p.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                // Case-insensitive unique code, ignore soft-deleted rows
+                b.HasIndex(p => p.Code)
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0");
+
+                // Homepage query optimization
+                b.HasIndex(p => new { p.IsDeleted, p.IsPublished, p.Status });
+
+                // Seller authorization
+                b.HasIndex(p => p.SellerId);
+
+                b.HasOne(p => p.Seller)
+                    .WithMany()
+                    .HasForeignKey(p => p.SellerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ---- PromotionUsage configuration ----
+            modelBuilder.Entity<PromotionUsage>(b =>
+            {
+                b.HasIndex(u => u.PromotionId);
+                b.HasIndex(u => u.UserId);
+                b.HasIndex(u => u.OrderId);
+
+                b.HasOne(u => u.Promotion)
+                    .WithMany(p => p.Usages)
+                    .HasForeignKey(u => u.PromotionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(u => u.User)
+                    .WithMany()
+                    .HasForeignKey(u => u.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasOne(u => u.Order)
+                    .WithMany()
+                    .HasForeignKey(u => u.OrderId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
             // Seed Users with BCrypt hashes
             // "admin123" BCrypt hash: $2a$11$ezY8eus712l.J/TErYvnveHybjXijpr.j7gucKR7G0q3xlgK6WCc6

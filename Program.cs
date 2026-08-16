@@ -47,6 +47,8 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICartSessionService, CartSessionService>();
     builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
+    builder.Services.AddScoped<IPromotionService, PromotionService>();
+    builder.Services.AddHostedService<PromotionSchedulerService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();

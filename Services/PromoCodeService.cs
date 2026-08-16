@@ -10,55 +10,26 @@ namespace Source.Services
         Task<PromoValidationResult> ValidateAsync(string? code, decimal subtotal);
     }
 
+    /// <summary>
+    /// Lớp tương thích ngược cho luồng checkout cũ (CartController / CartApiController / OrdersApiController).
+    /// Ủy quyền sang IPromotionService để có một nguồn验证逻辑 duy nhất.
+    /// Không userId nên bỏ qua kiểm tra giới hạn mỗi user.
+    /// </summary>
     public class PromoCodeService : IPromoCodeService
     {
         private readonly AppDbContext _context;
+        private readonly IPromotionService _promotionService;
 
-        public PromoCodeService(AppDbContext context)
+        public PromoCodeService(AppDbContext context, IPromotionService promotionService)
         {
             _context = context;
+            _promotionService = promotionService;
         }
 
         public async Task<PromoValidationResult> ValidateAsync(string? code, decimal subtotal)
         {
-            if (string.IsNullOrWhiteSpace(code))
-                return new PromoValidationResult(false, "Vui lòng nhập mã giảm giá.", 0, null);
-
-            var normalized = code.Trim().ToUpper();
-            var promo = await _context.PromoCodes
-                .FirstOrDefaultAsync(p => p.Code.ToUpper() == normalized);
-
-            if (promo == null)
-                return new PromoValidationResult(false, "Mã giảm giá không tồn tại.", 0, null);
-
-            if (!promo.IsActive)
-                return new PromoValidationResult(false, "Mã giảm giá đã bị vô hiệu hóa.", 0, null);
-
-            var now = DateTime.Now;
-            if (promo.StartDate > now)
-                return new PromoValidationResult(false, "Mã giảm giá chưa đến thời gian áp dụng.", 0, null);
-
-            if (promo.EndDate.HasValue && promo.EndDate.Value < now)
-                return new PromoValidationResult(false, "Mã giảm giá đã hết hạn.", 0, null);
-
-            if (promo.MaxUsage > 0 && promo.UsedCount >= promo.MaxUsage)
-                return new PromoValidationResult(false, "Mã giảm giá đã hết lượt sử dụng.", 0, null);
-
-            if (subtotal < promo.MinOrderAmount)
-                return new PromoValidationResult(false,
-                    $"Đơn hàng tối thiểu {promo.MinOrderAmount:N0} ₫ để dùng mã này.", 0, null);
-
-            decimal discount = promo.DiscountType == "Percent"
-                ? Math.Round(subtotal * promo.DiscountValue / 100m, 0)
-                : promo.DiscountValue;
-
-            if (promo.MaxDiscountAmount > 0 && discount > promo.MaxDiscountAmount)
-                discount = promo.MaxDiscountAmount;
-
-            if (discount > subtotal) discount = subtotal;
-
-            return new PromoValidationResult(true,
-                $"Áp dụng mã {promo.Code} thành công! Giảm {discount:N0} ₫.", discount, promo);
+            var result = await _promotionService.ValidateAsync(code, subtotal, null);
+            return new PromoValidationResult(result.Success, result.Message, result.DiscountAmount, result.Promo);
         }
     }
 }

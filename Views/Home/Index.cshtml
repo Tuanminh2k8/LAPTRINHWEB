@@ -8,6 +8,7 @@
     var sortOrder = ViewBag.SortOrder as string;
     var pageNumber = ViewBag.PageNumber as int? ?? 1;
     var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var activeTheme = ViewBag.ActiveTheme as string;
 
     var categoryIcons = new Dictionary<string, string>
     {
@@ -33,6 +34,60 @@
         "/images/combos/combo-party.jpg",
         "/images/combos/combo-kids.jpg"
     };
+}
+
+<script>document.documentElement.classList.add('js');</script>
+
+@if (!string.IsNullOrEmpty(activeTheme))
+{
+    string themeClass = "theme-" + activeTheme.ToLowerInvariant();
+    <div class="season-decor @themeClass">
+        @if (activeTheme == "Halloween")
+        {
+            <div class="season-banner banner-shine"><span>🎃</span> Đang diễn ra: Siêu sale Halloween – Mã khuyến mãi đang được áp dụng! <span>🎃</span></div>
+            <div class="css-web css-web-tl web-flicker"></div>
+            <div class="css-web css-web-tr web-flicker"></div>
+            <div class="css-spider-thread"></div>
+            <div class="css-spider"></div>
+            <div class="decor-pumpkin pumpkin-glow">🎃</div>
+            <div class="decor-bat bat-fly">🦇</div>
+            <div class="decor-ghost ghost-float">👻</div>
+        }
+        else if (activeTheme == "Winter")
+        {
+            <div class="season-banner banner-shine"><span>❄️</span> Mùa đông đến rồi – Giảm sâu cùng PolyFood! <span>❄️</span></div>
+            @for (int i = 0; i < 16; i++)
+            {
+                <div class="decor-snow snow-fall" style="left:@(i * 6 + 1)%; animation-delay:@((i % 8) * 0.6)s; font-size:@(0.9 + (i % 3) * 0.5)rem;">❄️</div>
+            }
+            <div class="snow-pile"></div>
+            <div class="decor-tree tree-sway">🌲</div>
+        }
+        else if (activeTheme == "NewYear")
+        {
+            <div class="season-banner banner-shine"><span>🎆</span> Chào năm mới – Rinh ưu đãi đầu năm! <span>🎆</span></div>
+            <div class="css-firework fw1"></div>
+            <div class="css-firework fw2"></div>
+            <div class="css-firework fw3"></div>
+        }
+        else if (activeTheme == "Valentine")
+        {
+            <div class="season-banner banner-shine"><span>💝</span> Ngày lãng mạn – Combo đôi giảm sâu! <span>💝</span></div>
+            @for (int i = 0; i < 12; i++)
+            {
+                <div class="decor-heart heart-rise" style="left:@(i * 8 + 2)%; animation-delay:@((i % 6) * 0.7)s;">💕</div>
+            }
+        }
+        else if (activeTheme == "Summer")
+        {
+            <div class="season-banner banner-shine"><span>☀️</span> Hè sôi động – Đồ uống mát lạnh giảm 50%! <span>☀️</span></div>
+            <div class="decor-sun sun-pulse">☀️</div>
+            @for (int i = 0; i < 10; i++)
+            {
+                <div class="decor-palm palm-sway" style="left:@(i * 10)%; animation-delay:@((i % 5) * 0.8)s;">🌴</div>
+            }
+        }
+    </div>
 }
 
 <!-- Auto-Slider Banner - Shopee Style -->
@@ -230,6 +285,50 @@
     </section>
 }
 
+@{
+    var homePromos = ViewBag.Promotions as IEnumerable<Source.Models.PromoCode> ?? new List<Source.Models.PromoCode>();
+}
+@if (homePromos.Any())
+{
+    <section class="polyfood-combos-section reveal">
+        <div class="container">
+        <div class="polyfood-section-header">
+            <div class="polyfood-section-icon">
+                <i class="fa-solid fa-ticket"></i>
+                </div>
+                <h3 class="polyfood-section-title">Mã giảm giá &amp; Khuyến mãi</h3>
+                <a asp-controller="Home" asp-action="Promotions" class="polyfood-badge-warning">Xem tất cả</a>
+            </div>
+            <div class="coupon-grid">
+                @foreach (var pr in homePromos)
+                {
+                    var discText = pr.DiscountType == "Percent"
+                        ? $"{pr.DiscountValue:0.#}%"
+                        : $"{pr.DiscountValue:0,#}₫";
+                    var maxText = pr.MaxDiscountAmount > 0 ? $" · Tối đa {pr.MaxDiscountAmount:0,#}₫" : "";
+                    var validText = pr.EndDate.HasValue ? $"HSD: {pr.EndDate.Value:dd/MM/yyyy}" : "Không thời hạn";
+
+                    <div class="coupon-card">
+                        <div class="coupon-card-left">
+                            <div class="coupon-card-discount">@discText</div>
+                            <div class="coupon-card-type">@(pr.DiscountType == "Percent" ? "Giảm %" : "Giảm tiền")</div>
+                        </div>
+                        <div class="coupon-card-body">
+                            <div class="coupon-card-name">@pr.Name</div>
+                            <div class="coupon-card-desc">@(pr.Description?.Length > 60 ? pr.Description[..60] + "…" : pr.Description)</div>
+                            <div class="coupon-card-code-row">
+                                <span class="coupon-code-pill" id="coupon-@pr.Id">@pr.Code</span>
+                                <button type="button" class="coupon-copy-btn" onclick="copyCoupon('coupon-@pr.Id', this)">Sao chép</button>
+                            </div>
+                            <div class="coupon-card-meta">@validText@maxText · Đơn tối thiểu @(string.Format("{0:0,#}", pr.MinOrderAmount))₫</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
 <section id="foods-section" class="container">
     <div class="polyfood-section-header">
         <div class="polyfood-section-icon">
@@ -347,6 +446,15 @@
 
 @section Scripts {
     <script>
+        function copyCoupon(id, btn) {
+            var code = document.getElementById(id).innerText.trim();
+            navigator.clipboard.writeText(code).then(function () {
+                var old = btn.innerText;
+                btn.innerText = 'Đã copy';
+                setTimeout(function () { btn.innerText = old; }, 1500);
+            });
+        }
+
         $(document).ready(function () {
             // Slider được quản lý bởi site.js (PolyFood.autoSlideSlider) — không khởi tạo 2 lần
 

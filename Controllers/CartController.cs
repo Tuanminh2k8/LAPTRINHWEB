@@ -13,15 +13,17 @@ namespace Source.Controllers
         private readonly AppDbContext _context;
         private readonly ICartSessionService _cartService;
         private readonly IPromoCodeService _promoService;
+        private readonly IPromotionService _promotionService;
         private readonly IPaymentService _payment;
         private readonly IConfiguration _config;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, IPaymentService payment, IConfiguration config, ILogger<CartController> logger)
+        public CartController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, IPromotionService promotionService, IPaymentService payment, IConfiguration config, ILogger<CartController> logger)
         {
             _context = context;
             _cartService = cartService;
             _promoService = promoService;
+            _promotionService = promotionService;
             _payment = payment;
             _config = config;
             _logger = logger;
@@ -288,10 +290,15 @@ namespace Source.Controllers
                 {
                     var subtotal = cart.Sum(i => i.TotalPrice);
 
-                    // Xác thực lại mã giảm giá phía server (không tin dữ liệu client)
+                    // Xác thực mã giảm giá phía server (không tin client)
                     var promoCode = HttpContext.Session.GetString(PromoSessionKey);
-                    var promoResult = await _promoService.ValidateAsync(promoCode, subtotal);
-                    var discount = promoResult.Success ? promoResult.DiscountAmount : 0m;
+                    decimal discount = 0m;
+                    PromoValidationResult? promoValidation = null;
+                    if (!string.IsNullOrWhiteSpace(promoCode))
+                    {
+                        promoValidation = await _promoService.ValidateAsync(promoCode, subtotal);
+                        discount = promoValidation.Success ? promoValidation.DiscountAmount : 0m;
+                    }
 
                     model.UserId = userId.Value;
                     model.OrderDate = DateTime.Now;
@@ -365,18 +372,16 @@ _context.Orders.Add(model);
                         _context.OrderDetails.Add(detail);
                     }
 
-                    // Ghi nhận lượt dùng mã trong cùng transaction — tăng ATOMIC, chỉ thành công khi chưa vượt MaxUsage
-                    if (promoResult.Success && promoResult.Promo != null)
+                    // Ghi nhận lượt dùng (concurrency-safe, trong cùng transaction)
+                    if (promoValidation != null && promoValidation.Success && promoValidation.Promo != null)
                     {
-                        var promoUpdated = await _context.PromoCodes
-                            .Where(p => p.Id == promoResult.Promo.Id && (p.MaxUsage == 0 || p.UsedCount < p.MaxUsage))
-                            .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount + 1));
-
-                        if (promoUpdated == 0)
+                        var usage = await _promotionService.RedeemAsync(
+                            promoValidation.Promo.Id, userId.Value, model.Id, subtotal, discount);
+                        if (usage == null)
                         {
                             await transaction.RollbackAsync();
                             HttpContext.Session.Remove(PromoSessionKey);
-                            TempData["ErrorMessage"] = "Mã giảm giá vừa hết lượt sử dụng. Vui lòng thử lại.";
+                            TempData["ErrorMessage"] = "Mã giảm giá không còn khả dụng. Vui lòng thử lại.";
                             return RedirectToAction("Checkout");
                         }
                     }
