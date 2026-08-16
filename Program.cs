@@ -56,6 +56,8 @@ builder.Services.AddScoped<OperationDemoService>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+// Seed data chạy nền sau khi app đã lắng nghe request (không chặn khởi động)
+builder.Services.AddHostedService<Source.Services.DatabaseSeederHostedService>();
 builder.Services.AddAntiforgery(options =>
 {
     // Cho phép API/AJAX gửi token qua header: X-CSRF-TOKEN hoặc RequestVerificationToken
@@ -92,7 +94,7 @@ app.UseStatusCodePagesWithReExecute("/Home/NotFound", "?statusCode={0}");
 
 app.MapHub<Source.Hubs.OrderTrackingHub>("/hubs/order-tracking");
 
-// Initialize Database & Seed
+// Apply pending migrations khi khởi động (best-effort; seed data chạy nền qua DatabaseSeederHostedService)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -100,12 +102,11 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
-        await DbInitializer.SeedAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Lỗi xảy ra trong quá trình Migrate/Seed Database.");
+        logger.LogError(ex, "Lỗi xảy ra trong quá trình Migrate Database. Kiểm tra connection string (Server/Instance/Database).");
     }
 }
 

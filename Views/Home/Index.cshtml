@@ -29,9 +29,9 @@
 
     var comboUnsplash = new List<string>
     {
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600",
-        "https://images.unsplash.com/photo-1544025162-d76694265947?w=600",
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
+        "/images/combos/combo-family.jpg",
+        "/images/combos/combo-party.jpg",
+        "/images/combos/combo-kids.jpg"
     };
 }
 
@@ -43,7 +43,7 @@
                 <div id="homepageSlider" class="carousel-slider">
                     <div class="slider-item active">
                         <div class="slider-img">
-                            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                            <img src="/images/banners/promo-banner-1.jpg" alt="PolyFood Promotion">
                         </div>
                         <div class="slider-caption">
                             <h4>Giảm 30% món chính</h4>
@@ -52,7 +52,7 @@
                     </div>
                     <div class="slider-item">
                         <div class="slider-img">
-                            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                            <img src="/images/banners/promo-banner-2.jpg" alt="PolyFood Promotion">
                         </div>
                         <div class="slider-caption">
                             <h4>Combo gia đình giảm 20%</h4>
@@ -61,7 +61,7 @@
                     </div>
                     <div class="slider-item">
                         <div class="slider-img">
-                            <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                            <img src="/images/banners/discount-banner.jpg" alt="PolyFood Promotion">
                         </div>
                         <div class="slider-caption">
                             <h4>Shipper tặng kèm món ngon</h4>
@@ -348,73 +348,7 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            initHomepageSlider();
+            // Slider được quản lý bởi site.js (PolyFood.autoSlideSlider) — không khởi tạo 2 lần
         });
-
-        function initHomepageSlider() {
-            const slider = document.getElementById('homepageSlider');
-            const slides = slider.querySelectorAll('.slider-item');
-            const prevBtn = slider.querySelector('.prev');
-            const nextBtn = slider.querySelector('.next');
-            const dots = slider.querySelectorAll('.slider-dot');
-            let currentSlide = 0;
-            let totalSlides = slides.length;
-            let slideInterval;
-            
-            // Show current slide
-            function showSlide(index) {
-                // Hide all slides
-                slides.forEach(slide => slide.classList.remove('active'));
-                dots.forEach(dot => dot.classList.remove('active'));
-                
-                // Wrap around
-                if (index >= totalSlides) index = 0;
-                if (index < 0) index = totalSlides - 1;
-                
-                // Show current
-                slides[index].classList.add('active');
-                dots[index].classList.add('active');
-                currentSlide = index;
-            }
-            
-            // Auto-slide function
-            function autoSlide() {
-                currentSlide++;
-                showSlide(currentSlide);
-            }
-            
-            // Event listeners
-            prevBtn.addEventListener('click', () => {
-                currentSlide--;
-                showSlide(currentSlide);
-                resetInterval();
-            });
-            
-            nextBtn.addEventListener('click', () => {
-                currentSlide++;
-                showSlide(currentSlide);
-                resetInterval();
-            });
-            
-            // Dot click
-            dots.forEach((dot, index) => {
-                dot.addEventListener('click', () => {
-                    showSlide(index);
-                    resetInterval();
-                });
-            });
-            
-            // Pause on hover, resume when mouse leaves
-            slider.addEventListener('mouseenter', () => {
-                clearInterval(slideInterval);
-            });
-            slider.addEventListener('mouseleave', startAutoSlide);
-            
-            // Start auto-slide
-            function startAutoSlide() {
-                slideInterval = setInterval(autoSlide, 5000); // 5 seconds
-            }
-            startAutoSlide();
-        }
     </script>
 }

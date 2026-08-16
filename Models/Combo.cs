@@ -24,7 +24,7 @@ namespace Source.Models
         public string Description { get; set; } = string.Empty;
 
         [Display(Name = "Hình ảnh")]
-        public string ImageUrl { get; set; } = "/images/default_combo.jpg";
+        public string ImageUrl { get; set; } = "/images/default_combo.svg";
 
         [Display(Name = "Đang giảm giá")]
         public bool IsOnSale { get; set; } = false;

@@ -15,10 +15,11 @@
         },
 
         preloader: function () {
+            // Ẩn ngay khi DOM ready (không chờ window.load vì ảnh ngoài có thể làm chậm)
+            $('.preloader').addClass('loaded');
             $(window).on('load', function () {
                 $('.preloader').addClass('loaded');
             });
-            setTimeout(function () { $('.preloader').addClass('loaded'); }, 2000);
         },
 
         navbarScroll: function () {
@@ -80,23 +81,31 @@
             var currentIndex = 0;
             var isTransitioning = false;
 
+            // Sinh dots động (tránh phụ thuộc HTML có sẵn)
+            var $dotsWrap = $slider.find('.slider-dots');
+            if ($dotsWrap.length && $dotsWrap.find('.slider-dot').length === 0) {
+                for (var i = 0; i < totalItems; i++) {
+                    $dotsWrap.append('<span class="slider-dot"></span>');
+                }
+            }
+            var $dots = $slider.find('.slider-dot');
+
             function showSlide(index) {
                 if (isTransitioning) return;
                 isTransitioning = true;
+                index = (index + totalItems) % totalItems;
                 $items.removeClass('active').eq(index).addClass('active');
-                $slider.find('.slider-dots .dot').removeClass('active').eq(index).addClass('active');
+                $dots.removeClass('active').eq(index).addClass('active');
                 currentIndex = index;
                 isTransitioning = false;
             }
 
             function nextSlide() {
-                var nextIndex = (currentIndex + 1) % totalItems;
-                showSlide(nextIndex);
+                showSlide(currentIndex + 1);
             }
 
             function prevSlide() {
-                var prevIndex = (currentIndex - 1 + totalItems) % totalItems;
-                showSlide(prevIndex);
+                showSlide(currentIndex - 1);
             }
 
             // Auto-slide every 5 seconds
@@ -106,23 +115,23 @@
             $slider.on('mouseenter', function () {
                 clearInterval(slideInterval);
             }).on('mouseleave', function () {
+                clearInterval(slideInterval);
                 slideInterval = setInterval(nextSlide, 5000);
             });
 
-            // Nav controls
-            $('.slider-prev').on('click', function () {
+            // Nav controls (khớp class HTML: slider-control prev/next)
+            $slider.find('.slider-control.prev').on('click', function () {
                 prevSlide();
                 clearInterval(slideInterval);
                 slideInterval = setInterval(nextSlide, 5000);
             });
-            $('.slider-next').on('click', function () {
+            $slider.find('.slider-control.next').on('click', function () {
                 nextSlide();
                 clearInterval(slideInterval);
                 slideInterval = setInterval(nextSlide, 5000);
             });
-            $('.slider-dot').on('click', function () {
-                var index = $(this).index();
-                showSlide(index);
+            $slider.find('.slider-dot').on('click', function () {
+                showSlide($(this).index());
                 clearInterval(slideInterval);
                 slideInterval = setInterval(nextSlide, 5000);
             });
@@ -446,7 +455,8 @@
                 'thức uống & tráng miệng': 'drink', 'món kèm': 'side', 'tráng miệng': 'dessert',
                 'đồ ăn sáng': 'breakfast', 'salad & wrap': 'salad', 'combos': 'combo'
             };
-            target.src = '/images/category-' + (map[cat] || 'default_food') + '.svg';
+            var fallback = map[cat] ? '/images/category-' + map[cat] + '.svg' : '/images/default_food.svg';
+            target.src = fallback;
         }
     }, true);
 

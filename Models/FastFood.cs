@@ -24,7 +24,7 @@ namespace Source.Models
         public string Description { get; set; } = string.Empty;
 
         [Display(Name = "Hình ảnh")]
-        public string ImageUrl { get; set; } = "/images/default_food.jpg";
+        public string ImageUrl { get; set; } = "/images/default_food.svg";
 
         [Required(ErrorMessage = "Vui lòng chọn chủng loại")]
         [Display(Name = "Chủng loại")]

@@ -590,12 +590,14 @@ namespace Source.Models
 
             int seed = 3000;
             int safety = 0;
-            while (context.FastFoods.Count() < minCount && safety < 3000)
+            int initialCount = context.FastFoods.Count();
+            var toAdd = new List<FastFood>();
+            while (initialCount + toAdd.Count < minCount && safety < 3000)
             {
                 safety++;
                 foreach (var cat in cats)
                 {
-                    if (context.FastFoods.Count() >= minCount) break;
+                    if (initialCount + toAdd.Count >= minCount) break;
                     if (!flavors.TryGetValue(cat.Name, out var pool)) continue;
 
                     var flavor = pool[_rng.Next(pool.Length)];
@@ -625,7 +627,7 @@ namespace Source.Models
                         _ => (30000 + _rng.Next(0, 50000), "food")
                     };
 
-                    context.FastFoods.Add(new FastFood
+                    toAdd.Add(new FastFood
                     {
                         Name = name,
                         Price = price,
@@ -639,6 +641,11 @@ namespace Source.Models
                     });
                     existingNames.Add(name);
                 }
+            }
+
+            if (toAdd.Any())
+            {
+                context.FastFoods.AddRange(toAdd);
                 context.SaveChanges();
             }
         }
