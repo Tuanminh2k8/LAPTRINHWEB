@@ -190,8 +190,9 @@ namespace Source.Controllers
             return View(combo);
         }
 
-        public async Task<IActionResult> Menu(int? categoryId)
+        public async Task<IActionResult> Menu(int? categoryId, int page = 1)
         {
+            const int pageSize = 12;
             var categories = await _context.Categories.AsNoTracking().ToListAsync();
             ViewBag.Categories = categories;
 
@@ -203,7 +204,20 @@ namespace Source.Controllers
                 ViewBag.SelectedCategory = categoryId;
             }
 
-            var foods = await query.OrderBy(f => f.Name).AsNoTracking().ToListAsync();
+            var totalItems = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+
+            var foods = await query
+                .OrderBy(f => f.Name)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.PageNumber = page;
+            ViewBag.TotalPages = totalPages;
+
             return View(foods);
         }
 

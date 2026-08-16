@@ -303,7 +303,9 @@ namespace Source.Controllers
 var sellerName = "";
                 if (item.FastFoodId.HasValue)
                 {
-                    var food = await _context.FastFoods.AsNoTracking().FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
+                    var food = await _context.FastFoods.AsNoTracking()
+                        .Include(f => f.Seller)
+                        .FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
                     sellerName = food?.Seller?.FullName ?? "";
                 }
                 else if (item.ComboId.HasValue)

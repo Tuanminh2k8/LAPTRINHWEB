@@ -131,7 +131,9 @@ namespace Source.Controllers.Api
             _context.Reviews.Add(review);
             for (var index = 0; index < request.Images.Count; index++)
             {
-                var imageUrl = await ImageUploadHelper.SaveToWwwRootAsync(request.Images[index], _environment.WebRootPath, "images/reviews");
+                var webRootPath = _environment.WebRootPath;
+                if (string.IsNullOrEmpty(webRootPath)) continue;
+                var imageUrl = await ImageUploadHelper.SaveToWwwRootAsync(request.Images[index], webRootPath, "images/reviews");
                 if (!string.IsNullOrWhiteSpace(imageUrl)) review.Images.Add(new ReviewImage { ImageUrl = imageUrl, SortOrder = index });
             }
             await _context.SaveChangesAsync();

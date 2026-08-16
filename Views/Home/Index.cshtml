@@ -349,6 +349,35 @@
     <script>
         $(document).ready(function () {
             // Slider được quản lý bởi site.js (PolyFood.autoSlideSlider) — không khởi tạo 2 lần
+
+            // Advanced search: gửi AJAX tới /Home/AdvancedSearch, thay kết quả vào #food-list-container
+            var $foodList = $('#food-list-container');
+            if ($('#btnSearchAdv').length && $foodList.length) {
+                $('#btnSearchAdv').on('click', function () {
+                    var btn = $(this).prop('disabled', true);
+                    $foodList.addClass('opacity-50').append('<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i></div>');
+                    $.ajax({
+                        url: '@Url.Action("AdvancedSearch", "Home")',
+                        type: 'POST',
+                        data: $('#advSearchForm').serialize(),
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                        }
+                    }).done(function (html) {
+                        $foodList.html(html);
+                    }).fail(function () {
+                        $foodList.html('<div class="empty-state col-12"><div class="empty-state-icon"><i class="fa-solid fa-circle-exclamation"></i></div><h5 class="empty-state-title">Có lỗi xảy ra</h5><p class="empty-state-text">Vui lòng thử lại sau.</p></div>');
+                    }).always(function () {
+                        btn.prop('disabled', false);
+                        $foodList.removeClass('opacity-50');
+                    });
+                });
+
+                $('#btnResetAdv').on('click', function () {
+                    $('#advSearchForm')[0].reset();
+                    $('#btnSearchAdv').trigger('click');
+                });
+            }
         });
     </script>
 }

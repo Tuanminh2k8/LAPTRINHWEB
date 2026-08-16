@@ -13,10 +13,12 @@ namespace Source.Controllers
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         [HttpGet]
@@ -151,6 +153,11 @@ namespace Source.Controllers
         [Authorize]
         public IActionResult GoogleLoginMock()
         {
+            // Mock Google login chỉ dành cho môi trường Development (demo).
+            if (!_env.IsDevelopment())
+            {
+                return NotFound();
+            }
             return View();
         }
 
@@ -158,6 +165,12 @@ namespace Source.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GoogleLoginMockSubmit(string email, string name, string subId)
         {
+            // Mock Google login chỉ dành cho môi trường Development (demo).
+            if (!_env.IsDevelopment())
+            {
+                return NotFound();
+            }
+
             if (string.IsNullOrEmpty(email))
             {
                 TempData["ErrorMessage"] = "Không thể lấy thông tin Email từ Google.";

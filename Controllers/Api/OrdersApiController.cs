@@ -154,7 +154,9 @@ namespace Source.Controllers.Api
 var sellerName = "";
                 if (item.FastFoodId.HasValue)
                 {
-                    var food = await _context.FastFoods.AsNoTracking().FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
+                    var food = await _context.FastFoods.AsNoTracking()
+                        .Include(f => f.Seller)
+                        .FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
                     sellerName = food?.Seller?.FullName ?? "";
                 }
                 else if (item.ComboId.HasValue)
@@ -234,7 +236,7 @@ var sellerName = "";
                     _context.PromoCodes.Update(promoResult.Promo);
                 }
 
-                if (pointsUsed > 0)
+                if (pointsUsed > 0 && userId.HasValue)
                 {
                     _loyalty.ApplyRedeem(userId.Value, pointsUsed, pointsDiscount);
                 }
@@ -430,7 +432,7 @@ var sellerName = "";
                     cart.Add(new CartItem
                     {
                         FastFoodId = d.FastFoodId,
-                        Name = food?.Name ?? d.FastFoodName,
+                        Name = food?.Name ?? d.FastFoodName ?? "",
                         ImageUrl = food?.ImageUrl ?? "/images/default_food.jpg",
                         Price = food?.Price ?? d.Price,
                         Quantity = d.Quantity,

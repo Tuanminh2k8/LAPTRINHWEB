@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Theo dõi đơn hàng";
+    var orderId = ViewBag.OrderId as int? ?? 0;
+}
+
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">Theo Dõi Đơn Hàng</h1>
+        <p class="page-hero-subtitle">Nhập số điện thoại đã dùng để đặt hàng #@orderId để xem trạng thái giao hàng.</p>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger rounded-3">@TempData["ErrorMessage"]</div>
+                }
+                <form method="get" asp-action="Tracking" asp-controller="Orders">
+                    <input type="hidden" name="id" value="@orderId" />
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại đặt hàng</label>
+                        <input type="tel" name="phone" class="form-control rounded-3" required placeholder="VD: 0987654321" />
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom btn-custom w-100">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Xem trạng thái đơn hàng
+                    </button>
+                </form>
+                <p class="text-muted small text-center mt-3 mb-0">
+                    Nếu bạn có tài khoản, hãy <a asp-action="Login" asp-controller="Account">đăng nhập</a> để theo dõi.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>

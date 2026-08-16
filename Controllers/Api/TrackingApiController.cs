@@ -114,28 +114,27 @@ namespace Source.Controllers.Api
                 .FirstOrDefaultAsync(d => d.Id == request.DriverId.Value && d.IsActive);
             if (driver == null) return BadRequest(new { success = false, message = "Tài xế không tồn tại hoặc không hoạt động." });
 
-            // Chỉ gán khi đơn đang sẵn sàng bàn giao (hoặc chưa có tài xế)
-            if (order.Status != OrderStatus.ReadyForPickup && order.DriverId == null)
-            {
-                // Cho phép gán sớm từ Preparing nếu business cho phép
-            }
+            // Chỉ gán khi đơn đang ở trạng thái hợp lệ (ReadyForPickup) và chưa có tài xế
+            if (!OrderStatus.IsValidTransition(order.Status, OrderStatus.DriverAssigned))
+                return BadRequest(new { success = false, message = $"Không thể gán tài xế khi đơn đang ở trạng thái \"{OrderStatus.GetLabel(order.Status)}\"." });
+
+            if (order.DriverId.HasValue)
+                return BadRequest(new { success = false, message = "Đơn hàng đã có tài xế." });
 
             order.DriverId = driver.Id;
             order.UpdatedAt = DateTime.Now;
-            _context.Orders.Update(order);
 
-            _context.OrderTrackingEvents.Add(new OrderTrackingEvent
-            {
-                OrderId = order.Id,
-                Status = OrderStatus.DriverAssigned,
-                Description = $"Đã gán tài xế {driver.FullName}",
-                Actor = "Admin",
-                CreatedAt = DateTime.Now
-            });
+            // Chuyển trạng thái qua state machine (ghi tracking event + broadcast SignalR)
+            var result = await _tracking.TransitionAsync(
+                order,
+                OrderStatus.DriverAssigned,
+                "Admin",
+                $"Đã gán tài xế {driver.FullName}");
 
-            await _context.SaveChangesAsync();
+            if (!result.ok)
+                return BadRequest(new { success = false, message = result.error });
 
-            // Broadcast qua SignalR
+            // Broadcast chi tiết tài xế riêng cho realtime hiển thị
             await _hub.Clients.Group($"order-{order.Id}").SendAsync("DriverAssigned", new
             {
                 orderId = order.Id,

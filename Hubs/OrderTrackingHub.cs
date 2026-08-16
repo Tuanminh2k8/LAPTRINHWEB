@@ -28,6 +28,8 @@ namespace Source.Hubs
         /// <summary>Customer: tham gia nhóm theo dõi đơn hàng — chỉ khi đơn thuộc chính user.</summary>
         public async Task JoinOrder(int orderId)
         {
+            if (Context.User == null) return;
+
             var userId = UserClaimsHelper.GetUserId(Context.User);
             if (!userId.HasValue) return;
 

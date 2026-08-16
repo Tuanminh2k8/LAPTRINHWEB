@@ -437,6 +437,20 @@
 
     window.showToast = PolyFood.showToast;
 
+    /* ─── Global loading overlay helpers (dùng bởi Admin/Orders, API actions) ─── */
+    window.showLoading = function (message) {
+        var $overlay = $('#global-loading-overlay');
+        if ($overlay.length === 0) {
+            $overlay = $('<div id="global-loading-overlay" class="global-loading-overlay"><div class="spinner-border text-danger" role="status"></div><div class="global-loading-text"></div></div>').appendTo('body');
+        }
+        $overlay.find('.global-loading-text').text(message || 'Đang xử lý...');
+        $overlay.addClass('show');
+    };
+
+    window.hideLoading = function () {
+        $('#global-loading-overlay').removeClass('show');
+    };
+
     window.changeQty = function (amount, min, max) {
         min = min || 1; max = max || 50;
         var $input = $('#quantityInput');

@@ -127,6 +127,12 @@
                                         <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
                                             <i class="fa-solid fa-eye me-1"></i> Xem chi tiết
                                         </a>
+                                        @if (order.Status == "Pending")
+                                        {
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#cancelModal@order.Id">
+                                                <i class="fa-solid fa-ban me-1"></i> Hủy đơn
+                                            </button>
+                                        }
                                         @if (order.Status == "Pending" || order.Status == "Delivered")
                                         {
                                             <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#rebuyModal@order.Id">

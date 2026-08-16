@@ -244,6 +244,8 @@
                 });
                 conn.onreconnected(function () {
                     $('#locationStatus').text('Đã kết nối lại').removeClass('text-danger');
+                    // Sau reconnect ConnectionId mới → phải join lại group để nhận realtime
+                    conn.invoke('JoinOrder', orderId).catch(function () { });
                 });
 
                 conn.start().then(function () {

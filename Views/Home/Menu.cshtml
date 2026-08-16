@@ -3,6 +3,8 @@
     ViewData["Title"] = "Thực Đơn";
     var categories = ViewBag.Categories as IEnumerable<Source.Models.Category> ?? new List<Source.Models.Category>();
     var selectedCategory = ViewBag.SelectedCategory as int?;
+    var pageNumber = ViewBag.PageNumber as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
 }
 
 <section class="page-hero">
@@ -54,4 +56,24 @@
             </div>
         }
     </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Phân trang thực đơn">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Menu" asp-route-categoryId="@selectedCategory" asp-route-page="@(pageNumber - 1)">Trước</a>
+                </li>
+                @for (int p = 1; p <= totalPages; p++)
+                {
+                    <li class="page-item @(p == pageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Menu" asp-route-categoryId="@selectedCategory" asp-route-page="@p">@p</a>
+                    </li>
+                }
+                <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Menu" asp-route-categoryId="@selectedCategory" asp-route-page="@(pageNumber + 1)">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
 </section>

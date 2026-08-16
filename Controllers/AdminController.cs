@@ -975,7 +975,10 @@ namespace Source.Controllers
                 return BadRequest(new { success = false, message = "Trạng thái không hợp lệ." });
             }
 
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(d => d.Modifiers)
+                .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
             if (order == null) return NotFound();
 
             if (!OrderStatus.IsValidTransition(order.Status, status))
@@ -999,38 +1002,11 @@ namespace Source.Controllers
                 return RedirectToAction(nameof(Orders), new { status });
             }
 
-            if (status == OrderStatus.Delivered) _loyalty.Award(order);
-
-            // Tính commission cho seller
-            var existingCommissions = await _context.SellerCommissions
-                .Where(sc => sc.OrderId == order.Id && sc.CommissionStatus == "Pending")
-                .ToListAsync();
-
-            if (!existingCommissions.Any())
+            if (status == OrderStatus.Delivered)
             {
-                var totalCommission = 0m;
-                foreach (var detail in order.OrderDetails.Where(d => d.FastFoodId.HasValue))
-                {
-                    var food = await _context.FastFoods.FindAsync(detail.FastFoodId.Value);
-                    if (food != null && food.SellerId.HasValue)
-                    {
-                        var itemCommission = (detail.Price + detail.Modifiers.Sum(m => m.OptionPrice)) * detail.Quantity * 0.1m;
-                        totalCommission += itemCommission;
-
-                        _context.SellerCommissions.Add(new SellerCommission
-                        {
-                            OrderId = order.Id,
-                            SellerId = food.SellerId.Value,
-                            CommissionAmount = Math.Round(itemCommission, 0),
-                            CommissionStatus = "Pending"
-                        });
-                    }
-                }
-
-                if (totalCommission > 0)
-                {
-                    await _context.SaveChangesAsync();
-                }
+                _loyalty.Award(order);
+                await _context.SaveChangesAsync();
+                await CalculateSellerCommission(order);
             }
 
             _logger.LogInformation("Admin updated order #{OrderId} status to: {Status}", id, status);
@@ -1056,7 +1032,8 @@ namespace Source.Controllers
                 var totalCommission = 0m;
                 foreach (var detail in order.OrderDetails.Where(d => d.FastFoodId.HasValue))
                 {
-                    var food = await _context.FastFoods.FindAsync(detail.FastFoodId.Value);
+                    var fastFoodId = detail.FastFoodId!.Value;
+                    var food = await _context.FastFoods.FindAsync(fastFoodId);
                     if (food != null && food.SellerId.HasValue)
                     {
                         var itemCommission = (detail.Price + detail.Modifiers.Sum(m => m.OptionPrice)) * detail.Quantity * 0.1m;
@@ -1065,7 +1042,7 @@ namespace Source.Controllers
                         _context.SellerCommissions.Add(new SellerCommission
                         {
                             OrderId = order.Id,
-                            SellerId = food.SellerId.Value,
+                            SellerId = food.SellerId!.Value,
                             CommissionAmount = Math.Round(itemCommission, 0),
                             CommissionStatus = "Pending"
                         });
@@ -1232,7 +1209,11 @@ namespace Source.Controllers
                 return RedirectToAction(nameof(Orders));
             }
 
-            if (status == OrderStatus.Delivered) _loyalty.Award(order);
+            if (status == OrderStatus.Delivered)
+            {
+                _loyalty.Award(order);
+                await _context.SaveChangesAsync();
+            }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {

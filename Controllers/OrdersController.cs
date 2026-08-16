@@ -83,42 +83,89 @@ namespace Source.Controllers
             return View(order);
         }
 
-        public async Task<IActionResult> Tracking(int id)
+        // Guest có thể theo dõi đơn bằng số điện thoại đặt hàng (không cần tài khoản).
+        [AllowAnonymous]
+        public IActionResult GuestTrack(int id)
+        {
+            ViewBag.OrderId = id;
+            return View();
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Tracking(int id, string? phone = null)
         {
             var userId = UserClaimsHelper.GetUserId(User);
-            if (!userId.HasValue)
+            if (userId.HasValue)
             {
-                return RedirectToAction("Login", "Account");
+                var order = await _context.Orders
+                    .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.FastFood)
+                    .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Combo)
+                    .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Modifiers)
+                    .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value);
+
+                if (order == null)
+                {
+                    return NotFound();
+                }
+
+                return View(order);
             }
 
-            var order = await _context.Orders
+            // Guest: cần số điện thoại trùng khớp với SĐT đặt hàng mới được xem
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                return RedirectToAction(nameof(GuestTrack), new { id });
+            }
+
+            var guestOrder = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.FastFood)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Combo)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Modifiers)
-                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value);
+                .FirstOrDefaultAsync(o => o.Id == id && o.ReceiverPhone == phone.Trim());
 
-            if (order == null)
+            if (guestOrder == null)
             {
-                return NotFound();
+                ViewBag.OrderId = id;
+                TempData["ErrorMessage"] = "Số điện thoại không khớp với đơn hàng.";
+                return RedirectToAction(nameof(GuestTrack), new { id });
             }
 
-            return View(order);
+            // Guest đơn chuyển khoản chưa thanh toán: đưa thẳng tới hướng dẫn chuyển khoản
+            if (guestOrder.PaymentMethod == "Bank" && guestOrder.PaymentStatus != "Paid")
+            {
+                return RedirectToAction(nameof(BankTransfer), new { id, phone = phone.Trim() });
+            }
+
+            return View(guestOrder);
         }
 
         // GET: Orders/BankTransfer/5 — hướng dẫn chuyển khoản cho đơn thanh toán Bank
-        public async Task<IActionResult> BankTransfer(int id)
+        [AllowAnonymous]
+        public async Task<IActionResult> BankTransfer(int id, string? phone = null)
         {
             var userId = UserClaimsHelper.GetUserId(User);
-            if (!userId.HasValue)
+            Order? order;
+            if (userId.HasValue)
             {
-                return RedirectToAction("Login", "Account");
+                order = await _context.Orders
+                    .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value && !o.IsDeleted);
             }
-
-            var order = await _context.Orders
-                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId.Value && !o.IsDeleted);
+            else
+            {
+                // Guest: cần SĐT trùng khớp
+                if (string.IsNullOrWhiteSpace(phone))
+                {
+                    return RedirectToAction(nameof(GuestTrack), new { id });
+                }
+                order = await _context.Orders
+                    .FirstOrDefaultAsync(o => o.Id == id && o.ReceiverPhone == phone.Trim() && !o.IsDeleted);
+            }
 
             if (order == null)
             {

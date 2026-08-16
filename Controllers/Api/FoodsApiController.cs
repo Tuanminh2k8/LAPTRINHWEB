@@ -200,7 +200,7 @@ namespace Source.Controllers.Api
 
             if (images.Count == 0)
             {
-                images.Add(new { ImageUrl = food.ImageUrl, IsPrimary = true, AltText = food.Name });
+                images.Add(new { ImageUrl = food.ImageUrl ?? "", IsPrimary = true, AltText = (string?)food.Name });
             }
 
             return Ok(new
