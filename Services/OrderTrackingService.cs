@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Source.Hubs;
 using Source.Models;
 
@@ -82,7 +83,21 @@ namespace Source.Services
                 CreatedAt = now
             });
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Có người khác vừa cập nhật đơn cùng lúc — không ghi đè; báo lỗi để client thử lại
+                _context.ChangeTracker.Clear();
+                return (false, "Đơn hàng vừa được cập nhật bởi người khác. Vui lòng tải lại và thử lại.");
+            }
+            catch (DbUpdateException)
+            {
+                _context.ChangeTracker.Clear();
+                return (false, "Có lỗi dữ liệu khi cập nhật đơn hàng. Vui lòng thử lại.");
+            }
 
             // Broadcast qua SignalR
             await _hub.Clients.Group($"order-{order.Id}").SendAsync("OrderStatusChanged", new

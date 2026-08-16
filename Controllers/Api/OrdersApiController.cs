@@ -152,7 +152,6 @@ await _context.SaveChangesAsync();
                 // Batch-load để tránh N+1 query trong vòng lặp
                 var foodIds = cart.Where(i => i.FastFoodId.HasValue).Select(i => i.FastFoodId!.Value).Distinct().ToList();
                 var comboIds = cart.Where(i => i.ComboId.HasValue).Select(i => i.ComboId!.Value).Distinct().ToList();
-                var variantIds = cart.Where(i => i.VariantId.HasValue).Select(i => i.VariantId!.Value).Distinct().ToList();
 
                 var foods = await _context.FastFoods
                     .AsNoTracking()
@@ -164,11 +163,6 @@ await _context.SaveChangesAsync();
                     .AsNoTracking()
                     .Where(c => comboIds.Contains(c.Id))
                     .ToDictionaryAsync(c => c.Id);
-
-                var variants = await _context.FoodVariants
-                    .AsNoTracking()
-                    .Where(v => variantIds.Contains(v.Id))
-                    .ToDictionaryAsync(v => v.Id);
 
                 var comboFirstFoods = await _context.ComboDetails
                     .AsNoTracking()
@@ -219,19 +213,29 @@ await _context.SaveChangesAsync();
                         });
                     }
 
-                    // Tăng SoldCount cho món ăn (không tính combo) + giảm tồn kho variant
+// Tăng SoldCount cho món ăn (không tính combo) + giảm tồn kho variant ATOMIC (chống oversell)
                     if (item.FastFoodId.HasValue && foods.TryGetValue(item.FastFoodId.Value, out var food))
                     {
                         detail.ProductDescription = food.Description;
                         food.SoldCount += item.Quantity;
                         _context.Update(food);
 
-                        if (item.VariantId.HasValue && variants.TryGetValue(item.VariantId.Value, out var variant)
-                            && variant.StockQuantity > 0)
+                        if (item.VariantId.HasValue)
                         {
-                            variant.StockQuantity = Math.Max(0, variant.StockQuantity - item.Quantity);
-                            variant.UpdatedAt = DateTime.Now;
-                            _context.Update(variant);
+                            // Chỉ giảm khi tồn kho >= số lượng — thao tác nguyên tử, không đọc-rồi-ghi
+                            var stockUpdated = await _context.FoodVariants
+                                .Where(v => v.Id == item.VariantId.Value && v.StockQuantity >= item.Quantity)
+                                .ExecuteUpdateAsync(s => s
+                                    .SetProperty(v => v.StockQuantity, v => v.StockQuantity - item.Quantity)
+                                    .SetProperty(v => v.UpdatedAt, DateTime.Now));
+
+                            if (stockUpdated == 0)
+                            {
+                                await transaction.RollbackAsync();
+                                _cartService.ClearCart();
+                                HttpContext.Session.Remove(PromoSessionKey);
+                                return BadRequest(new { message = $"Tồn kho không đủ cho phân loại \"{item.VariantName}\" của món \"{item.Name}\"." });
+                            }
                         }
                     }
 else if (item.ComboId.HasValue && combos.TryGetValue(item.ComboId.Value, out var combo))
@@ -242,8 +246,18 @@ else if (item.ComboId.HasValue && combos.TryGetValue(item.ComboId.Value, out var
 
                 if (promoResult.Success && promoResult.Promo != null)
                 {
-                    promoResult.Promo.UsedCount++;
-                    _context.PromoCodes.Update(promoResult.Promo);
+                    // Tăng UsedCount ATOMIC — chỉ thành công khi chưa vượt MaxUsage (chống race hết lượt)
+                    var promoUpdated = await _context.PromoCodes
+                        .Where(p => p.Id == promoResult.Promo.Id && (p.MaxUsage == 0 || p.UsedCount < p.MaxUsage))
+                        .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount + 1));
+
+                    if (promoUpdated == 0)
+                    {
+                        await transaction.RollbackAsync();
+                        _cartService.ClearCart();
+                        HttpContext.Session.Remove(PromoSessionKey);
+                        return BadRequest(new { message = "Mã giảm giá vừa hết lượt sử dụng. Vui lòng thử lại." });
+                    }
                 }
 
                 if (pointsUsed > 0 && userId.HasValue)

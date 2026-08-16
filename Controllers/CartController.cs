@@ -365,19 +365,20 @@ _context.Orders.Add(model);
                         _context.OrderDetails.Add(detail);
                     }
 
-                    // Ghi nhận lượt dùng mã trong cùng transaction
+                    // Ghi nhận lượt dùng mã trong cùng transaction — tăng ATOMIC, chỉ thành công khi chưa vượt MaxUsage
                     if (promoResult.Success && promoResult.Promo != null)
                     {
-                        promoResult.Promo.UsedCount++;
-                        // Guard chống race: nếu tăng xong vượt MaxUsage thì hủy toàn bộ đơn
-                        if (promoResult.Promo.MaxUsage > 0 && promoResult.Promo.UsedCount > promoResult.Promo.MaxUsage)
+                        var promoUpdated = await _context.PromoCodes
+                            .Where(p => p.Id == promoResult.Promo.Id && (p.MaxUsage == 0 || p.UsedCount < p.MaxUsage))
+                            .ExecuteUpdateAsync(s => s.SetProperty(p => p.UsedCount, p => p.UsedCount + 1));
+
+                        if (promoUpdated == 0)
                         {
                             await transaction.RollbackAsync();
                             HttpContext.Session.Remove(PromoSessionKey);
                             TempData["ErrorMessage"] = "Mã giảm giá vừa hết lượt sử dụng. Vui lòng thử lại.";
                             return RedirectToAction("Checkout");
                         }
-                        _context.PromoCodes.Update(promoResult.Promo);
                     }
 
                     await _context.SaveChangesAsync();
