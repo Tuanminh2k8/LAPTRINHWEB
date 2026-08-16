@@ -1,21 +1,7 @@
 @model Source.Models.Order
 @{
-    ViewData["Title"] = "Chi Tiết Đơn Hàng #" + Model.Id;
-    
-    int activeStep = Model.Status switch
-    {
-        "Delivered" => 3,
-        "Shipping" => 2,
-        "Cancelled" => 0,
-        "Refunded" => 0,
-        _ => 1
-    };
-    int progressPercent = activeStep switch
-    {
-        3 => 100,
-        2 => 50,
-        _ => 15
-    };
+    ViewData["Title"] = "Theo Dõi Đơn Hàng #" + Model.Id;
+    var isLoggedIn = User.Identity?.IsAuthenticated ?? false;
 }
 
 <div class="container py-5">
@@ -27,106 +13,53 @@
             </h2>
             <span class="text-muted small">Ngày đặt: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
         </div>
-        <a asp-action="Index" class="btn btn-secondary-custom btn-custom py-2 px-4" style="font-size:.85rem;">
-            <i class="fa-solid fa-list me-1"></i> Tất cả đơn hàng
-        </a>
+        <div class="d-flex gap-2">
+            <span class="badge @Source.Models.OrderStatus.GetBadgeClass(Model.Status) fs-6" id="orderStatusBadge">
+                @Source.Models.OrderStatus.GetLabel(Model.Status)
+            </span>
+            <a asp-action="Index" class="btn btn-secondary-custom btn-custom py-2 px-4" style="font-size:.85rem;">
+                <i class="fa-solid fa-list me-1"></i> Tất cả đơn hàng
+            </a>
+        </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5 mb-4">
-        <h5 class="fw-bold text-dark mb-4">Trạng Thái Đơn Hàng</h5>
-        
-        <div class="timeline-status mb-4">
-            <div class="timeline-track"></div>
-            <div class="timeline-progress" style="width: @progressPercent%;"></div>
-            <div class="timeline-steps">
-                <div class="timeline-step @(activeStep >= 1 ? "active" : "")">
-                    <div class="timeline-icon"><i class="fa-solid fa-receipt"></i></div>
-                    <div class="timeline-text">Đã Tiếp Nhận</div>
-                </div>
-                <div class="timeline-step @(activeStep >= 2 ? "active" : "")">
-                    <div class="timeline-icon"><i class="fa-solid fa-motorcycle"></i></div>
-                    <div class="timeline-text">Đang Giao Hàng</div>
-                </div>
-                <div class="timeline-step @(activeStep >= 3 ? "active" : "")">
-                    <div class="timeline-icon"><i class="fa-solid fa-circle-check"></i></div>
-                    <div class="timeline-text">Đã Giao Thành Công</div>
-                </div>
-            </div>
+    @if (!isLoggedIn)
+    {
+        <div class="alert alert-warning d-flex align-items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Đăng nhập để theo dõi trạng thái đơn hàng theo thời gian thực.</span>
         </div>
+    }
+
+    <!-- Connection state banner -->
+    <div class="alert d-none align-items-center gap-2 mb-3" id="connBanner" role="alert">
+        <span id="connDot" class="d-inline-block rounded-circle" style="width:10px;height:10px;"></span>
+        <span id="connText"></span>
     </div>
 
     <div class="row g-4">
+        <!-- Left: Map + driver -->
         <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
-                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">Danh Sách Món Ăn</h5>
-                
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr class="text-muted small">
-                                <th>Món ăn</th>
-                                <th class="text-center">Đơn giá</th>
-                                <th class="text-center">Số lượng</th>
-                                <th class="text-end">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var detail in Model.OrderDetails)
-                            {
-                                var name = detail.FastFoodName ?? detail.FastFood?.Name ?? detail.Combo?.Name ?? "Sản phẩm";
-                                var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? detail.Combo?.ImageUrl ?? "/images/default_food.svg";
-                                var modifierTotal = detail.Modifiers.Sum(m => m.OptionPrice);
-
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img src="@img" alt="@name" class="rounded-3" style="width: 42px; height: 42px; object-fit: cover;">
-                                            <div>
-                                                <div class="fw-bold text-dark" style="font-size:.85rem;">@name</div>
-                                                @if (detail.Modifiers.Any())
-                                                {
-                                                    <div class="d-flex flex-wrap gap-1 mt-1">
-                                                        @foreach (var m in detail.Modifiers)
-                                                        {
-                                                            <span class="badge bg-light border text-muted rounded-pill" style="font-size:.65rem;">
-                                                                @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
-                                                            </span>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center small">@((detail.Price + modifierTotal).ToString("N0")) ₫</td>
-                                    <td class="text-center fw-bold">x @detail.Quantity</td>
-                                    <td class="text-end fw-bold text-danger small">@(((detail.Price + modifierTotal) * detail.Quantity).ToString("N0")) ₫</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                    <span class="fw-bold text-dark" style="font-size:1rem;">Tổng tiền thanh toán:</span>
-                    <span class="fw-800 text-danger" style="font-size:1.4rem;">@Model.TotalAmount.ToString("N0") ₫</span>
-                </div>
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">
+                    <i class="fa-solid fa-map-location-dot me-2 text-danger"></i>Bản Đồ Giao Hàng
+                </h5>
+                <div id="trackingMap" style="height:320px;border-radius:12px;background:#e9ecef;"></div>
+                <div class="small text-muted mt-2" id="mapStatus">Bản đồ sẽ hiển thị vị trí tài xế khi đơn bắt đầu giao.</div>
             </div>
-        </div>
 
-        <div class="col-lg-5">
             <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
-                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">Thông Tin Nhận Hàng</h5>
-                
+                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">
+                    <i class="fa-solid fa-user-gear me-2 text-danger"></i>Thông Tin Nhận Hàng
+                </h5>
                 <div class="mb-3">
                     <span class="text-muted small d-block">Người nhận hàng:</span>
                     <strong class="text-dark">@Model.ReceiverName</strong>
                 </div>
-
                 <div class="mb-3">
                     <span class="text-muted small d-block">Số điện thoại:</span>
                     <strong class="text-dark">@Model.ReceiverPhone</strong>
                 </div>
-
                 <div class="mb-3">
                     <span class="text-muted small d-block">@(Model.OrderType == "Pickup" ? "Hình thức nhận" : "Địa chỉ giao hàng"):</span>
                     @if (Model.OrderType == "Pickup")
@@ -138,10 +71,38 @@
                         <strong class="text-dark">@Model.ReceiverAddress</strong>
                     }
                 </div>
+            </div>
+        </div>
 
-                <div class="p-3 bg-light rounded-3 mt-4 border">
+        <!-- Right: Status timeline + driver card -->
+        <div class="col-lg-5">
+            <!-- Driver card -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">
+                    <i class="fa-solid fa-motorcycle me-2 text-danger"></i>Tài Xế Giao Hàng
+                </h5>
+                <div id="driverCard">
+                    <div class="text-muted py-3"><i class="fa-solid fa-hourglass-half me-1"></i>Đang chờ gán tài xế...</div>
+                </div>
+                <div class="p-3 bg-light rounded-3 mt-3 border">
                     <span class="text-muted small d-block"><i class="fa-solid fa-shield-halved text-success me-1"></i>Trạng thái hiện tại:</span>
-                    <strong class="text-danger" style="font-size:1.2rem;">@Source.Models.OrderStatus.GetLabel(Model.Status)</strong>
+                    <strong class="text-danger" style="font-size:1.2rem;" id="currentStatusText">@Source.Models.OrderStatus.GetLabel(Model.Status)</strong>
+                    @if (Model.EstimatedDeliveryTime.HasValue)
+                    {
+                        <div class="small text-muted mt-1"><i class="fa-regular fa-clock me-1"></i>Dự kiến giao: @Model.EstimatedDeliveryTime.Value.ToString("HH:mm dd/MM")</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <h5 class="fw-bold text-dark mb-3 pb-2" style="font-size:1rem;">
+                    <i class="fa-solid fa-timeline me-2 text-danger"></i>Chi Tiết Trạng Thái
+                </h5>
+                <div id="trackingTimeline">
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Đang tải...
+                    </div>
                 </div>
             </div>
         </div>
@@ -149,72 +110,177 @@
 </div>
 
 @section Scripts {
-    <style>
-        .timeline-status {
-            position: relative;
-        }
-        .timeline-track {
-            position: absolute;
-            top: 24px;
-            left: 20px;
-            right: 20px;
-            height: 3px;
-            background: #e9ecef;
-            border-radius: 2px;
-        }
-        .timeline-progress {
-            position: absolute;
-            top: 24px;
-            left: 20px;
-            height: 3px;
-            background: linear-gradient(90deg, #dc3545, #ffc107);
-            border-radius: 2px;
-            transition: width 0.5s ease;
-        }
-        .timeline-steps {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-            z-index: 1;
-            padding: 0 10px;
-        }
-        .timeline-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            position: relative;
-        }
-        .timeline-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #fff;
-            border: 3px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #adb5bd;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-        .timeline-step.active .timeline-icon {
-            border-color: #dc3545;
-            background: #dc3545;
-            color: #fff;
-            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
-        }
-        .timeline-text {
-            margin-top: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #6c757d;
-            text-align: center;
-            white-space: nowrap;
-        }
-        .timeline-step.active .timeline-text {
-            color: #dc3545;
-        }
-    </style>
+    <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        $(function () {
+            const orderId = @Model.Id;
+            const orderType = '@Model.OrderType';
+            const token = $('input[name="__RequestVerificationToken"]').val();
+            const initialStatus = '@Model.Status';
+
+            let map = null;
+            let marker = null;
+            let circle = null;
+            let conn = null;
+            let currentStatus = initialStatus;
+
+            // ---- Map helpers ----
+            function initMap(lat, lng) {
+                if (map) return;
+                map = L.map('trackingMap').setView([lat, lng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                marker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'driver-marker',
+                        html: '<div style="width:34px;height:34px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-motorcycle" style="color:#fff;font-size:15px;"></i></div>',
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 17]
+                    })
+                }).addTo(map).bindPopup('Tài xế');
+                circle = L.circle([lat, lng], { radius: 150, color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: 0.08 }).addTo(map);
+            }
+
+            function updateMarker(lat, lng) {
+                if (!map) initMap(lat, lng);
+                if (marker) marker.setLatLng([lat, lng]);
+                if (circle) circle.setLatLng([lat, lng]);
+                if (map) map.panTo([lat, lng], { animate: true });
+            }
+
+            // ---- Connection state UI ----
+            function setConn(state, text, color) {
+                const $banner = $('#connBanner');
+                $banner.removeClass('d-none alert-success alert-danger alert-warning');
+                $banner.addClass('alert-' + color);
+                $('#connDot').css('background', state === 'connected' ? '#22c55e' : state === 'reconnecting' ? '#f59e0b' : '#ef4444');
+                $('#connText').text(text);
+            }
+
+            // ---- Timeline render ----
+            function renderTimeline(events) {
+                const $t = $('#trackingTimeline').empty();
+                if (!events || !events.length) {
+                    $t.html('<div class="text-muted text-center py-3">Chưa có sự kiện trạng thái.</div>');
+                    return;
+                }
+                events.forEach(function (e, idx) {
+                    const isLast = idx === events.length - 1;
+                    $t.append(
+                        '<div class="d-flex gap-3 pb-3" style="border-left:2px solid ' + (isLast ? '#dc3545' : '#e9ecef') + ';margin-left:12px;padding-left:16px;">' +
+                        '<div><i class="fa-solid ' + e.icon + ' ' + (isLast ? 'text-danger' : 'text-secondary') + '"></i></div>' +
+                        '<div>' +
+                        '<div class="fw-bold" style="font-size:.9rem;">' + e.statusLabel + '</div>' +
+                        '<div class="small text-muted">' + (e.description || '') + (e.actor ? ' — ' + e.actor : '') + '</div>' +
+                        '<div class="small text-muted">' + new Date(e.createdAt).toLocaleString('vi-VN') + '</div>' +
+                        '</div></div>'
+                    );
+                });
+            }
+
+            // ---- Driver card render ----
+            function renderDriverCard(driver) {
+                if (!driver) {
+                    $('#driverCard').html('<div class="text-muted"><i class="fa-solid fa-hourglass-half me-1"></i>Đang chờ gán tài xế...</div>');
+                    return;
+                }
+                $('#driverCard').html(
+                    '<div class="d-flex align-items-center gap-3">' +
+                    '<img src="' + (driver.avatarUrl || '/images/default_avatar.svg') + '" class="rounded-circle border" style="width:52px;height:52px;object-fit:cover;">' +
+                    '<div>' +
+                    '<div class="fw-bold text-dark">' + driver.fullName + '</div>' +
+                    '<div class="small text-muted"><i class="fa-solid fa-star text-warning me-1"></i>' + (driver.rating || 5).toFixed(1) + ' · ' + driver.totalDeliveries + ' chuyến</div>' +
+                    '<div class="small text-muted"><i class="fa-solid ' + (driver.vehicleType === 'Ô tô' ? 'fa-car' : 'fa-motorcycle') + ' me-1"></i>' + (driver.vehicleType || '') + (driver.licensePlate ? ' · ' + driver.licensePlate : '') + '</div>' +
+                    '</div>' +
+                    '<div class="ms-auto text-end small">' +
+                    '<div class="text-muted mb-1">Liên hệ</div>' +
+                    '<a href="tel:' + driver.phoneNumber + '" class="btn btn-sm btn-outline-primary rounded-pill"><i class="fa-solid fa-phone me-1"></i>Gọi</a>' +
+                    '</div></div>'
+                );
+            }
+
+            // ---- Data load ----
+            async function loadTracking() {
+                try {
+                    const res = await fetch('/api/orders/' + orderId + '/tracking');
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    if (data.status && data.statusLabel) {
+                        currentStatus = data.status;
+                        $('#currentStatusText').text(data.statusLabel);
+                        $('#orderStatusBadge').text(data.statusLabel);
+                    }
+                    if (data.estimatedDeliveryTime) {
+                        $('.small.text-muted .fa-regular').closest('div').remove();
+                    }
+                    if (data.events) renderTimeline(data.events);
+                    if (data.driver) renderDriverCard(data.driver);
+                    if (data.driver && data.driver.hasLocation && data.driver.latitude && data.driver.longitude) {
+                        updateMarker(data.driver.latitude, data.driver.longitude);
+                        $('#mapStatus').text('Vị trí tài xế được cập nhật thời gian thực.');
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            // ---- SignalR ----
+            function connect() {
+                conn = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/order-tracking')
+                    .withAutomaticReconnect()
+                    .build();
+
+                conn.on('OrderStatusChanged', function (data) {
+                    currentStatus = data.status;
+                    $('#currentStatusText').text(data.statusLabel);
+                    $('#orderStatusBadge').text(data.statusLabel);
+                    loadTracking();
+                });
+
+                conn.on('DriverAssigned', function (data) {
+                    renderDriverCard(data.driver);
+                    loadTracking();
+                });
+
+                conn.on('DriverLocationUpdated', function (data) {
+                    if (data.latitude && data.longitude) {
+                        updateMarker(data.latitude, data.longitude);
+                        $('#mapStatus').text('Vị trí tài xế được cập nhật thời gian thực · ' + new Date(data.at).toLocaleTimeString('vi-VN'));
+                    }
+                });
+
+                conn.on('DriverAccepted', function () { loadTracking(); });
+                conn.on('OrderDelivered', function () {
+                    $('#currentStatusText').text('Đã giao thành công');
+                    $('#orderStatusBadge').text('Đã giao');
+                    loadTracking();
+                });
+
+                conn.onreconnecting(function () {
+                    setConn('reconnecting', 'Mất kết nối. Đang kết nối lại...', 'warning');
+                });
+                conn.onreconnected(function () {
+                    setConn('connected', 'Đã kết nối lại. Dữ liệu đang đồng bộ.', 'success');
+                    loadTracking();
+                });
+                conn.onclose(function () {
+                    setConn('disconnected', 'Mất kết nối thời gian thực.', 'danger');
+                });
+
+                conn.start().then(function () {
+                    setConn('connected', 'Kết nối thời gian thực thành công.', 'success');
+                    return conn.invoke('JoinOrder', orderId);
+                }).catch(function () {
+                    setConn('disconnected', 'Không thể kết nối thời gian thực.', 'danger');
+                });
+            }
+
+            loadTracking();
+            if (@(isLoggedIn ? "true" : "false")) connect();
+            else {
+                // Không đăng nhập — poll định kỳ nhưng ít thông tin hơn (chỉ hiển thị).
+            }
+        });
+    </script>
 }

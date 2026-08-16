@@ -29,5 +29,8 @@ namespace Source.Models
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Giá tăng thêm (snapshot)")]
         public decimal OptionPrice { get; set; } = 0;
+
+        [Display(Name = "Số lượng tùy chọn")]
+        public int OptionQuantity { get; set; } = 1;
     }
 }

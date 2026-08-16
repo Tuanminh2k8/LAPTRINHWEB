@@ -1,0 +1,195 @@
+@using Source.Models
+@model List<Order>
+@{
+    ViewData["Title"] = "Tổng quan tài xế";
+    Layout = "_DriverLayout";
+    var driver = ViewBag.Driver as Driver;
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Tổng quan tài xế</h4>
+    <div class="text-muted">Chào mừng trở lại, <span class="fw-bold text-dark">@driver?.FullName</span></div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="text-muted small">Đơn đang giao</div>
+                <div class="fs-3 fw-bold" id="statInDelivery">@ViewBag.InDeliveryCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="text-muted small">Đã giao hôm nay</div>
+                <div class="fs-3 fw-bold">@ViewBag.TotalDelivered</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="text-muted small">Đánh giá</div>
+                <div class="fs-3 fw-bold text-warning"><i class="fa-solid fa-star me-1"></i>@(driver?.Rating.ToString("F1") ?? "5.0")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="text-muted small">Phương tiện</div>
+                <div class="fs-5 fw-bold">@(driver?.VehicleType ?? "-") <span class="text-muted fs-6">@driver?.LicensePlate</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active orders -->
+<div class="card border-0 shadow-sm rounded-4 mb-4" id="activeOrders">
+    <div class="card-header bg-white rounded-top-4 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-truck-fast me-2 text-primary"></i>Danh sách đơn</h6>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-motorcycle fa-2x mb-3 text-secondary"></i>
+                <div>Chưa có đơn hàng nào được gán cho bạn.</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Mã đơn</th>
+                            <th>Người nhận</th>
+                            <th>Địa chỉ</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian</th>
+                            <th class="pe-3">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var o in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">#@o.Id</td>
+                                <td>
+                                    <div>@o.ReceiverName</div>
+                                    <div class="small text-muted">@o.ReceiverPhone</div>
+                                </td>
+                                <td class="small text-muted" style="max-width:220px;">
+                                    <span class="d-inline-block text-truncate" style="max-width:200px;">@o.ReceiverAddress</span>
+                                </td>
+                                <td>
+                                    <span class="badge @OrderStatus.GetBadgeClass(o.Status)">@OrderStatus.GetLabel(o.Status)</span>
+                                </td>
+                                <td class="small">@o.OrderDate.ToString("HH:mm dd/MM")</td>
+                                <td class="pe-3">
+                                    <a asp-controller="Driver" asp-action="Order" asp-route-id="@o.Id" class="btn btn-primary btn-sm rounded-pill">
+                                        <i class="fa-solid fa-route me-1"></i>Đi giao
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white rounded-top-4 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-location-dot me-2 text-primary"></i>Chia sẻ vị trí thời gian thực</h6>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Bật chia sẻ vị trí để khách hàng có thể theo dõi tài xế trên bản đồ trong thời gian thực.
+            Vị trí sẽ được gửi từ trình duyệt của bạn (không tạo dữ liệu giả).
+        </p>
+        <div class="d-flex align-items-center gap-3">
+            <button id="btnStartSharing" class="btn btn-primary rounded-pill px-4">
+                <i class="fa-solid fa-location-crosshairs me-1"></i><span id="btnShareText">Bắt đầu chia sẻ vị trí</span>
+            </button>
+            <button id="btnStopSharing" class="btn btn-outline-secondary rounded-pill px-4 d-none">
+                <i class="fa-solid fa-circle-stop me-1"></i>Dừng chia sẻ
+            </button>
+            <div class="small text-muted" id="locationStatus">Chưa chia sẻ vị trí</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const driverId = @(driver?.Id ?? 0);
+            let watchId = null;
+
+            function getAntiForgeryToken() {
+                return $('input[name="__RequestVerificationToken"]').val();
+            }
+
+            async function sendLocation(lat, lng) {
+                try {
+                    await fetch('/api/driver/location', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': getAntiForgeryToken()
+                        },
+                        body: JSON.stringify({ latitude: lat, longitude: lng })
+                    });
+                    $('#locationStatus').text('Đang chia sẻ vị trí (' + new Date().toLocaleTimeString() + ')').removeClass('text-danger');
+                } catch (e) {
+                    $('#locationStatus').text('Lỗi gửi vị trí').addClass('text-danger');
+                }
+            }
+
+            function startSharing() {
+                if (!navigator.geolocation) {
+                    alert('Trình duyệt không hỗ trợ định vị.');
+                    return;
+                }
+                $('#btnStartSharing').prop('disabled', true);
+                $('#btnShareText').text('Đang yêu cầu quyền vị trí...');
+                watchId = navigator.geolocation.watchPosition(
+                    function (pos) {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        $('#btnStartSharing').addClass('d-none');
+                        $('#btnStopSharing').removeClass('d-none');
+                        $('#btnShareText').text('Đang chia sẻ');
+                        $('#locationStatus').text('Đang chia sẻ vị trí (' + new Date().toLocaleTimeString() + ')').removeClass('text-danger');
+                        sendLocation(lat, lng);
+                    },
+                    function (err) {
+                        $('#btnStartSharing').prop('disabled', false);
+                        $('#btnShareText').text('Bắt đầu chia sẻ vị trí');
+                        $('#locationStatus').text('Không lấy được vị trí. Vui lòng kiểm tra quyền định vị.').addClass('text-danger');
+                    },
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                );
+            }
+
+            function stopSharing() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                $('#btnStartSharing').removeClass('d-none').prop('disabled', false);
+                $('#btnStopSharing').addClass('d-none');
+                $('#btnShareText').text('Bắt đầu chia sẻ vị trí');
+                $('#locationStatus').text('Đã dừng chia sẻ vị trí').removeClass('text-danger');
+            }
+
+            $('#btnStartSharing').on('click', startSharing);
+            $('#btnStopSharing').on('click', stopSharing);
+        });
+    </script>
+}

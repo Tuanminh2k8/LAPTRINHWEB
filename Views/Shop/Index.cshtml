@@ -1,0 +1,74 @@
+@{
+    var seller = ViewBag.Seller as Source.Models.User;
+    var foods = Model as IEnumerable<Source.Models.FastFood> ?? new List<Source.Models.FastFood>();
+    double avgRating = ViewBag.AvgRating ?? 0;
+    int reviewCount = ViewBag.ReviewCount ?? 0;
+    int totalDelivered = ViewBag.TotalDelivered ?? 0;
+    ViewData["Title"] = "Cửa hàng " + (seller?.FullName ?? "PolyFood");
+}
+
+<div class="container my-4 my-lg-5">
+    <!-- Shop header -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="shop-cover p-4 p-md-5 text-white">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="rounded-3 bg-white d-flex align-items-center justify-content-center shadow-sm" style="width:72px;height:72px;">
+                    <i class="fa-solid fa-store text-danger" style="font-size:2rem;"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="fw-bold mb-1">@seller?.FullName</h2>
+                    <div class="d-flex flex-wrap gap-3 small">
+                        <span><i class="fa-solid fa-star text-warning me-1"></i>@avgRating.ToString("0.0")</span>
+                        <span>@reviewCount đánh giá</span>
+                        <span><i class="fa-solid fa-box me-1"></i>@foods.Count() sản phẩm</span>
+                        <span><i class="fa-solid fa-circle-check me-1"></i>@totalDelivered đơn đã giao</span>
+                    </div>
+                </div>
+                <div class="text-end small">
+                    <div class="text-white-50">Phản hồi nhanh</div>
+                    <div class="fw-bold">Trong giờ hành chính</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="fw-bold text-dark mb-4"><i class="fa-solid fa-bag-shopping text-danger me-2"></i>Sản phẩm của cửa hàng</h4>
+
+    @if (!foods.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="fa-solid fa-box-open fa-2x mb-3 d-block"></i>
+            Cửa hàng chưa có sản phẩm nào.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            @foreach (var item in foods)
+            {
+                <div class="col">
+                    <div class="card-food">
+                        <div class="card-img-container">
+                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" data-category="@item.Category?.Name">
+                            <span class="food-badge">@item.Category?.Name</span>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Name</h5>
+                            <p class="card-description">@item.Description</p>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <span class="price-tag">@item.Price.ToString("N0") ₫</span>
+                                <a asp-action="FoodDetails" asp-controller="Home" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Xem</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <style>
+        .shop-cover { background: linear-gradient(120deg, #dc3545, #ff7a59); }
+    </style>
+}

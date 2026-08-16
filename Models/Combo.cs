@@ -23,6 +23,9 @@ namespace Source.Models
         [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
 
+        [Display(Name = "Hình ảnh")]
+        public string ImageUrl { get; set; } = "/images/default_combo.jpg";
+
         [Display(Name = "Đang giảm giá")]
         public bool IsOnSale { get; set; } = false;
 
@@ -30,8 +33,9 @@ namespace Source.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal OriginalPrice { get; set; } = 0;
 
-        [Display(Name = "Hình ảnh")]
-        public string ImageUrl { get; set; } = "/images/default_combo.jpg";
+        [Display(Name = "Mã SKU")]
+        [StringLength(50)]
+        public string? Sku { get; set; }
 
         // Navigation property for foods in this combo
         public ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();

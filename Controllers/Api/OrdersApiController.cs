@@ -133,6 +133,8 @@ namespace Source.Controllers.Api
                 ShippingFee = shippingFee,
                 Discount = discount + pointsDiscount,
                 TotalAmount = total,
+                PromoCode = request.PromoCode,
+                Tax = 0m,
                 UpdatedAt = DateTime.Now
             };
 
@@ -149,7 +151,23 @@ namespace Source.Controllers.Api
 
                 foreach (var item in cart)
                 {
-                    var detail = new OrderDetail
+var sellerName = "";
+                if (item.FastFoodId.HasValue)
+                {
+                    var food = await _context.FastFoods.AsNoTracking().FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
+                    sellerName = food?.Seller?.FullName ?? "";
+                }
+                else if (item.ComboId.HasValue)
+                {
+                    // Combo doesn't have direct seller, use first food's seller
+                    var comboFood = await _context.ComboDetails.AsNoTracking()
+                        .Where(cd => cd.ComboId == item.ComboId.Value)
+                        .Select(cd => cd.FastFood)
+                        .FirstOrDefaultAsync();
+                    sellerName = comboFood?.Seller?.FullName ?? "";
+                }
+
+                var detail = new OrderDetail
                     {
                         OrderId = order.Id,
                         FastFoodId = item.FastFoodId,
@@ -157,7 +175,10 @@ namespace Source.Controllers.Api
                         Quantity = item.Quantity,
                         Price = item.Price,
                         FastFoodName = item.Name,
-                        ProductImageUrl = item.ImageUrl
+                        ProductImageUrl = item.ImageUrl,
+                        Sku = item.Sku,
+                        VariantName = item.VariantName,
+                        SellerName = sellerName
                     };
                     _context.OrderDetails.Add(detail);
                     await _context.SaveChangesAsync();
@@ -170,11 +191,12 @@ namespace Source.Controllers.Api
                             OrderDetailId = detail.Id,
                             ModifierOptionId = m.OptionId,
                             OptionName = m.OptionName,
-                            OptionPrice = m.OptionPrice
+                            OptionPrice = m.OptionPrice,
+                            OptionQuantity = m.OptionQuantity > 0 ? m.OptionQuantity : 1
                         });
                     }
 
-                    // Tăng SoldCount cho món ăn (không tính combo)
+// Tăng SoldCount cho món ăn (không tính combo)
                     if (item.FastFoodId.HasValue)
                     {
                         var food = await _context.FastFoods.FindAsync(item.FastFoodId.Value);
@@ -183,6 +205,18 @@ namespace Source.Controllers.Api
                             detail.ProductDescription = food.Description;
                             food.SoldCount += item.Quantity;
                             _context.Update(food);
+                        }
+
+                        // Giảm tồn kho của variant đã chọn (không bao giờ âm)
+                        if (item.VariantId.HasValue)
+                        {
+                            var variant = await _context.FoodVariants.FindAsync(item.VariantId.Value);
+                            if (variant != null && variant.StockQuantity > 0)
+                            {
+                                variant.StockQuantity = Math.Max(0, variant.StockQuantity - item.Quantity);
+                                variant.UpdatedAt = DateTime.Now;
+                                _context.Update(variant);
+                            }
                         }
                     }
                     else if (item.ComboId.HasValue)

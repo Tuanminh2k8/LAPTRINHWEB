@@ -14,6 +14,7 @@ namespace Source.Models
         public DbSet<Combo> Combos { get; set; } = null!;
         public DbSet<Branch> Branches { get; set; } = null!;
         public DbSet<PointTransaction> PointTransactions { get; set; } = null!;
+        public DbSet<SellerCommission> SellerCommissions { get; set; } = null!;
         public DbSet<FavoriteItem> FavoriteItems { get; set; } = null!;
         public DbSet<ComboDetail> ComboDetails { get; set; } = null!;
         public DbSet<Order> Orders { get; set; } = null!;
@@ -21,9 +22,13 @@ namespace Source.Models
         public DbSet<PromoCode> PromoCodes { get; set; } = null!;
         public DbSet<ModifierGroup> ModifierGroups { get; set; } = null!;
         public DbSet<ModifierOption> ModifierOptions { get; set; } = null!;
+        public DbSet<FoodVariant> FoodVariants { get; set; } = null!;
         public DbSet<OrderDetailModifier> OrderDetailModifiers { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
         public DbSet<ReviewImage> ReviewImages { get; set; } = null!;
+        public DbSet<FoodImage> FoodImages { get; set; } = null!;
+        public DbSet<Driver> Drivers { get; set; } = null!;
+        public DbSet<OrderTrackingEvent> OrderTrackingEvents { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,9 +56,76 @@ namespace Source.Models
                 .HasForeignKey(odm => odm.ModifierOptionId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Categories, Combos, Users, ComboDetails seed remain
-            // Foods are seeded dynamically via DbInitializer
-            
+            // Giữ snapshot món ăn & combo trong hóa đơn khi sản phẩm gốc bị xóa.
+            modelBuilder.Entity<OrderDetail>()
+                .HasOne(od => od.FastFood)
+                .WithMany()
+                .HasForeignKey(od => od.FastFoodId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OrderDetail>()
+                .HasOne(od => od.Combo)
+                .WithMany()
+                .HasForeignKey(od => od.ComboId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Quan hệ FastFood -> Seller
+            modelBuilder.Entity<FastFood>()
+                .HasOne(f => f.Seller)
+                .WithMany()
+                .HasForeignKey(f => f.SellerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // FoodVariant configuration
+            modelBuilder.Entity<FoodVariant>()
+                .HasOne(fv => fv.FastFood)
+                .WithMany(f => f.Variants)
+                .HasForeignKey(fv => fv.FastFoodId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Unique constraint on FastFoodId + Size + Color
+            modelBuilder.Entity<FoodVariant>()
+                .HasIndex(fv => new { fv.FastFoodId, fv.Size, fv.Color })
+                .IsUnique();
+
+            // FoodImage configuration — gallery ảnh món ăn
+            modelBuilder.Entity<FoodImage>()
+                .HasOne(fi => fi.FastFood)
+                .WithMany(f => f.FoodImages)
+                .HasForeignKey(fi => fi.FastFoodId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FoodImage>()
+                .HasIndex(fi => new { fi.FastFoodId, fi.SortOrder });
+
+            // Driver configuration
+            modelBuilder.Entity<Driver>()
+                .HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Driver>()
+                .HasIndex(d => d.UserId)
+                .IsUnique();
+
+            // Order tracking event configuration
+            modelBuilder.Entity<OrderTrackingEvent>()
+                .HasOne(ote => ote.Order)
+                .WithMany(o => o.TrackingEvents)
+                .HasForeignKey(ote => ote.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderTrackingEvent>()
+                .HasIndex(ote => new { ote.OrderId, ote.CreatedAt });
+
+            // Order — quan hệ Driver (giữ snapshot, không xóa driver khi đơn bị xóa)
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Driver)
+                .WithMany()
+                .HasForeignKey(o => o.DriverId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Seed Categories
             modelBuilder.Entity<Category>().HasData(
                 new Category { Id = 1, Name = "Burgers", Description = "Các loại bánh burger thơm ngon", Icon = "🍔" },
@@ -91,9 +163,6 @@ namespace Source.Models
                 new ComboDetail { ComboId = 2, FastFoodId = 7, Quantity = 2 }
             );
 
-            // ModifierGroups + Options được seed tập trung trong DbInitializer (sinh động cho nhiều món).
-            // Giữ nguyên để tránh xung đột ID với dữ liệu sinh tự động.
-
             // Indexes for Orders
             modelBuilder.Entity<Order>()
                 .Property(o => o.Status)
@@ -111,6 +180,7 @@ namespace Source.Models
             // Seed Users with BCrypt hashes
             // "admin123" BCrypt hash: $2a$11$ezY8eus712l.J/TErYvnveHybjXijpr.j7gucKR7G0q3xlgK6WCc6
             // "customer123" BCrypt hash: $2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6
+            // "seller123" BCrypt hash: $2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
@@ -133,6 +203,17 @@ namespace Source.Models
                     PhoneNumber = "0912345678",
                     Address = "456 Đường Quang Trung, Gò Vấp, TP.HCM",
                     Role = "Customer"
+                },
+                new User
+                {
+                    Id = 3,
+                    Username = "seller",
+                    PasswordHash = "$2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6", // Mật khẩu đăng nhập: customer123
+                    FullName = "Người Bán Hàng Shopee",
+                    Email = "seller@fastfood.com",
+                    PhoneNumber = "0909090909",
+                    Address = "789 Đường Lê Lợi, Quận 1, TP.HCM",
+                    Role = "Seller"
                 }
             );
         }

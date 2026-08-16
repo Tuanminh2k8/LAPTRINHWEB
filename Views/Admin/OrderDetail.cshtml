@@ -150,18 +150,47 @@
                 <input type="hidden" name="id" value="@Model.Id" />
                 <div class="mb-3">
                     <select name="status" class="form-select form-control-custom">
-                        <option value="Pending" selected="@(Model.Status == "Pending")">Chờ xác nhận</option>
-                        <option value="Preparing" selected="@(Model.Status == "Preparing")">Đang chuẩn bị</option>
-                        <option value="Shipping" selected="@(Model.Status == "Shipping")">Đang giao</option>
-                        <option value="Delivered" selected="@(Model.Status == "Delivered")">Đã giao</option>
-                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Đã hủy</option>
-                        <option value="Refunded" selected="@(Model.Status == "Refunded")">Hoàn tiền</option>
+                        <option value="Pending" selected="@(Model.Status == "Pending")">@Source.Models.OrderStatus.GetLabel("Pending")</option>
+                        <option value="Confirmed" selected="@(Model.Status == "Confirmed")">@Source.Models.OrderStatus.GetLabel("Confirmed")</option>
+                        <option value="Preparing" selected="@(Model.Status == "Preparing")">@Source.Models.OrderStatus.GetLabel("Preparing")</option>
+                        <option value="ReadyForPickup" selected="@(Model.Status == "ReadyForPickup")">@Source.Models.OrderStatus.GetLabel("ReadyForPickup")</option>
+                        <option value="DriverAssigned" selected="@(Model.Status == "DriverAssigned")">@Source.Models.OrderStatus.GetLabel("DriverAssigned")</option>
+                        <option value="PickedUp" selected="@(Model.Status == "PickedUp")">@Source.Models.OrderStatus.GetLabel("PickedUp")</option>
+                        <option value="Shipping" selected="@(Model.Status == "Shipping")">@Source.Models.OrderStatus.GetLabel("Shipping")</option>
+                        <option value="Arriving" selected="@(Model.Status == "Arriving")">@Source.Models.OrderStatus.GetLabel("Arriving")</option>
+                        <option value="Delivered" selected="@(Model.Status == "Delivered")">@Source.Models.OrderStatus.GetLabel("Delivered")</option>
+                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">@Source.Models.OrderStatus.GetLabel("Cancelled")</option>
+                        <option value="RefundPending" selected="@(Model.Status == "RefundPending")">@Source.Models.OrderStatus.GetLabel("RefundPending")</option>
+                        <option value="Refunded" selected="@(Model.Status == "Refunded")">@Source.Models.OrderStatus.GetLabel("Refunded")</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-danger btn-custom w-100 rounded-pill py-2">
                     Lưu trạng thái
                 </button>
             </form>
+
+            @if (ViewBag.ActiveDrivers is List<Source.Models.Driver> drivers && drivers.Any() &&
+                 (Model.Status == "ReadyForPickup" || Model.Status == "Preparing"))
+            {
+                <hr />
+                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-motorcycle me-1"></i>Gán tài xế</h6>
+                <form asp-action="AssignDriver" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-2">
+                        <select name="driverId" class="form-select form-control-custom" required>
+                            <option value="">-- Chọn tài xế --</option>
+                            @foreach (var d in drivers)
+                            {
+                                <option value="@d.Id">@d.FullName (@d.VehicleType @d.LicensePlate)</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-custom w-100 rounded-pill py-2">
+                        <i class="fa-solid fa-motorcycle me-1"></i> Gán tài xế
+                    </button>
+                </form>
+            }
         </div>
     </div>
 

@@ -235,7 +235,9 @@ namespace Source.Controllers
                 ReceiverPhone = user?.PhoneNumber ?? string.Empty,
                 ReceiverAddress = user?.Address ?? string.Empty,
                 Discount = promoResult.Success ? promoResult.DiscountAmount : 0,
-                TotalAmount = subtotal - (promoResult.Success ? promoResult.DiscountAmount : 0)
+                TotalAmount = subtotal - (promoResult.Success ? promoResult.DiscountAmount : 0),
+                PromoCode = promoResult.Success ? promoResult.Promo?.Code : null,
+                Tax = 0m
             };
 
             ViewBag.Cart = cart;
@@ -298,16 +300,34 @@ namespace Source.Controllers
 
                     foreach (var item in cart)
                     {
-                        var detail = new OrderDetail
-                        {
-                            OrderId = model.Id,
-                            FastFoodId = item.FastFoodId,
-                            ComboId = item.ComboId,
-                            Quantity = item.Quantity,
-                            Price = item.Price,
-                            FastFoodName = item.Name,
-                            ProductImageUrl = item.ImageUrl
-                        };
+var sellerName = "";
+                if (item.FastFoodId.HasValue)
+                {
+                    var food = await _context.FastFoods.AsNoTracking().FirstOrDefaultAsync(f => f.Id == item.FastFoodId.Value);
+                    sellerName = food?.Seller?.FullName ?? "";
+                }
+                else if (item.ComboId.HasValue)
+                {
+                    var comboFood = await _context.ComboDetails.AsNoTracking()
+                        .Where(cd => cd.ComboId == item.ComboId.Value)
+                        .Select(cd => cd.FastFood)
+                        .FirstOrDefaultAsync();
+                    sellerName = comboFood?.Seller?.FullName ?? "";
+                }
+
+                var detail = new OrderDetail
+                    {
+                        OrderId = model.Id,
+                        FastFoodId = item.FastFoodId,
+                        ComboId = item.ComboId,
+                        Quantity = item.Quantity,
+                        Price = item.Price,
+                        FastFoodName = item.Name,
+                        ProductImageUrl = item.ImageUrl,
+                        Sku = item.Sku,
+                        VariantName = item.VariantName,
+                        SellerName = sellerName
+                    };
 
                         if (item.FastFoodId.HasValue)
                         {

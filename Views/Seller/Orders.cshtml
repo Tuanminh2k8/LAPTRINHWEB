@@ -1,0 +1,120 @@
+@model IEnumerable<Source.Models.Order>
+@{
+    Layout = "_SellerLayout";
+    ViewData["Title"] = "Quản lý Đơn Hàng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold text-dark mb-1">Quản Lý Đơn Hàng</h4>
+        <p class="text-muted small mb-0">Theo dõi, chuẩn bị món ăn và cập nhật trạng thái đơn hàng của bạn</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="ps-4">Mã đơn</th>
+                    <th>Ngày đặt</th>
+                    <th>Người nhận</th>
+                    <th>Địa chỉ / Hình thức</th>
+                    <th>Thanh toán</th>
+                    <th>Tổng tiền</th>
+                    <th>Trạng thái</th>
+                    <th class="pe-4 text-end" style="width: 150px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-receipt fa-3x mb-3 text-muted"></i>
+                            <p class="small mb-0">Bạn chưa nhận được đơn hàng nào.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        var badgeClass = Source.Models.OrderStatus.GetBadgeClass(item.Status);
+                        var label = Source.Models.OrderStatus.GetLabel(item.Status);
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">#@item.Id</td>
+                            <td class="small text-muted">@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <div class="fw-600">@item.ReceiverName</div>
+                                <div class="small text-muted">@item.ReceiverPhone</div>
+                            </td>
+                            <td>
+                                @if (item.OrderType == "Pickup")
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning border-opacity-10 small mb-1">Tự đến lấy</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info-subtle text-info border border-info border-opacity-10 small mb-1">Giao tận nơi</span>
+                                }
+                                <div class="text-muted text-truncate small" style="max-width: 200px;">@item.ReceiverAddress</div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-500">@(item.PaymentMethod == "Bank" ? "Chuyển khoản" : "COD")</div>
+                                @if (item.PaymentStatus == "Paid")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success border-opacity-10" style="font-size:0.65rem;">Đã thanh toán</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-10" style="font-size:0.65rem;">Chưa thanh toán</span>
+                                }
+                            </td>
+                            <td class="fw-bold text-danger">@item.TotalAmount.ToString("N0") ₫</td>
+                            <td>
+                                <span class="badge @badgeClass px-2 py-1">@label</span>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a asp-action="OrderDetail" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="fa-solid fa-pen-to-square me-1"></i> Xử lý
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="card-footer bg-white border-0 p-4">
+            <nav aria-label="Phân trang đơn hàng">
+                <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
+                    @{
+                        var prevDisabled = ViewBag.CurrentPage <= 1 ? "disabled" : "";
+                        var nextDisabled = ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "";
+                    }
+                    <li class="page-item @prevDisabled">
+                        <a class="page-link rounded-3 px-3" asp-action="Orders" asp-route-page="@(ViewBag.CurrentPage - 1)">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        var active = i == ViewBag.CurrentPage ? "active" : "";
+                        <li class="page-item @active">
+                            <a class="page-link rounded-3 px-3 @active" asp-action="Orders" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @nextDisabled">
+                        <a class="page-link rounded-3 px-3" asp-action="Orders" asp-route-page="@(ViewBag.CurrentPage + 1)">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

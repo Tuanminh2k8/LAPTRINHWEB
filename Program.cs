@@ -30,6 +30,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("SellerOnly", policy => policy.RequireRole("Seller"));
+    options.AddPolicy("KolOnly", policy => policy.RequireRole("Kol"));
 });
 
 builder.Services.AddDistributedMemoryCache();
@@ -44,6 +46,7 @@ builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IPromoCodeService, PromoCodeService>();
     builder.Services.AddScoped<IPaymentService, PaymentService>();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
+    builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 
 // Demo DI lifetimes
 builder.Services.AddSingleton<ISingletonOperation, OperationService>();
@@ -52,6 +55,7 @@ builder.Services.AddTransient<ITransientOperation, OperationService>();
 builder.Services.AddScoped<OperationDemoService>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 builder.Services.AddAntiforgery(options =>
 {
     // Cho phép API/AJAX gửi token qua header: X-CSRF-TOKEN hoặc RequestVerificationToken
@@ -85,6 +89,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 // Handle 404 errors with custom page
 app.UseStatusCodePagesWithReExecute("/Home/NotFound", "?statusCode={0}");
+
+app.MapHub<Source.Hubs.OrderTrackingHub>("/hubs/order-tracking");
 
 // Initialize Database & Seed
 using (var scope = app.Services.CreateScope())

@@ -1,0 +1,260 @@
+@using Source.Models
+@model Order
+@{
+    ViewData["Title"] = $"Đơn #{Model.Id}";
+    Layout = "_DriverLayout";
+    var driver = ViewBag.Driver as Driver;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <a asp-controller="Driver" asp-action="Index" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Quay lại</a>
+        <h4 class="fw-bold mt-1 mb-0">Đơn #@Model.Id</h4>
+    </div>
+    <span class="badge @OrderStatus.GetBadgeClass(Model.Status) fs-6" id="orderStatusBadge">@OrderStatus.GetLabel(Model.Status)</span>
+</div>
+
+<!-- Delivery address + map -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="rounded-3 bg-light d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                <i class="fa-solid fa-map-location-dot text-primary fs-5"></i>
+            </div>
+            <div>
+                <div class="fw-bold">Địa chỉ giao hàng</div>
+                <div class="text-muted small">@Model.ReceiverName - @Model.ReceiverPhone</div>
+                <div class="small">@Model.ReceiverAddress</div>
+            </div>
+        </div>
+        <div id="driverMap" style="height:300px;border-radius:12px;"></div>
+    </div>
+</div>
+
+<!-- Items -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white rounded-top-4 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-basket-shopping me-2 text-primary"></i>Chi tiết đơn hàng</h6>
+    </div>
+    <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+            @foreach (var d in Model.OrderDetails)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="@(d.ProductImageUrl ?? d.FastFood?.ImageUrl ?? "/images/default_food.jpg")" style="width:40px;height:40px;object-fit:cover;border-radius:8px;" alt="">
+                        <div>
+                            <div class="fw-bold small">@(d.FastFoodName ?? d.FastFood?.Name ?? "Sản phẩm")</div>
+                            <div class="small text-muted">
+                                @if (!string.IsNullOrEmpty(d.VariantName)) { <span>@d.VariantName</span> }
+                                @if (d.Modifiers.Any())
+                                {
+                                    <span>(@string.Join(", ", d.Modifiers.Select(m => m.OptionName)))</span>
+                                }
+                                x @d.Quantity
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fw-bold small">@((d.Price + d.Modifiers.Sum(m => m.OptionPrice)).ToString("N0")) ₫</div>
+                </li>
+            }
+        </ul>
+        <div class="p-3 border-top d-flex justify-content-between">
+            <div class="fw-bold">Tổng cộng</div>
+            <div class="fw-bold text-danger">@Model.TotalAmount.ToString("N0") ₫</div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Note))
+        {
+            <div class="p-3 border-top small text-muted">
+                <i class="fa-solid fa-note-sticky me-1"></i>Ghi chú: @Model.Note
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Driver actions -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white rounded-top-4 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-clipboard-check me-2 text-primary"></i>Thao tác giao hàng</h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            @if (Model.Status == OrderStatus.DriverAssigned)
+            {
+                <div class="col-12">
+                    <button class="btn btn-success btn-lg w-100 rounded-pill" id="btnAcceptOrder">
+                        <i class="fa-solid fa-handshake me-2"></i>Nhận đơn & Lấy hàng
+                    </button>
+                </div>
+            }
+            @if (OrderStatus.InDelivery.Contains(Model.Status))
+            {
+                <div class="col-md-6">
+                    <button class="btn btn-primary w-100 rounded-pill" data-status="@OrderStatus.Shipping">
+                        <i class="fa-solid fa-motorcycle me-1"></i>@OrderStatus.GetLabel(OrderStatus.Shipping)
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-warning w-100 rounded-pill" data-status="@OrderStatus.Arriving">
+                        <i class="fa-solid fa-location-arrow me-1"></i>@OrderStatus.GetLabel(OrderStatus.Arriving)
+                    </button>
+                </div>
+            }
+            @if (Model.Status == OrderStatus.Shipping || Model.Status == OrderStatus.Arriving)
+            {
+                <div class="col-12">
+                    <button class="btn btn-success w-100 rounded-pill" data-status="@OrderStatus.Delivered">
+                        <i class="fa-solid fa-circle-check me-1"></i>Đã giao thành công
+                    </button>
+                </div>
+            }
+            @if (OrderStatus.InDelivery.Contains(Model.Status) || Model.Status == OrderStatus.PickedUp)
+            {
+                <div class="col-12 mt-3">
+                    <button class="btn btn-outline-danger w-100 rounded-pill" data-status="@OrderStatus.PickedUp">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Quay lại đã lấy hàng
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white rounded-top-4 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-timeline me-2 text-primary"></i>Timeline trạng thái</h6>
+    </div>
+    <div class="card-body" id="trackingTimeline">
+        <div class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Đang tải...</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        $(function () {
+            const orderId = @Model.Id;
+            const orderStatus = '@Model.Status';
+            const token = $('input[name="__RequestVerificationToken"]').val();
+            const driverVehicle = '@(driver?.VehicleType ?? "")';
+
+            let map = null;
+            let marker = null;
+            let routeLine = null;
+            let conn = null;
+
+            // ---- Map init (location of customer address or center) ----
+            function initMap(lat, lng) {
+                if (map) return;
+                map = L.map('driverMap').setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                marker = L.marker([lat, lng]).addTo(map)
+                    .bindPopup(driverVehicle ? '<i class="fa-solid fa-motorcycle"></i> Bạn' : 'Bạn');
+            }
+
+            function updateMarker(lat, lng) {
+                if (marker) marker.setLatLng([lat, lng]);
+                if (map) map.panTo([lat, lng], { animate: true });
+            }
+
+            // ---- API helpers ----
+            async function api(url, method, body) {
+                const res = await fetch(url, {
+                    method: method || 'GET',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: body ? JSON.stringify(body) : undefined
+                });
+                return res.json();
+            }
+
+            // ---- Load tracking + timeline ----
+            async function loadTracking() {
+                const data = await api('/api/orders/' + orderId + '/tracking');
+                if (data.events) renderTimeline(data.events);
+                if (data.driver && data.driver.hasLocation) {
+                    initMap(data.driver.latitude, data.driver.longitude);
+                    updateMarker(data.driver.latitude, data.driver.longitude);
+                } else {
+                    // No location yet - center on a generic point
+                    initMap(21.0285, 105.8542);
+                }
+            }
+
+            function renderTimeline(events) {
+                const $t = $('#trackingTimeline').empty();
+                if (!events || !events.length) {
+                    $t.html('<div class="text-muted text-center py-3">Chưa có sự kiện.</div>');
+                    return;
+                }
+                events.forEach(function (e, idx) {
+                    const isLast = idx === events.length - 1;
+                    $t.append(
+                        '<div class="d-flex gap-3 ' + (isLast ? '' : 'pb-3') + '" style="border-left:2px solid ' + (isLast ? 'var(--driver-primary)' : '#e5e7eb') + ';margin-left:10px;padding-left:16px;">' +
+                        '<div><i class="fa-solid ' + e.icon + ' text-' + (isLast ? 'primary' : 'secondary') + '"></i></div>' +
+                        '<div>' +
+                        '<div class="fw-bold">' + e.statusLabel + '</div>' +
+                        '<div class="small text-muted">' + (e.description || '') + (e.actor ? ' — ' + e.actor : '') + '</div>' +
+                        '<div class="small text-muted">' + new Date(e.createdAt).toLocaleString('vi-VN') + '</div>' +
+                        '</div></div>'
+                    );
+                });
+            }
+
+            // ---- Status transitions ----
+            async function updateStatus(status) {
+                const res = await api('/api/driver/orders/' + orderId + '/status', 'POST', { status: status });
+                if (res.success) {
+                    location.reload();
+                } else {
+                    alert(res.message || 'Lỗi cập nhật trạng thái.');
+                }
+            }
+
+            $('#btnAcceptOrder').on('click', async function () {
+                const res = await api('/api/driver/orders/' + orderId + '/accept', 'POST', {});
+                if (res.success) { location.reload(); } else { alert(res.message || 'Lỗi.'); }
+            });
+
+            $('[data-status]').on('click', function () {
+                updateStatus($(this).data('status'));
+            });
+
+            // ---- SignalR connection ----
+            function connect() {
+                conn = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/order-tracking')
+                    .withAutomaticReconnect()
+                    .build();
+
+                conn.on('OrderStatusChanged', function (data) {
+                    $('#orderStatusBadge')
+                        .attr('class', 'badge fs-6 ' + (data.statusLabel === 'Đã giao' ? 'bg-success' : 'bg-primary'))
+                        .text(data.statusLabel);
+                    loadTracking();
+                });
+
+                conn.on('OrderDelivered', function () {
+                    $('#orderStatusBadge').attr('class', 'badge fs-6 bg-success').text('Đã giao');
+                });
+
+                conn.onreconnecting(function () {
+                    $('#locationStatus').text('Mất kết nối, đang kết nối lại...').addClass('text-danger');
+                });
+                conn.onreconnected(function () {
+                    $('#locationStatus').text('Đã kết nối lại').removeClass('text-danger');
+                });
+
+                conn.start().then(function () {
+                    return conn.invoke('JoinOrder', orderId);
+                }).catch(function (err) {
+                    console.error('SignalR error:', err);
+                });
+            }
+
+            loadTracking();
+            connect();
+        });
+    </script>
+}

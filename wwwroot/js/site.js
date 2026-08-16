@@ -11,6 +11,7 @@
             this.autoDismissAlerts();
             this.revealOnScroll();
             this.animateStatCounters();
+            this.autoSlideSlider();
         },
 
         preloader: function () {
@@ -70,6 +71,62 @@
             }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
             $('.reveal').each(function () { observer.observe(this); });
         },
+
+        autoSlideSlider: function () {
+            var $slider = $('#homepageSlider');
+            if ($slider.length === 0) return;
+            var $items = $slider.find('.slider-item');
+            var totalItems = $items.length;
+            var currentIndex = 0;
+            var isTransitioning = false;
+
+            function showSlide(index) {
+                if (isTransitioning) return;
+                isTransitioning = true;
+                $items.removeClass('active').eq(index).addClass('active');
+                $slider.find('.slider-dots .dot').removeClass('active').eq(index).addClass('active');
+                currentIndex = index;
+                isTransitioning = false;
+            }
+
+            function nextSlide() {
+                var nextIndex = (currentIndex + 1) % totalItems;
+                showSlide(nextIndex);
+            }
+
+            function prevSlide() {
+                var prevIndex = (currentIndex - 1 + totalItems) % totalItems;
+                showSlide(prevIndex);
+            }
+
+            // Auto-slide every 5 seconds
+            var slideInterval = setInterval(nextSlide, 5000);
+
+            // Pause on hover
+            $slider.on('mouseenter', function () {
+                clearInterval(slideInterval);
+            }).on('mouseleave', function () {
+                slideInterval = setInterval(nextSlide, 5000);
+            });
+
+            // Nav controls
+            $('.slider-prev').on('click', function () {
+                prevSlide();
+                clearInterval(slideInterval);
+                slideInterval = setInterval(nextSlide, 5000);
+            });
+            $('.slider-next').on('click', function () {
+                nextSlide();
+                clearInterval(slideInterval);
+                slideInterval = setInterval(nextSlide, 5000);
+            });
+            $('.slider-dot').on('click', function () {
+                var index = $(this).index();
+                showSlide(index);
+                clearInterval(slideInterval);
+                slideInterval = setInterval(nextSlide, 5000);
+            });
+        }
 
         animateStatCounters: function () {
             if (!('IntersectionObserver' in window)) return;
@@ -149,21 +206,53 @@
             } else {
                 $('#cm-rating').addClass('d-none').removeClass('d-flex');
             }
-            this.renderGroups(food.modifierGroups || []);
+            this.selectedVariantId = null;
+            this.renderGroups(food.modifierGroups || [], food.variants || []);
             $('#cm-qty').val(1);
             this.updateTotal();
             var modal = new bootstrap.Modal(document.getElementById('foodCustomizeModal'));
             modal.show();
         },
 
-        renderGroups: function (groups) {
+        renderGroups: function (groups, variants) {
             var $container = $('#cm-groups');
             $container.empty();
+            $('#cm-loading').addClass('d-none');
+
+            // ─── Phân loại (FoodVariant: Size/SKU) ───
+            if (variants && variants.length) {
+                var $v = $('#cm-variant-group-template').html();
+                var $vg = $($v);
+                variants.forEach(function (v, idx) {
+                    var $t = $('#cm-variant-option').html();
+                    var $o = $t
+                        .replace(/__ID__/g, v.id)
+                        .replace(/__NAME__/g, v.displayName || v.name)
+                        .replace(/__PRICE__/g, v.price)
+                        .replace(/__STOCK__/g, v.stockQuantity)
+                        .replace(/__DEFAULT__/g, v.isDefault);
+                    var $chip = $($o);
+                    $chip.find('.cm-var-name').text(v.displayName || v.name);
+                    var stockText = v.stockQuantity <= 5 ? ' · còn ' + v.stockQuantity : '';
+                    $chip.find('.cm-var-stock').text(stockText);
+                    $chip.find('.cm-var-price').text(Number(v.price).toLocaleString('vi-VN') + ' ₫');
+                    if (v.isDefault || idx === 0) {
+                        $chip.find('.cm-var-input').prop('checked', true);
+                        this.selectedVariantId = v.id;
+                    }
+                    $vg.find('.cm-variants').append($chip);
+                }.bind(this));
+                $container.append($vg);
+            }
+
             if (!groups || !groups.length) {
-                $container.html('<p class="text-muted mb-0">Món ăn này không có tùy chọn.</p>');
+                if (!variants || !variants.length) {
+                    $container.append('<p class="text-muted mb-0">Món ăn này không có tùy chọn.</p>');
+                }
+                this.updateTotal();
                 return;
             }
-            $('#cm-loading').addClass('d-none');
+
             groups.forEach(function (group) {
                 var $tmpl = group.isMultiple ? $('#cm-multi-group-template') : $('#cm-single-group-template');
                 var $g = $tmpl.html();
@@ -176,7 +265,7 @@
                 if (group.isMultiple) {
                     $group.find('.cm-group-count').text('Tối đa ' + group.maxOptions + ' lựa chọn');
                 } else {
-                    $group.find('.cm-group-required').removeClass('d-none').text('Bắt buộc');
+                    $group.find('.cm-group-required').removeClass('d-none').text(group.minOptions > 0 ? 'Bắt buộc' : 'Chọn 1');
                 }
                 (group.options || []).forEach(function (opt) {
                     var $t = group.isMultiple ? $('#cm-option-multi').html() : $('#cm-option-single').html();
@@ -195,6 +284,7 @@
                 });
                 $container.append($group);
             });
+            this.updateTotal();
         },
 
         getSelected: function () {
@@ -218,8 +308,24 @@
             return selected;
         },
 
-        getUnitPrice: function () {
+        getSelectedVariant: function () {
+            var $checked = $('#cm-variants .cm-var-input:checked');
+            if ($checked.length) return Number($checked.val());
+            if (this.selectedVariantId) return this.selectedVariantId;
+            return null;
+        },
+
+        getVariantPrice: function () {
+            var $checked = $('#cm-variants .cm-var-input:checked');
+            if ($checked.length) return Number($checked.data('price') || 0);
             var base = this.food.price || 0;
+            var variants = this.food.variants || [];
+            if (variants.length) return Number(variants[0].price || base);
+            return base;
+        },
+
+        getUnitPrice: function () {
+            var base = this.getVariantPrice();
             var addon = 0;
             $('#cm-groups .cm-opt-input:checked').each(function () {
                 addon += Number($(this).data('price') || 0);
@@ -262,7 +368,9 @@
         // Món lẻ: kiểm tra tùy chọn (size/topping/độ cay) qua API
         $.getJSON('/api/foods/' + id)
             .done(function (food) {
-                if (food.modifierGroups && food.modifierGroups.length) {
+                var hasVariants = food.variants && food.variants.length;
+                var hasGroups = food.modifierGroups && food.modifierGroups.length;
+                if (hasVariants || hasGroups) {
                     CustomizeModal.open(food, btn);
                 } else {
                     addToCartDirect(id, false, qty, btn);
@@ -361,6 +469,9 @@
             if ($(this).attr('type') === 'checkbox') CustomizeModal.enforceMultiLimit($(this));
             CustomizeModal.updateTotal();
         });
+        $('#cm-groups').on('change', '.cm-var-input', function () {
+            CustomizeModal.updateTotal();
+        });
         $('#cm-add-btn').on('click', function () {
             if (!CustomizeModal.food) return;
             var $btn = $(this).prop('disabled', true);
@@ -375,6 +486,7 @@
                     foodId: CustomizeModal.food.id,
                     comboId: null,
                     quantity: qty,
+                    variantId: CustomizeModal.getSelectedVariant(),
                     optionIds: CustomizeModal.getSelected().map(Number)
                 }),
                 success: function (res) {

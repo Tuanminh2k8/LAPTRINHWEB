@@ -1,81 +1,140 @@
 @model Source.Models.FastFood
 @{
     ViewData["Title"] = Model.Name;
+    var relatedFoods = ViewBag.RelatedFoods as IEnumerable<Source.Models.FastFood> ?? new List<Source.Models.FastFood>();
 }
 
-<div class="container my-5">
+<div class="container my-4 my-lg-5">
     <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
+        <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-danger"><i class="fa-solid fa-house me-1"></i> Trang chủ</a></li>
-            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Menu</a></li>
+            <li class="breadcrumb-item"><a asp-action="Menu" class="text-decoration-none">Menu</a></li>
             <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
         </ol>
     </nav>
 
-    <div class="row g-5">
+    <div class="row g-4 g-lg-5">
+        <!-- ═══════ Image Gallery ═══════ -->
         <div class="col-lg-6">
-            <div class="detail-image-card">
-                <img src="@Model.ImageUrl" alt="@Model.Name">
+            <div id="galleryWrap">
+                <div class="gallery-main position-relative rounded-4 overflow-hidden bg-white shadow-sm border">
+                    <img id="galleryMain" src="@Model.ImageUrl" alt="@Model.Name"
+                         class="w-100" style="height: 420px; object-fit: cover; cursor: zoom-in;">
+                    <button type="button" id="galleryZoom" class="btn btn-light btn-sm rounded-circle position-absolute top-0 end-0 m-3 shadow-sm" title="Phóng to">
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+                    <span class="food-badge position-absolute start-0 top-0 m-3" style="z-index:2;">@Model.Category?.Name</span>
+                </div>
+                <div id="galleryThumbs" class="d-flex gap-2 mt-2 overflow-auto pb-1">
+                    <button type="button" class="gallery-thumb active" data-src="@Model.ImageUrl">
+                        <img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy" style="width:72px;height:72px;object-fit:cover;">
+                    </button>
+                </div>
             </div>
         </div>
-        
+
+        <!-- ═══════ Product Information ═══════ -->
         <div class="col-lg-6">
-            <div class="glass-panel h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex gap-2 mb-3">
-                        <span class="badge bg-danger rounded-pill px-3 py-2">@Model.Category?.Name</span>
+            <div class="glass-panel h-100 d-flex flex-column rounded-4">
+                <div class="p-4 p-lg-4">
+                    <!-- Rating / Sold / Reviews -->
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-2 small text-muted">
+                        <span class="d-flex align-items-center gap-1">
+                            <span id="pdRating" class="text-warning"><i class="fa-solid fa-star"></i> <span class="fw-bold text-dark">0.0</span></span>
+                        </span>
+                        <span id="pdReviewCount" class="text-muted">0 đánh giá</span>
+                        <span class="text-muted">·</span>
+                        <span class="text-muted"><i class="fa-solid fa-fire text-danger me-1"></i>Đã bán <span id="pdSold">@Model.SoldCount</span></span>
+                    </div>
+
+                    <h1 class="fw-bold text-dark mb-2" style="font-size:1.5rem;line-height:1.3;">@Model.Name</h1>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         @if (!string.IsNullOrEmpty(Model.Theme))
                         {
-                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="fa-solid fa-tag me-1"></i>@Model.Theme</span>
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><i class="fa-solid fa-tag me-1"></i>@Model.Theme</span>
                         }
-                    </div>
-                    
-                    <h1 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size:1.8rem;">
-                        @Model.Name
-                        <button type="button" id="favBtn" class="btn btn-link p-0 fs-4" data-food-id="@Model.Id" title="Thêm vào món yêu thích">
-                            <i id="favIcon" class="fa-regular fa-heart text-danger"></i>
+                        <button type="button" id="favBtn" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-food-id="@Model.Id" title="Yêu thích">
+                            <i id="favIcon" class="fa-regular fa-heart"></i> Yêu thích
                         </button>
-                    </h1>
-                    <h2 class="text-danger fw-800 mb-4">@Model.Price.ToString("N0") ₫</h2>
-                    
-                    <hr class="my-4">
-                    
-                    <h5 class="fw-bold text-muted mb-2" style="font-size:.9rem;">Thông tin chi tiết:</h5>
-                    <p style="line-height:1.8;color:var(--gray-500);">@Model.Description</p>
-                </div>
-                
-                <div class="mt-4">
-                    <form asp-controller="Cart" asp-action="AddToCart" method="post">
-                        <input type="hidden" name="id" value="@Model.Id">
-                        <input type="hidden" name="isCombo" value="false">
-                        
-                        <div class="d-flex align-items-center gap-3 mb-4">
-                            <span class="fw-bold text-dark">Số lượng:</span>
-                            <div class="quantity-control">
-                                <button type="button" onclick="changeQty(-1, 1, 50)">-</button>
-                                <input type="number" id="quantityInput" name="quantity" value="1" min="1" max="50" readonly>
-                                <button type="button" onclick="changeQty(1, 1, 50)">+</button>
+                    </div>
+
+                    <!-- Price -->
+                    <div id="priceBox" class="d-flex align-items-end gap-2 flex-wrap mb-3">
+                        <span id="pdPrice" class="text-danger fw-800" style="font-size:1.8rem;">@Model.Price.ToString("N0") ₫</span>
+                        <span id="pdOldPrice" class="text-muted text-decoration-line-through d-none" style="font-size:1rem;"></span>
+                    </div>
+
+                    <!-- Stock urgency (backend-driven) -->
+                    <div id="stockUrgency" class="d-none mb-3"></div>
+
+                    <div id="pdAvailability" class="mb-3"></div>
+
+                    <hr class="my-3">
+
+                    <!-- ═══ FoodVariant selector ═══ -->
+                    <div id="variantSection" class="mb-3 d-none">
+                        <h6 class="fw-bold text-dark mb-2">Phân loại <span class="text-danger">*</span></h6>
+                        <div id="variantChips" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- ═══ Modifier groups ═══ -->
+                    <div id="modifierSection" class="mb-3 d-none"></div>
+
+                    <!-- Quantity -->
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <span class="fw-bold text-dark">Số lượng:</span>
+                        <div class="quantity-control" id="qtyControl">
+                            <button type="button" data-qty="-1">-</button>
+                            <input type="number" id="quantityInput" value="1" min="1" max="50" readonly>
+                            <button type="button" data-qty="1">+</button>
+                        </div>
+                    </div>
+
+                    <!-- CTA -->
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <button type="button" id="btnAddCart" class="btn btn-primary-custom btn-custom flex-fill py-3 rounded-pill shadow">
+                            <i class="fa-solid fa-cart-plus me-2"></i>Thêm vào giỏ
+                        </button>
+                        <button type="button" id="btnBuyNow" class="btn btn-dark btn-custom flex-fill py-3 rounded-pill shadow">
+                            <i class="fa-solid fa-bolt me-2"></i>Mua ngay
+                        </button>
+                    </div>
+                    <a asp-action="Menu" class="btn btn-link text-muted btn-sm mt-2 ps-0">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Quay lại Menu
+                    </a>
+
+                    <!-- ═══ Seller / Shop summary ═══ -->
+                    <div id="sellerBox" class="d-none mt-4 pt-3 border-top">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                <i class="fa-solid fa-store text-danger"></i>
                             </div>
-                        </div>
-                        
-                        <div class="d-flex gap-2">
-                            <a asp-action="Index" class="btn btn-secondary-custom btn-custom flex-grow-1">
-                                <i class="fa-solid fa-arrow-left me-1"></i> Quay lại Menu
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" id="sellerName"></div>
+                                <div class="small text-muted" id="sellerMeta"></div>
+                            </div>
+                            <a id="sellerLink" href="#" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                Xem cửa hàng
                             </a>
-                            <button type="submit" class="btn btn-primary-custom btn-custom flex-grow-1 py-3">
-                                <i class="fa-solid fa-cart-plus me-2"></i>Thêm vào giỏ
-                            </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="container my-5">
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="card-header bg-white border-0 p-4 d-flex align-items-center justify-content-between">
+    <!-- ═══════ Product description ═══════ -->
+    <div class="card border-0 shadow-sm rounded-4 mt-4 bg-white">
+        <div class="card-body p-4 p-lg-5">
+            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-circle-info text-danger me-2"></i>Thông tin sản phẩm</h5>
+            <p style="line-height:1.8;color:var(--gray-500);">@Model.Description</p>
+        </div>
+    </div>
+
+    <!-- ═══════ Reviews with images ═══════ -->
+    <div class="card border-0 shadow-sm rounded-4 mt-4 overflow-hidden">
+        <div class="card-header bg-white border-0 p-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
             <h4 class="fw-bold mb-0"><i class="fa-solid fa-star text-warning me-2"></i>Đánh giá từ khách hàng</h4>
             <span id="reviewSummary" class="text-muted small"></span>
         </div>
@@ -83,10 +142,7 @@
     </div>
 </div>
 
-@{
-    var relatedFoods = ViewBag.RelatedFoods as IEnumerable<Source.Models.FastFood> ?? new List<Source.Models.FastFood>();
-}
-
+<!-- ═══════ Related products ═══════ -->
 @if (relatedFoods.Any())
 {
     <div class="container my-5">
@@ -97,7 +153,7 @@
                 <div class="col">
                     <div class="card-food">
                         <div class="card-img-container">
-                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy">
+                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" data-category="@item.Category?.Name">
                             <span class="food-badge">@item.Category?.Name</span>
                         </div>
                         <div class="card-body">
@@ -115,39 +171,312 @@
     </div>
 }
 
+<!-- Fullscreen gallery modal -->
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 overflow-hidden bg-dark">
+            <div class="modal-body p-2 text-center">
+                <img id="galleryFull" src="@Model.ImageUrl" alt="@Model.Name" class="img-fluid rounded-3" style="max-height:80vh;object-fit:contain;">
+            </div>
+            <div class="modal-footer border-0 justify-content-center bg-dark">
+                <button type="button" class="btn btn-light btn-sm rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         (function () {
             var foodId = @Model.Id;
-            var $icon = $('#favIcon');
-            var $btn = $('#favBtn');
+            var foodData = null;        // full payload from /api/foods/{id}
+            var selectedVariantId = null;
+            var basePrice = @Model.Price.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
 
-            $.getJSON('/api/favorites/ids')
-                .done(function (res) {
-                    if (res.foods && res.foods.indexOf(foodId) >= 0) {
-                        $icon.removeClass('fa-regular').addClass('fa-solid');
-                    }
+            function fmt(n) { return Number(n).toLocaleString('vi-VN') + ' ₫'; }
+            function esc(v) { return $('<div>').text(v == null ? '' : v).html(); }
+            function getQty() { return parseInt($('#quantityInput').val(), 10) || 1; }
+
+            // ─── Load product via API (single source of truth) ───
+            $.getJSON('/api/foods/' + foodId)
+                .done(function (f) {
+                    foodData = f;
+                    renderGallery(f.images || []);
+                    renderRating(f);
+                    renderPrice(f);
+                    renderStock(f);
+                    renderVariants(f.variants || []);
+                    renderModifiers(f.modifierGroups || []);
+                    renderSeller(f.seller);
+                })
+                .fail(function () {
+                    // Fallback: dùng dữ liệu server-render sẵn
+                    $('#pdRating .fw-bold').text('0.0');
+                    renderVariants([]);
+                    renderModifiers([]);
                 });
 
-            $btn.on('click', function () {
-                $.ajax({
-                    url: '/api/favorites/toggle',
+            // ─── Gallery ───
+            function renderGallery(images) {
+                if (!images || !images.length) return;
+                var $main = $('#galleryMain');
+                var mainImg = images[0].imageUrl || images[0].ImageUrl;
+                $main.attr('src', mainImg);
+                var $thumbs = $('#galleryThumbs').empty();
+                images.forEach(function (img, i) {
+                    var url = img.imageUrl || img.ImageUrl;
+                    var $b = $('<button type="button" class="gallery-thumb' + (i === 0 ? ' active' : '') + '" data-src="' + esc(url) + '">' +
+                        '<img src="' + esc(url) + '" alt="Ảnh ' + (i + 1) + '" loading="lazy" style="width:72px;height:72px;object-fit:cover;"></button>');
+                    $thumbs.append($b);
+                });
+                $thumbs.off('click').on('click', '.gallery-thumb', function () {
+                    var $t = $(this);
+                    $main.attr('src', $t.data('src'));
+                    $('#galleryThumbs .gallery-thumb').removeClass('active');
+                    $t.addClass('active');
+                });
+            }
+
+            $('#galleryZoom').on('click', function () {
+                var src = $('#galleryMain').attr('src');
+                $('#galleryFull').attr('src', src);
+                new bootstrap.Modal(document.getElementById('galleryModal')).show();
+            });
+            // Hover zoom
+            $('#galleryWrap').on('mouseenter', '.gallery-main', function () { $(this).find('#galleryMain').css('transform', 'scale(1.05)'); })
+                .on('mouseleave', '.gallery-main', function () { $(this).find('#galleryMain').css('transform', 'scale(1)'); });
+
+            // ─── Rating / sold / reviews ───
+            function renderRating(f) {
+                var avg = f.avgRating || 0, cnt = f.reviewCount || 0;
+                $('#pdRating .fw-bold').text(avg.toFixed(1));
+                $('#pdReviewCount').text(cnt + ' đánh giá');
+                $('#pdSold').text(f.soldCount || 0);
+            }
+
+            // ─── Price (variant-aware) ───
+            function renderPrice(f) {
+                basePrice = f.price || basePrice;
+                updatePrice(null);
+            }
+
+            function updatePrice(variant) {
+                var price = variant ? Number(variant.price) : basePrice;
+                var orig = variant && variant.originalPrice ? Number(variant.originalPrice) : null;
+                $('#pdPrice').text(fmt(price));
+                if (orig && orig > price) {
+                    $('#pdOldPrice').removeClass('d-none').text(fmt(orig));
+                } else {
+                    $('#pdOldPrice').addClass('d-none');
+                }
+            }
+
+            // ─── Stock urgency (real, from variant/food) ───
+            function renderStock(f) {
+                var $u = $('#stockUrgency');
+                if (!f.isAvailable) {
+                    $u.removeClass('d-none').html('<span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-ban me-1"></i>Món tạm hết hàng</span>');
+                    $('#pdAvailability').html('<p class="text-danger small mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i>Sản phẩm hiện không thể đặt mua.</p>');
+                    $('#btnAddCart').prop('disabled', true);
+                    $('#btnBuyNow').prop('disabled', true);
+                }
+            }
+
+            // ─── Variant selector (Shopee-style chips) ───
+            function renderVariants(variants) {
+                if (!variants || !variants.length) { $('#variantSection').addClass('d-none'); return; }
+                $('#variantSection').removeClass('d-none');
+                var $box = $('#variantChips').empty();
+
+                // Group by Size (primary dimension) for clean chips
+                variants.forEach(function (v) {
+                    var label = v.displayName || v.name;
+                    var $chip = $('<label class="variant-chip">' +
+                        '<input type="radio" name="variant" value="' + v.id + '" data-price="' + v.price + '"' +
+                        ' data-orig="' + (v.originalPrice || '') + '" data-stock="' + v.stockQuantity + '"' +
+                        (v.isDefault ? ' checked' : '') + '>' +
+                        '<span class="variant-chip-inner"><span class="variant-chip-name"></span>' +
+                        (v.stockQuantity <= 5 ? '<small class="variant-chip-stock text-danger"></small>' : '') + '</span></label>');
+                    $chip.find('.variant-chip-name').text(label);
+                    $chip.find('.variant-chip-stock').text('còn ' + v.stockQuantity);
+                    $box.append($chip);
+                });
+
+                var $def = $box.find('input:checked').first();
+                if (!$def.length) { $def = $box.find('input').first().prop('checked', true); }
+                if ($def.length) {
+                    selectedVariantId = Number($def.val());
+                    updatePrice({ price: $def.data('price'), originalPrice: $def.data('orig') });
+                    updateQtyMax($def.data('stock'));
+                }
+
+                $box.off('change').on('change', 'input[name="variant"]', function () {
+                    var $c = $(this);
+                    selectedVariantId = Number($c.val());
+                    updatePrice({ price: $c.data('price'), originalPrice: $c.data('orig') });
+                    updateQtyMax($c.data('stock'));
+                });
+            }
+
+            function updateQtyMax(stock) {
+                var $u = $('#stockUrgency');
+                var qty = getQty();
+                if (stock > 0 && stock <= 5) {
+                    $u.removeClass('d-none').html('<span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Chỉ còn ' + stock + ' phần</span>');
+                } else {
+                    $u.addClass('d-none');
+                }
+                var max = Math.min(50, Math.max(1, stock));
+                $('#quantityInput').attr('max', max);
+                if (qty > max) $('#quantityInput').val(max);
+            }
+
+            // ─── Modifier groups ───
+            function renderModifiers(groups) {
+                if (!groups || !groups.length) { $('#modifierSection').addClass('d-none'); return; }
+                $('#modifierSection').removeClass('d-none');
+                var $box = $('#modifierSection').empty();
+                groups.forEach(function (g, gi) {
+                    var $g = $('<div class="mb-3">' +
+                        '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                        '<h6 class="fw-bold text-dark mb-0" style="font-size:.9rem;">' + esc(g.name) + (g.isMultiple ? '' : ' <span class="text-danger small fw-normal">(Chọn 1)</span>') + '</h6>' +
+                        (g.isMultiple ? '<small class="text-muted">Tối đa ' + g.maxOptions + '</small>' : '') +
+                        '</div><div class="d-flex flex-wrap gap-2"></div></div>');
+                    var $opts = $g.find('div:last-child');
+                    (g.options || []).forEach(function (o) {
+                        var $o = $('<label class="mod-option-chip">' +
+                            '<input type="' + (g.isMultiple ? 'checkbox' : 'radio') + '" name="mod-g' + g.id + '" value="' + o.id + '"' +
+                            ' data-price="' + o.price + '"' + (o.isDefault ? ' checked' : '') + '>' +
+                            '<span class="mod-option-inner"><span class="mod-option-name"></span><span class="mod-option-price"></span></span></label>');
+                        $o.find('.mod-option-name').text(o.name);
+                        $o.find('.mod-option-price').text(o.price > 0 ? '+' + fmt(o.price) : 'Miễn phí');
+                        $opts.append($o);
+                    });
+                    $box.append($g);
+                });
+                $box.off('change').on('change', 'input', function () {
+                    if ($(this).attr('type') === 'checkbox') enforceModLimit($(this));
+                });
+            }
+
+            function enforceModLimit($input) {
+                var max = 99;
+                var name = $input.attr('name');
+                (foodData.modifierGroups || []).forEach(function (g) {
+                    if (name === 'mod-g' + g.id) max = g.maxOptions;
+                });
+                var $checked = $input.closest('.d-flex.flex-wrap').find('input:checked');
+                if ($checked.length > max) {
+                    PolyFood.showToast('Chỉ được chọn tối đa ' + max + ' lựa chọn.', 'warning');
+                    $input.prop('checked', false);
+                }
+            }
+
+            // ─── Seller / shop summary ───
+            function renderSeller(seller) {
+                if (!seller) return;
+                $('#sellerBox').removeClass('d-none');
+                $('#sellerName').text(seller.fullName || 'Cửa hàng');
+                $('#sellerMeta').html('<i class="fa-solid fa-box me-1"></i>' + (seller.productCount || 0) + ' sản phẩm');
+                $('#sellerLink').attr('href', '/Shop/' + seller.id);
+            }
+
+            // ─── Build payload ───
+            function selectedOptions() {
+                var ids = [];
+                $('#modifierSection input:checked').each(function () { ids.push(Number($(this).val())); });
+                return ids;
+            }
+
+            function addToCart(opts) {
+                opts = opts || {};
+                var payload = {
+                    foodId: foodId,
+                    comboId: null,
+                    quantity: getQty(),
+                    variantId: selectedVariantId,
+                    optionIds: selectedOptions()
+                };
+                return $.ajax({
+                    url: '/api/cart/add',
                     type: 'POST',
                     contentType: 'application/json',
+                    data: JSON.stringify(payload)
+                });
+            }
+
+            // ─── Add to cart ───
+            $('#btnAddCart').on('click', function () {
+                var $btn = $(this).prop('disabled', true);
+                var orig = $btn.html();
+                $btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...');
+                addToCart().done(function (res) {
+                    if (res.success) {
+                        if (window.updateCartBadge) updateCartBadge(res.count);
+                        PolyFood.showToast(res.message || 'Đã thêm vào giỏ hàng!', 'success');
+                    } else {
+                        PolyFood.showToast(res.message || 'Lỗi', 'danger');
+                    }
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    PolyFood.showToast(msg, 'danger');
+                }).always(function () {
+                    $btn.prop('disabled', false).html(orig);
+                });
+            });
+
+            // ─── Buy Now: add to cart → redirect checkout ───
+            $('#btnBuyNow').on('click', function () {
+                var $btn = $(this).prop('disabled', true);
+                var orig = $btn.html();
+                $btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...');
+                addToCart().done(function (res) {
+                    if (res.success) {
+                        if (window.updateCartBadge) updateCartBadge(res.count);
+                        window.location.href = '/Cart/Checkout';
+                    } else {
+                        PolyFood.showToast(res.message || 'Không thể mua ngay.', 'danger');
+                        $btn.prop('disabled', false).html(orig);
+                    }
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    PolyFood.showToast(msg, 'danger');
+                    $btn.prop('disabled', false).html(orig);
+                });
+            });
+
+            // ─── Quantity ───
+            $('#qtyControl').on('click', 'button', function () {
+                var $input = $('#quantityInput');
+                var v = getQty() + Number($(this).data('qty'));
+                var max = Number($input.attr('max')) || 50;
+                if (v >= 1 && v <= max) $input.val(v);
+            });
+
+            // ─── Favorites ───
+            var $icon = $('#favIcon');
+            $.getJSON('/api/favorites/ids').done(function (res) {
+                if (res.foods && res.foods.indexOf(foodId) >= 0) $icon.removeClass('fa-regular').addClass('fa-solid');
+            });
+            $('#favBtn').on('click', function () {
+                $.ajax({
+                    url: '/api/favorites/toggle', type: 'POST', contentType: 'application/json',
                     data: JSON.stringify({ fastFoodId: foodId })
                 }).done(function (r) {
                     if (r.success) {
-                        if (r.isFavorited) { $icon.removeClass('fa-regular').addClass('fa-solid'); showToast(r.message, 'success'); }
-                        else { $icon.removeClass('fa-solid').addClass('fa-regular'); showToast(r.message, 'info'); }
+                        if (r.isFavorited) { $icon.removeClass('fa-regular').addClass('fa-solid'); PolyFood.showToast(r.message, 'success'); }
+                        else { $icon.removeClass('fa-solid').addClass('fa-regular'); PolyFood.showToast(r.message, 'info'); }
                     } else {
-                        if (r.message && r.message.indexOf('đăng nhập') >= 0) { window.location.href = '/Account/Login'; }
-                        else { showToast(r.message || 'Lỗi', 'danger'); }
+                        if (r.message && r.message.indexOf('đăng nhập') >= 0) window.location.href = '/Account/Login';
+                        else PolyFood.showToast(r.message || 'Lỗi', 'danger');
                     }
-                }).fail(function () { showToast('Lỗi kết nối.', 'danger'); });
+                }).fail(function () { PolyFood.showToast('Lỗi kết nối.', 'danger'); });
             });
 
-            function escapeHtml(value) { return $('<div>').text(value || '').html(); }
+            // ─── Reviews (with images) ───
             $.getJSON('/api/reviews/food/' + foodId).done(function (data) {
                 var summary = data.summary || {};
                 $('#reviewSummary').html('<strong class="text-dark">' + (summary.avgRating || 0).toFixed(1) + '</strong> / 5 · ' + (summary.totalReviews || 0) + ' đánh giá');
@@ -157,8 +486,10 @@
                 }
                 var html = data.reviews.map(function (review) {
                     var stars = '<span class="text-warning">' + '★'.repeat(review.rating) + '</span><span class="text-muted">' + '☆'.repeat(5 - review.rating) + '</span>';
-                    var images = (review.imageUrls || []).map(function (url) { return '<a href="' + escapeHtml(url) + '" target="_blank"><img src="' + escapeHtml(url) + '" alt="Ảnh đánh giá" class="rounded-3 border me-2 mt-2" style="width:72px;height:72px;object-fit:cover"></a>'; }).join('');
-                    return '<div class="py-3 border-top"><div class="d-flex justify-content-between gap-3"><strong class="text-dark">' + escapeHtml(review.reviewerName) + '</strong><small>' + new Date(review.createdAt).toLocaleDateString('vi-VN') + '</small></div><div class="mt-1">' + stars + '</div>' + (review.comment ? '<p class="text-dark mb-0 mt-2">' + escapeHtml(review.comment) + '</p>' : '') + (images ? '<div>' + images + '</div>' : '') + '</div>';
+                    var images = (review.imageUrls || []).map(function (url) {
+                        return '<a href="' + esc(url) + '" target="_blank"><img src="' + esc(url) + '" alt="Ảnh đánh giá" class="rounded-3 border me-2 mt-2" style="width:72px;height:72px;object-fit:cover" loading="lazy"></a>';
+                    }).join('');
+                    return '<div class="py-3 border-top"><div class="d-flex justify-content-between gap-3"><strong class="text-dark">' + esc(review.reviewerName) + '</strong><small>' + new Date(review.createdAt).toLocaleDateString('vi-VN') + '</small></div><div class="mt-1">' + stars + '</div>' + (review.comment ? '<p class="text-dark mb-0 mt-2">' + esc(review.comment) + '</p>' : '') + (images ? '<div>' + images + '</div>' : '') + '</div>';
                 }).join('');
                 $('#foodReviews').html(html);
             }).fail(function () { $('#foodReviews').html('<div class="py-3 text-muted">Chưa thể tải đánh giá.</div>'); });

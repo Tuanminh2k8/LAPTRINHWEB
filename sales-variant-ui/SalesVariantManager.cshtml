@@ -1,0 +1,82 @@
+@* Reusable Razor partial: _SalesVariantManager.cshtml *@
+<section class="svm" id="salesVariantManager" data-component="sales-variant-manager">
+  <div class="svm__card">
+    <header class="svm__title">Thông tin bán hàng</header>
+
+    <div class="svm__section-title">Phân loại hàng</div>
+
+    <div class="svm__type-list" id="variantTypeList"></div>
+
+    <div class="svm__table-headline">
+      <div>
+        <div class="svm__section-title">Danh sách phân loại hàng</div>
+      </div>
+      <button type="button" class="svm__primary-btn" id="applyAllBtn">Áp dụng cho tất cả phân loại</button>
+    </div>
+
+    <div class="svm__bulk-row">
+      <div class="svm__input-wrap"><span>₫</span><input id="bulkPrice" inputmode="numeric" placeholder="Giá" /></div>
+      <div class="svm__input-wrap"><input id="bulkStock" inputmode="numeric" placeholder="Kho hàng" /></div>
+      <div class="svm__input-wrap"><input id="bulkSku" placeholder="SKU phân loại" /></div>
+    </div>
+
+    <div class="svm__table-wrap">
+      <table class="svm__matrix" aria-label="Danh sách phân loại hàng">
+        <thead>
+          <tr>
+            <th class="col-variant">Size</th>
+            <th class="col-addon">Thêm món</th>
+            <th class="col-price"><span class="req">*</span> Giá</th>
+            <th class="col-stock"><span class="req">*</span> Kho hàng <span class="help">?</span></th>
+            <th class="col-sku">SKU</th>
+          </tr>
+        </thead>
+        <tbody id="variantMatrixBody"></tbody>
+      </table>
+    </div>
+
+    <div class="svm__collapse" id="collapseMatrix"><span>Ẩn</span>⌃</div>
+
+    <div class="svm__size-title"><span class="req">*</span> Bảng quy đổi kích cỡ</div>
+    <p class="svm__hint">Thêm vào để nhận gợi ý kích cỡ từ AI và tính năng tự động phản hồi kích cỡ thông minh <a href="#" onclick="return false">Xem chi tiết⌄</a></p>
+
+    <div class="svm__size-controls">
+      <label class="radio"><input type="radio" name="sizeMode" value="template" checked> <span>Template</span></label>
+      <label class="radio"><input type="radio" name="sizeMode" value="image"> <span>Hình ảnh</span></label>
+    </div>
+
+    <div class="svm__size-row">
+      <select id="sizeTemplate">
+        <option value="">Tăng khả năng hiển thị cho sản phẩm với Bảng quy đổi kích cỡ...</option>
+        <option value="clothing">Thời trang</option>
+        <option value="shoes">Giày dép</option>
+        <option value="kids">Trẻ em</option>
+      </select>
+      <button type="button" class="svm__secondary-btn" id="newSizeChartBtn">Tạo Bảng quy đổi kích cỡ mới</button>
+    </div>
+    <div class="svm__error-text" id="sizeError">Không thể để trống Bảng quy đổi kích cỡ</div>
+
+    <div class="svm__discount-title">Mua nhiều giảm giá</div>
+    <div class="svm__muted">Giá sỉ chỉ có thể được thiết lập khi các phân loại hàng đồng giá.</div>
+  </div>
+
+  <template id="variantTypeTemplate">
+    <div class="svm__type-card">
+      <div class="svm__type-header"><span class="svm__type-label">Phân loại</span><button type="button" class="icon-btn type-delete" title="Xóa">×</button></div>
+      <input class="svm__type-name" value="" aria-label="Tên phân loại" />
+      <div class="svm__preset-row" role="radiogroup" aria-label="Cỡ chuẩn"></div>
+      <div class="svm__options-label">Tùy chọn</div>
+      <div class="svm__option-grid"></div>
+    </div>
+  </template>
+</section>
+
+@* Optional: expose initial data through JSON *@
+<script type="application/json" id="salesVariantInitialData">
+{
+  "variantTypes": [
+    {"name":"Size","presets":["Size (US)","Size (Inch)","Size (EU)","Size (Tuổi)","Size (Quốc Tế)","Size (cm)","Size (mm)","Tùy chỉnh"],"selectedPreset":"Tùy chỉnh","options":["S","M","L","XL"]},
+    {"name":"Thêm món","presets":[],"selectedPreset":"","options":["Thêm phô mai|x2","Thêm salad|x2","Thêm bơ|x2"]}
+  ]
+}
+</script>

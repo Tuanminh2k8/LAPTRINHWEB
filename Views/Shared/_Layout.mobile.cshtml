@@ -98,6 +98,7 @@
                         <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card text-danger"></i> Hồ sơ</a></li>
                         <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3" asp-controller="Orders" asp-action="Index"><i class="fa-solid fa-receipt text-danger"></i> Đơn hàng</a></li>
                         @if (role == "Admin") { <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-danger fw-semibold" asp-controller="Admin" asp-action="Index"><i class="fa-solid fa-shield-hooded"></i> Quản trị</a></li> }
+                        @if (role == "Seller" || role == "Admin") { <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-warning fw-semibold" asp-controller="Seller" asp-action="Index"><i class="fa-solid fa-store"></i> Kênh người bán</a></li> }
                         <li class="nav-item border-top mt-1"></li>
                         <li class="nav-item"><a class="nav-link d-flex align-items-center gap-2 px-4 py-3 text-danger" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
                     }
@@ -118,15 +119,6 @@
             </div>
         </div>
     </header>
-
-    @if (isAuthenticated && role == "Admin")
-    {
-        <div class="admin-return-bar" id="adminReturnBarMobile">
-            <a asp-controller="Admin" asp-action="Index" class="admin-return-btn">
-                <i class="fa-solid fa-shield-hooded"></i> Quay lại Quản trị
-            </a>
-        </div>
-    }
 
     <div class="mobile-shell">
         <div class="main-wrapper">
@@ -169,6 +161,8 @@
             </div>
         }
     </div>
+
+    <partial name="_FoodCustomizeModal" />
 
     <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index:1090"></div>
     <button id="btnScrollTop" class="btn-scroll-top" aria-label="Cuộn lên đầu trang"><i class="fa-solid fa-chevron-up"></i></button>

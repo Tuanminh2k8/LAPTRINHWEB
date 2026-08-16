@@ -9,15 +9,16 @@
     string RowKey(Source.Models.CartItem item)
     {
         var optKey = string.Join("-", item.Modifiers.Select(m => m.OptionId));
-        return item.IsCombo ? $"c{item.ComboId.GetValueOrDefault()}" : $"f{item.FastFoodId.GetValueOrDefault()}-{optKey}";
+        return item.IsCombo ? $"c{item.ComboId.GetValueOrDefault()}" : $"f{item.FastFoodId.GetValueOrDefault()}-{item.VariantId.GetValueOrDefault()}-{optKey}";
     }
 
     string CartStateLine(Source.Models.CartItem item)
     {
         var foodId = item.IsCombo ? "null" : (item.FastFoodId?.ToString() ?? "null");
         var comboId = item.IsCombo ? (item.ComboId?.ToString() ?? "null") : "null";
+        var variantId = item.IsCombo ? "null" : (item.VariantId?.ToString() ?? "null");
         var optionIds = string.Join(",", item.Modifiers.Select(m => m.OptionId));
-        return $"{{ key: '{RowKey(item)}', foodId: {foodId}, comboId: {comboId}, optionIds: [{optionIds}], isCombo: {item.IsCombo.ToString().ToLower()} }},";
+        return $"{{ key: '{RowKey(item)}', foodId: {foodId}, comboId: {comboId}, variantId: {variantId}, optionIds: [{optionIds}], isCombo: {item.IsCombo.ToString().ToLower()} }},";
     }
 }
 
@@ -78,6 +79,10 @@
                                                     else
                                                     {
                                                         <span class="badge bg-light text-muted border rounded-pill small mt-1">Món lẻ</span>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(item.VariantName))
+                                                    {
+                                                        <div class="small text-muted mt-1"><i class="fa-solid fa-tags me-1"></i>@item.VariantName</div>
                                                     }
                                                     @if (item.Modifiers.Any())
                                                     {
@@ -182,7 +187,7 @@
                         // Cập nhật lại đơn giá/ thành tiền từng dòng
                         data.items.forEach(function (it) {
                             var optKey = (it.modifiers || []).map(m => m.optionId).join('-');
-                            var key = it.isCombo ? 'c' + it.comboId : 'f' + it.fastFoodId + '-' + optKey;
+                            var key = it.isCombo ? 'c' + it.comboId : 'f' + it.fastFoodId + '-' + (it.variantId || '0') + '-' + optKey;
                             var $total = $('#item-total-' + key);
                             if ($total.length) $total.text(fmt(it.totalPrice));
                             var $input = $('#qty-input-' + key);
@@ -202,6 +207,7 @@
                     data: JSON.stringify({
                         foodId: item.isCombo ? null : item.foodId,
                         comboId: item.isCombo ? item.comboId : null,
+                        variantId: item.isCombo ? null : item.variantId,
                         quantity: newQty,
                         optionIds: item.optionIds
                     }),
@@ -238,6 +244,7 @@
                     data: JSON.stringify({
                         foodId: item.isCombo ? null : item.foodId,
                         comboId: item.isCombo ? item.comboId : null,
+                        variantId: item.isCombo ? null : item.variantId,
                         optionIds: item.optionIds
                     }),
                     success: function (res) {

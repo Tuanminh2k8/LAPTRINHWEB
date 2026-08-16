@@ -30,6 +30,8 @@ namespace Source.Controllers.Api
             public int? FoodId { get; set; }
             public int? ComboId { get; set; }
             public int Quantity { get; set; } = 1;
+            // Id của FoodVariant (phân loại size/SKU) đã chọn — null nếu món không có phân loại
+            public int? VariantId { get; set; }
             // Mảng id của ModifierOption được chọn (chỉ áp dụng cho món ăn, không cho combo)
             public List<int> OptionIds { get; set; } = new();
         }
@@ -59,6 +61,8 @@ namespace Source.Controllers.Api
                     i.Price,
                     i.Quantity,
                     i.IsCombo,
+                    i.VariantId,
+                    i.VariantName,
                     unitTotal = i.UnitPrice,
                     i.TotalPrice,
                     modifiers = i.Modifiers.Select(m => new { m.OptionId, m.OptionName, m.OptionPrice })
@@ -97,9 +101,34 @@ namespace Source.Controllers.Api
             {
                 var food = await _context.FastFoods.AsNoTracking()
                     .Include(f => f.ModifierGroups).ThenInclude(g => g.Options)
+                    .Include(f => f.Variants)
                     .FirstOrDefaultAsync(f => f.Id == request.FoodId);
                 if (food == null) return NotFound(new { message = "Không tìm thấy món ăn." });
                 if (!food.IsAvailable) return BadRequest(new { message = "Món ăn này hiện không còn hàng." });
+
+                // Xác thực variant (phân loại) phía server — chỉ chấp nhận variant hợp lệ + thuộc món này
+                int? variantId = request.VariantId;
+                if (variantId.HasValue)
+                {
+                    var variant = food.Variants.FirstOrDefault(v => v.Id == variantId.Value);
+                    if (variant == null) return BadRequest(new { message = "Phân loại không hợp lệ." });
+                    if (!variant.IsAvailable || variant.StockQuantity <= 0)
+                        return BadRequest(new { message = $"Phân loại \"{variant.DisplayName}\" hiện đã hết hàng." });
+                    if (variant.StockQuantity < quantity)
+                        return BadRequest(new { message = $"Phân loại \"{variant.DisplayName}\" chỉ còn {variant.StockQuantity} phần." });
+
+                    price = variant.Price;
+                    imageUrl = string.IsNullOrWhiteSpace(variant.ImageUrl) ? food.ImageUrl : variant.ImageUrl;
+                }
+                else
+                {
+                    // Món có variant nhưng không chọn: báo yêu cầu chọn phân loại
+                    if (food.Variants.Any(v => v.IsAvailable && v.StockQuantity > 0))
+                        return BadRequest(new { message = "Vui lòng chọn phân loại (size/màu) cho món ăn." });
+
+                    price = food.Price;
+                    imageUrl = food.ImageUrl;
+                }
 
                 // Xác thực option ids phía server (chỉ chấp nhận option hợp lệ + thuộc món này)
                 if (request.OptionIds.Any())
@@ -124,17 +153,18 @@ namespace Source.Controllers.Api
                     }
                 }
 
-                name = food.Name; imageUrl = food.ImageUrl; price = food.Price;
-                isCombo = false; foodId = food.Id; comboId = null;
+                name = food.Name; foodId = food.Id; comboId = null; isCombo = false;
             }
             else
             {
                 return BadRequest(new { message = "Vui lòng chọn món ăn hoặc combo." });
             }
 
+            // Giá đơn vị: variant nếu có, ngược lại giá gốc (đã gán vào price ở trên)
             var item = cart.FirstOrDefault(i =>
                 (isCombo && i.ComboId == comboId) ||
-                (!isCombo && i.FastFoodId == foodId && i.Modifiers.Count == chosen.Count &&
+                (!isCombo && i.FastFoodId == foodId && i.VariantId == request.VariantId &&
+                 i.Modifiers.Count == chosen.Count &&
                  i.Modifiers.All(m => chosen.Any(c => c.OptionId == m.OptionId))));
 
             if (item == null)
@@ -148,6 +178,9 @@ namespace Source.Controllers.Api
                     Price = price,
                     Quantity = quantity,
                     IsCombo = isCombo,
+                    VariantId = request.VariantId,
+                    VariantName = request.VariantId.HasValue ? await GetVariantName(request.VariantId.Value) : null,
+                    VariantPrice = request.VariantId.HasValue ? price : null,
                     Modifiers = chosen
                 });
             }
@@ -252,12 +285,20 @@ namespace Source.Controllers.Api
         {
             var keyOptionIds = r.OptionIds ?? new List<int>();
             return cart.FirstOrDefault(i =>
-                (r.FoodId.HasValue && i.FastFoodId == r.FoodId) ||
+                (r.FoodId.HasValue && i.FastFoodId == r.FoodId && i.VariantId == r.VariantId) ||
                 (r.ComboId.HasValue && i.ComboId == r.ComboId)) is var match &&
                 match != null &&
                 (match.IsCombo || (!match.IsCombo && match.Modifiers.Count == keyOptionIds.Count &&
                     match.Modifiers.All(m => keyOptionIds.Contains(m.OptionId))))
                 ? match : null;
+        }
+
+        private async Task<string?> GetVariantName(int variantId)
+        {
+            return await _context.FoodVariants.AsNoTracking()
+                .Where(v => v.Id == variantId)
+                .Select(v => v.DisplayName)
+                .FirstOrDefaultAsync();
         }
     }
 
@@ -266,6 +307,7 @@ namespace Source.Controllers.Api
         public int? FoodId { get; set; }
         public int? ComboId { get; set; }
         public int Quantity { get; set; } = 1;
+        public int? VariantId { get; set; }
         public List<int>? OptionIds { get; set; }
     }
 }

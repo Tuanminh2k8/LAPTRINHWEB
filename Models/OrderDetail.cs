@@ -45,6 +45,17 @@ namespace Source.Models
         [StringLength(1000)]
         public string? ProductDescription { get; set; }
 
+        [StringLength(100)]
+        public string? Sku { get; set; }
+
+        // Snapshot phân loại (FoodVariant) đã chọn — hiển thị lịch sử đúng kể cả khi variant bị xóa
+        [StringLength(200)]
+        public string? VariantName { get; set; }
+
+        // Snapshot tên chủ店/store để hiển thị lịch sử đơn hàng
+        [StringLength(100)]
+        public string? SellerName { get; set; }
+
         public ICollection<OrderDetailModifier> Modifiers { get; set; } = new List<OrderDetailModifier>();
     }
 }

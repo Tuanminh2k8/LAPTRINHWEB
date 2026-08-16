@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
@@ -15,13 +15,15 @@ namespace Source.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AdminController> _logger;
         private readonly ILoyaltyService _loyalty;
+        private readonly IOrderTrackingService _tracking;
 
-        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger, ILoyaltyService loyalty)
+        public AdminController(AppDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger, ILoyaltyService loyalty, IOrderTrackingService tracking)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
             _loyalty = loyalty;
+            _tracking = tracking;
         }
 
         public async Task<IActionResult> Index()
@@ -61,6 +63,64 @@ namespace Source.Controllers
             return View(users);
         }
 
+        // GET: Admin/Drivers — quản lý đội ngũ tài xế
+        public async Task<IActionResult> Drivers()
+        {
+            var drivers = await _context.Drivers
+                .Include(d => d.User)
+                .OrderBy(d => d.FullName)
+                .ToListAsync();
+            return View(drivers);
+        }
+
+        // POST: Admin/DriverToggle/5 — bật/tắt hoạt động của tài xế
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DriverToggle(int id)
+        {
+            var driver = await _context.Drivers.FindAsync(id);
+            if (driver == null) return NotFound();
+
+            driver.IsActive = !driver.IsActive;
+            if (!driver.IsActive)
+            {
+                driver.IsOnline = false;
+            }
+            _context.Drivers.Update(driver);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = driver.IsActive ? $"Tài xế {driver.FullName} đã được kích hoạt." : $"Tài xế {driver.FullName} đã bị vô hiệu hóa.";
+            return RedirectToAction(nameof(Drivers));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DriverEdit(int id)
+        {
+            var driver = await _context.Drivers.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == id);
+            if (driver == null) return NotFound();
+            return View(driver);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DriverEdit(int id, Driver updatedDriver)
+        {
+            if (id != updatedDriver.Id) return NotFound();
+
+            var driver = await _context.Drivers.FindAsync(id);
+            if (driver == null) return NotFound();
+
+            driver.VehicleType = updatedDriver.VehicleType;
+            driver.LicensePlate = updatedDriver.LicensePlate;
+            driver.AvatarUrl = updatedDriver.AvatarUrl;
+            driver.IsActive = updatedDriver.IsActive;
+            _context.Drivers.Update(driver);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Cập nhật tài xế thành công!";
+            return RedirectToAction(nameof(Drivers));
+        }
+
         [HttpGet]
         public IActionResult UserCreate() => View();
 
@@ -88,9 +148,9 @@ namespace Source.Controllers
             ModelState.Remove("PasswordHash");
 
             // Phân quyền: chỉ chấp nhận role hợp lệ
-            if (user.Role != "Admin" && user.Role != "Customer")
+            if (user.Role != "Admin" && user.Role != "Customer" && user.Role != "Seller" && user.Role != "Driver")
             {
-                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin hoặc Customer.");
+                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin, Customer, Seller hoặc Driver.");
             }
 
             if (ModelState.IsValid)
@@ -98,6 +158,25 @@ namespace Source.Controllers
                 user.PasswordHash = PasswordHelper.HashPassword(password);
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+
+                // Tự động tạo hồ sơ tài xế khi tạo user có role Driver
+                if (user.Role == "Driver")
+                {
+                    _context.Drivers.Add(new Driver
+                    {
+                        UserId = user.Id,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        VehicleType = "Xe máy",
+                        Rating = 5.0,
+                        TotalDeliveries = 0,
+                        IsOnline = false,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    });
+                    await _context.SaveChangesAsync();
+                }
+
                 _logger.LogInformation("Admin created user: {Username} (Role={Role})", user.Username, user.Role);
                 TempData["SuccessMessage"] = "Thêm người dùng thành công!";
                 return RedirectToAction(nameof(Users));
@@ -143,9 +222,9 @@ namespace Source.Controllers
             ModelState.Remove("PasswordHash");
 
             // Phân quyền: role hợp lệ + không cho admin tự hạ quyền chính mình
-            if (updatedUser.Role != "Admin" && updatedUser.Role != "Customer")
+            if (updatedUser.Role != "Admin" && updatedUser.Role != "Customer" && updatedUser.Role != "Seller" && updatedUser.Role != "Driver")
             {
-                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin hoặc Customer.");
+                ModelState.AddModelError("Role", "Vai trò không hợp lệ. Chỉ chấp nhận Admin, Customer, Seller hoặc Driver.");
             }
 
             var currentAdminId = UserClaimsHelper.GetUserId(User);
@@ -162,6 +241,33 @@ namespace Source.Controllers
                 dbUser.PhoneNumber = updatedUser.PhoneNumber;
                 dbUser.Address = updatedUser.Address;
                 dbUser.Role = updatedUser.Role;
+
+                await _context.SaveChangesAsync();
+
+                // Đồng bộ hồ sơ tài xế: tạo mới nếu chuyển thành Driver, vô hiệu hóa nếu bỏ Driver
+                var driverRecord = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == dbUser.Id);
+                if (dbUser.Role == "Driver" && driverRecord == null)
+                {
+                    _context.Drivers.Add(new Driver
+                    {
+                        UserId = dbUser.Id,
+                        FullName = dbUser.FullName,
+                        PhoneNumber = dbUser.PhoneNumber,
+                        VehicleType = "Xe máy",
+                        Rating = 5.0,
+                        TotalDeliveries = 0,
+                        IsOnline = false,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    });
+                    await _context.SaveChangesAsync();
+                }
+                else if (dbUser.Role != "Driver" && driverRecord != null)
+                {
+                    driverRecord.IsActive = false;
+                    _context.Drivers.Update(driverRecord);
+                    await _context.SaveChangesAsync();
+                }
 
                 if (!string.IsNullOrWhiteSpace(newPassword))
                 {
@@ -322,7 +428,7 @@ namespace Source.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> FoodCreate(FastFood food, IFormFile? imageFile)
+        public async Task<IActionResult> FoodCreate(FastFood food, IFormFile? imageFile, string? variantsJson)
         {
             ModelState.Remove("Category");
 
@@ -345,6 +451,19 @@ namespace Source.Controllers
 
                 _context.FastFoods.Add(food);
                 await _context.SaveChangesAsync();
+
+                // Save variants
+                var variants = ParseVariantsJson(variantsJson);
+                foreach (var v in variants)
+                {
+                    v.FastFoodId = food.Id;
+                    _context.FoodVariants.Add(v);
+                }
+                if (variants.Count > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+
                 _logger.LogInformation("Admin created food: {FoodName} (Price={Price})", food.Name, food.Price);
                 TempData["SuccessMessage"] = "Thêm món ăn thành công!";
                 return RedirectToAction(nameof(Foods));
@@ -357,7 +476,9 @@ namespace Source.Controllers
         [HttpGet]
         public async Task<IActionResult> FoodEdit(int id)
         {
-            var food = await _context.FastFoods.FindAsync(id);
+            var food = await _context.FastFoods
+                .Include(f => f.Variants)
+                .FirstOrDefaultAsync(f => f.Id == id);
             if (food == null) return NotFound();
             ViewBag.Categories = await _context.Categories.ToListAsync();
             return View(food);
@@ -365,7 +486,7 @@ namespace Source.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> FoodEdit(int id, FastFood food, IFormFile? imageFile)
+        public async Task<IActionResult> FoodEdit(int id, FastFood food, IFormFile? imageFile, string? variantsJson)
         {
             if (id != food.Id) return NotFound();
             ModelState.Remove("Category");
@@ -398,12 +519,82 @@ namespace Source.Controllers
 
                 _context.Update(dbFood);
                 await _context.SaveChangesAsync();
+
+                // Sync variants: replace all
+                if (variantsJson != null)
+                {
+                    var oldVariants = await _context.FoodVariants
+                        .Where(fv => fv.FastFoodId == id)
+                        .ToListAsync();
+                    _context.FoodVariants.RemoveRange(oldVariants);
+
+                    var variants = ParseVariantsJson(variantsJson);
+                    foreach (var v in variants)
+                    {
+                        v.Id = 0;
+                        v.FastFoodId = id;
+                        _context.FoodVariants.Add(v);
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
                 TempData["SuccessMessage"] = "Cập nhật món ăn thành công!";
                 return RedirectToAction(nameof(Foods));
             }
 
             ViewBag.Categories = await _context.Categories.ToListAsync();
             return View(food);
+        }
+
+        private static List<FoodVariant> ParseVariantsJson(string? variantsJson)
+        {
+            var result = new List<FoodVariant>();
+            if (string.IsNullOrWhiteSpace(variantsJson)) return result;
+
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(variantsJson);
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    var v = new FoodVariant
+                    {
+                        Name = el.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
+                        Size = el.TryGetProperty("size", out var s) ? s.GetString() ?? "" : "",
+                        Color = el.TryGetProperty("color", out var c) ? c.GetString() ?? "" : "",
+                        Sku = el.TryGetProperty("sku", out var sku) ? sku.GetString() : null,
+                        IsAvailable = el.TryGetProperty("isAvailable", out var avail) ? avail.GetBoolean() : true,
+                        IsDefault = el.TryGetProperty("isDefault", out var def) ? def.GetBoolean() : false,
+                        StockQuantity = el.TryGetProperty("stock", out var st) ? st.GetInt32() : 0
+                    };
+
+                    if (el.TryGetProperty("price", out var p) && p.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    {
+                        v.Price = p.GetDecimal();
+                    }
+                    if (el.TryGetProperty("originalPrice", out var op) && op.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    {
+                        v.OriginalPrice = op.GetDecimal();
+                    }
+                    if (el.TryGetProperty("imageUrl", out var img))
+                    {
+                        var imgVal = img.GetString();
+                        if (!string.IsNullOrWhiteSpace(imgVal) && !imgVal.StartsWith("data:image"))
+                        {
+                            v.ImageUrl = imgVal;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(v.Name) && !string.IsNullOrWhiteSpace(v.Size))
+                    {
+                        result.Add(v);
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore malformed JSON
+            }
+            return result;
         }
 
         [HttpPost]
@@ -787,11 +978,60 @@ namespace Source.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            order.Status = status;
+            if (!OrderStatus.IsValidTransition(order.Status, status))
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = $"Không thể chuyển từ \"{OrderStatus.GetLabel(order.Status)}\" sang \"{OrderStatus.GetLabel(status)}\"." });
+                }
+                TempData["ErrorMessage"] = "Chuyển đổi trạng thái đơn hàng không hợp lệ.";
+                return RedirectToAction(nameof(Orders), new { status });
+            }
+
+            var result = await _tracking.TransitionAsync(order, status, "Admin");
+            if (!result.ok)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = result.error });
+                }
+                TempData["ErrorMessage"] = result.error;
+                return RedirectToAction(nameof(Orders), new { status });
+            }
+
             if (status == OrderStatus.Delivered) _loyalty.Award(order);
-            order.UpdatedAt = DateTime.Now;
-            _context.Update(order);
-            await _context.SaveChangesAsync();
+
+            // Tính commission cho seller
+            var existingCommissions = await _context.SellerCommissions
+                .Where(sc => sc.OrderId == order.Id && sc.CommissionStatus == "Pending")
+                .ToListAsync();
+
+            if (!existingCommissions.Any())
+            {
+                var totalCommission = 0m;
+                foreach (var detail in order.OrderDetails.Where(d => d.FastFoodId.HasValue))
+                {
+                    var food = await _context.FastFoods.FindAsync(detail.FastFoodId.Value);
+                    if (food != null && food.SellerId.HasValue)
+                    {
+                        var itemCommission = (detail.Price + detail.Modifiers.Sum(m => m.OptionPrice)) * detail.Quantity * 0.1m;
+                        totalCommission += itemCommission;
+
+                        _context.SellerCommissions.Add(new SellerCommission
+                        {
+                            OrderId = order.Id,
+                            SellerId = food.SellerId.Value,
+                            CommissionAmount = Math.Round(itemCommission, 0),
+                            CommissionStatus = "Pending"
+                        });
+                    }
+                }
+
+                if (totalCommission > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             _logger.LogInformation("Admin updated order #{OrderId} status to: {Status}", id, status);
 
@@ -802,6 +1042,41 @@ namespace Source.Controllers
 
             TempData["SuccessMessage"] = "Cập nhật trạng thái đơn hàng thành công!";
             return RedirectToAction(nameof(Orders), new { status });
+        }
+
+        // Tính commission cho seller khi đơn hàng được giao
+        private async Task CalculateSellerCommission(Order order)
+        {
+            var existingCommissions = await _context.SellerCommissions
+                .Where(sc => sc.OrderId == order.Id && sc.CommissionStatus == "Pending")
+                .ToListAsync();
+
+            if (!existingCommissions.Any())
+            {
+                var totalCommission = 0m;
+                foreach (var detail in order.OrderDetails.Where(d => d.FastFoodId.HasValue))
+                {
+                    var food = await _context.FastFoods.FindAsync(detail.FastFoodId.Value);
+                    if (food != null && food.SellerId.HasValue)
+                    {
+                        var itemCommission = (detail.Price + detail.Modifiers.Sum(m => m.OptionPrice)) * detail.Quantity * 0.1m;
+                        totalCommission += itemCommission;
+
+                        _context.SellerCommissions.Add(new SellerCommission
+                        {
+                            OrderId = order.Id,
+                            SellerId = food.SellerId.Value,
+                            CommissionAmount = Math.Round(itemCommission, 0),
+                            CommissionStatus = "Pending"
+                        });
+                    }
+                }
+
+                if (totalCommission > 0)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
         }
 
         [HttpPost]
@@ -842,10 +1117,17 @@ namespace Source.Controllers
                 return RedirectToAction(nameof(Orders));
             }
 
-            order.Status = OrderStatus.Cancelled;
-            order.UpdatedAt = DateTime.Now;
+            var result = await _tracking.TransitionAsync(order, OrderStatus.Cancelled, "Admin", cancelReason ?? "Hủy bởi quản trị viên");
+            if (!result.ok)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return BadRequest(new { success = false, message = result.error });
+                }
+                TempData["ErrorMessage"] = result.error;
+                return RedirectToAction(nameof(Orders));
+            }
             order.CancelReason = cancelReason;
-            _context.Update(order);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Admin cancelled order #{OrderId}. Reason: {Reason}", id, cancelReason);
@@ -857,6 +1139,60 @@ namespace Source.Controllers
 
             TempData["SuccessMessage"] = $"Đã hủy đơn hàng #{id}";
             return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignDriver(int id, int driverId)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+            if (order == null) return NotFound();
+
+            if (!OrderStatus.IsValidTransition(order.Status, OrderStatus.DriverAssigned) && order.DriverId != null)
+            {
+                TempData["ErrorMessage"] = "Không thể gán tài xế cho đơn hàng ở trạng thái hiện tại.";
+                return RedirectToAction(nameof(OrderDetail), new { id });
+            }
+
+            var driver = await _context.Drivers.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == driverId && d.IsActive);
+            if (driver == null)
+            {
+                TempData["ErrorMessage"] = "Tài xế không tồn tại hoặc không hoạt động.";
+                return RedirectToAction(nameof(OrderDetail), new { id });
+            }
+
+            order.DriverId = driver.Id;
+            order.UpdatedAt = DateTime.Now;
+            _context.Orders.Update(order);
+
+            // Nếu đơn chưa ở trạng thái bàn giao, đưa về DriverAssigned (qua state machine)
+            if (order.Status != OrderStatus.DriverAssigned)
+            {
+                var result = await _tracking.TransitionAsync(order, OrderStatus.DriverAssigned, "Admin", $"Đã gán tài xế {driver.FullName}");
+                if (!result.ok)
+                {
+                    TempData["ErrorMessage"] = result.error;
+                    return RedirectToAction(nameof(OrderDetail), new { id });
+                }
+            }
+            else
+            {
+                await _context.SaveChangesAsync();
+                _context.OrderTrackingEvents.Add(new OrderTrackingEvent
+                {
+                    OrderId = order.Id,
+                    Status = OrderStatus.DriverAssigned,
+                    Description = $"Đã gán tài xế {driver.FullName}",
+                    Actor = "Admin",
+                    CreatedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            _logger.LogInformation("Admin assigned driver #{DriverId} to order #{OrderId}", driver.Id, order.Id);
+            TempData["SuccessMessage"] = $"Đã gán tài xế {driver.FullName} cho đơn hàng #{order.Id}.";
+            return RedirectToAction(nameof(OrderDetail), new { id });
         }
 
         [HttpPost]
@@ -885,11 +1221,18 @@ namespace Source.Controllers
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            order.Status = status;
+            var result = await _tracking.TransitionAsync(order, status, "Admin");
+            if (!result.ok)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = result.error });
+                }
+                TempData["ErrorMessage"] = result.error;
+                return RedirectToAction(nameof(Orders));
+            }
+
             if (status == OrderStatus.Delivered) _loyalty.Award(order);
-            order.UpdatedAt = DateTime.Now;
-            _context.Update(order);
-            await _context.SaveChangesAsync();
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -915,6 +1258,10 @@ namespace Source.Controllers
 
             ViewBag.StatusBadgeClass = OrderStatus.GetBadgeClass(order.Status);
             ViewBag.StatusLabel = OrderStatus.GetLabel(order.Status);
+            ViewBag.ActiveDrivers = await _context.Drivers
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.FullName)
+                .ToListAsync();
 
             var subtotal = order.OrderDetails.Sum(d => d.Price * d.Quantity);
             ViewBag.Subtotal = subtotal;

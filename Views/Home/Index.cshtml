@@ -35,33 +35,47 @@
     };
 }
 
-<section class="hero-section">
+<!-- Auto-Slider Banner - Shopee Style -->
+<section class="polyfood-hero-banner">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6 hero-content">
-                <h1 class="hero-title">Đặt Thức Ăn Nhanh<br>Giao Hàng <span>Siêu Tốc</span></h1>
-                <p class="hero-subtitle">Thưởng thức những món ăn nóng hổi, thơm ngon chuẩn vị nhà làm chỉ với vài click chuột. Giao hàng miễn phí trong 30 phút!</p>
-                <div class="d-flex gap-3 flex-wrap mt-4">
-                    <a href="#foods-section" class="btn btn-primary-custom btn-custom">Đặt món ngay</a>
-                    <a href="#combos-section" class="btn btn-secondary-custom btn-custom">Xem thực đơn</a>
-                </div>
-                <div class="d-flex gap-3 mt-4">
-                    <span class="polyfood-badge-warning d-inline-flex align-items-center gap-2"><i class="fa-solid fa-truck-fast"></i> Giao nhanh 30 phút</span>
-                    <span class="polyfood-badge-warning d-inline-flex align-items-center gap-2"><i class="fa-solid fa-shield"></i> Thanh toán an toàn</span>
-                </div>
-            </div>
-            <div class="col-lg-6 text-center mt-5 mt-lg-0 hero-visual">
-                <div class="position-relative d-inline-block">
-                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000&auto=format&fit=crop" alt="PolyFood Hero" class="hero-img" loading="lazy">
-                    <div class="floating-badge star">
-                        <i class="fa-solid fa-star text-warning"></i>
-                        <span>4.9/5 (1.2k+ Đánh giá)</span>
+        <div class="row g-0">
+            <div class="col-12">
+                <div id="homepageSlider" class="carousel-slider">
+                    <div class="slider-item active">
+                        <div class="slider-img">
+                            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                        </div>
+                        <div class="slider-caption">
+                            <h4>Giảm 30% món chính</h4>
+                            <p>Món nóng hổi cho cả nhà</p>
+                        </div>
                     </div>
-                    <div class="floating-badge truck">
-                        <i class="fa-solid fa-truck-fast text-danger"></i>
-                        <span>Giao siêu tốc 30 phút</span>
+                    <div class="slider-item">
+                        <div class="slider-img">
+                            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                        </div>
+                        <div class="slider-caption">
+                            <h4>Combo gia đình giảm 20%</h4>
+                            <p>Đồ uống + món chính</p>
+                        </div>
+                    </div>
+                    <div class="slider-item">
+                        <div class="slider-img">
+                            <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&q=80&auto=format&fit=crop" alt="PolyFood Promotion">
+                        </div>
+                        <div class="slider-caption">
+                            <h4>Shipper tặng kèm món ngon</h4>
+                            <p>Mỗi đơn nhận 1 đồ kèm</p>
+                        </div>
                     </div>
                 </div>
+                <button class="slider-control prev" aria-label="Trang trước">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="slider-control next" aria-label="Trang sau">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="slider-dots"></div>
             </div>
         </div>
     </div>
@@ -334,25 +348,73 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            $('#btnSearchAdv').click(function () {
-                var formData = $('#advSearchForm').serialize();
-                $.ajax({
-                    url: '@Url.Action("AdvancedSearch", "Home")',
-                    type: 'GET',
-                    data: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    success: function (data) {
-                        $('#food-list-container').html(data);
-                    },
-                    error: function () {
-                        showToast('Lỗi khi thực hiện tìm kiếm nâng cao.', 'danger');
-                    }
+            initHomepageSlider();
+        });
+
+        function initHomepageSlider() {
+            const slider = document.getElementById('homepageSlider');
+            const slides = slider.querySelectorAll('.slider-item');
+            const prevBtn = slider.querySelector('.prev');
+            const nextBtn = slider.querySelector('.next');
+            const dots = slider.querySelectorAll('.slider-dot');
+            let currentSlide = 0;
+            let totalSlides = slides.length;
+            let slideInterval;
+            
+            // Show current slide
+            function showSlide(index) {
+                // Hide all slides
+                slides.forEach(slide => slide.classList.remove('active'));
+                dots.forEach(dot => dot.classList.remove('active'));
+                
+                // Wrap around
+                if (index >= totalSlides) index = 0;
+                if (index < 0) index = totalSlides - 1;
+                
+                // Show current
+                slides[index].classList.add('active');
+                dots[index].classList.add('active');
+                currentSlide = index;
+            }
+            
+            // Auto-slide function
+            function autoSlide() {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+            
+            // Event listeners
+            prevBtn.addEventListener('click', () => {
+                currentSlide--;
+                showSlide(currentSlide);
+                resetInterval();
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                currentSlide++;
+                showSlide(currentSlide);
+                resetInterval();
+            });
+            
+            // Dot click
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    showSlide(index);
+                    resetInterval();
                 });
             });
-
-            $('#btnResetAdv').click(function () {
-                $('#advSearchForm')[0].reset();
+            
+            // Pause on hover, resume when mouse leaves
+            slider.addEventListener('mouseenter', () => {
+                clearInterval(slideInterval);
             });
-        });
+            slider.addEventListener('mouseleave', startAutoSlide);
+            
+            // Start auto-slide
+            function startAutoSlide() {
+                slideInterval = setInterval(autoSlide, 5000); // 5 seconds
+            }
+            startAutoSlide();
+        }
     </script>
 }

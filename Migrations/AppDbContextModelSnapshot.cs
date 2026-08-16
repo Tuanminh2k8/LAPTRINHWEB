@@ -152,6 +152,10 @@ namespace Source.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Sku")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Combos");
@@ -241,6 +245,70 @@ namespace Source.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Source.Models.Driver", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double?>("CurrentLat")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CurrentLng")
+                        .HasColumnType("float");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLocationAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LicensePlate")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalDeliveries")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VehicleType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Drivers");
+                });
+
             modelBuilder.Entity("Source.Models.FastFood", b =>
                 {
                     b.Property<int>("Id")
@@ -274,6 +342,13 @@ namespace Source.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("SellerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sku")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("SoldCount")
                         .HasColumnType("int");
 
@@ -285,6 +360,8 @@ namespace Source.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("SellerId");
 
                     b.ToTable("FastFoods");
 
@@ -413,6 +490,107 @@ namespace Source.Migrations
                     b.ToTable("FavoriteItems");
                 });
 
+            modelBuilder.Entity("Source.Models.FoodImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AltText")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FastFoodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FastFoodId", "SortOrder");
+
+                    b.ToTable("FoodImages");
+                });
+
+            modelBuilder.Entity("Source.Models.FoodVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FastFoodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal?>("OriginalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Sku")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FastFoodId", "Size", "Color")
+                        .IsUnique();
+
+                    b.ToTable("FoodVariants");
+                });
+
             modelBuilder.Entity("Source.Models.ModifierGroup", b =>
                 {
                     b.Property<int>("Id")
@@ -432,6 +610,9 @@ namespace Source.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("MaxOptions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinOptions")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -499,8 +680,23 @@ namespace Source.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("Discount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("DriverAcceptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DriverId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EstimatedDeliveryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -532,7 +728,17 @@ namespace Source.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PickedUpAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("PickupTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PromoCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ReadyAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ReceiverAddress")
@@ -557,6 +763,9 @@ namespace Source.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -569,6 +778,8 @@ namespace Source.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("DriverId");
 
                     b.HasIndex("IsDeleted");
 
@@ -616,6 +827,18 @@ namespace Source.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("SellerName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Sku")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VariantName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ComboId");
@@ -646,6 +869,9 @@ namespace Source.Migrations
                     b.Property<decimal>("OptionPrice")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("OptionQuantity")
+                        .HasColumnType("int");
+
                     b.Property<int>("OrderDetailId")
                         .HasColumnType("int");
 
@@ -656,6 +882,40 @@ namespace Source.Migrations
                     b.HasIndex("OrderDetailId");
 
                     b.ToTable("OrderDetailModifiers");
+                });
+
+            modelBuilder.Entity("Source.Models.OrderTrackingEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Actor")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId", "CreatedAt");
+
+                    b.ToTable("OrderTrackingEvents");
                 });
 
             modelBuilder.Entity("Source.Models.PointTransaction", b =>
@@ -817,6 +1077,41 @@ namespace Source.Migrations
                     b.ToTable("ReviewImages");
                 });
 
+            modelBuilder.Entity("Source.Models.SellerCommission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CommissionAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CommissionStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("SellerCommissions");
+                });
+
             modelBuilder.Entity("Source.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -895,6 +1190,19 @@ namespace Source.Migrations
                             Role = "Customer",
                             TotalSpent = 0m,
                             Username = "customer"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Address = "789 Đường Lê Lợi, Quận 1, TP.HCM",
+                            Email = "seller@fastfood.com",
+                            FullName = "Người Bán Hàng Shopee",
+                            PasswordHash = "$2a$11$YIt.Q8rHNv0BKrlePDKezedHKn7OjqQYdbTAS7EramaJSAVPn.R/6",
+                            PhoneNumber = "0909090909",
+                            Points = 0,
+                            Role = "Seller",
+                            TotalSpent = 0m,
+                            Username = "seller"
                         });
                 });
 
@@ -917,6 +1225,17 @@ namespace Source.Migrations
                     b.Navigation("FastFood");
                 });
 
+            modelBuilder.Entity("Source.Models.Driver", b =>
+                {
+                    b.HasOne("Source.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Source.Models.FastFood", b =>
                 {
                     b.HasOne("Source.Models.Category", "Category")
@@ -925,7 +1244,14 @@ namespace Source.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Source.Models.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Category");
+
+                    b.Navigation("Seller");
                 });
 
             modelBuilder.Entity("Source.Models.FavoriteItem", b =>
@@ -949,6 +1275,28 @@ namespace Source.Migrations
                     b.Navigation("FastFood");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Source.Models.FoodImage", b =>
+                {
+                    b.HasOne("Source.Models.FastFood", "FastFood")
+                        .WithMany("FoodImages")
+                        .HasForeignKey("FastFoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FastFood");
+                });
+
+            modelBuilder.Entity("Source.Models.FoodVariant", b =>
+                {
+                    b.HasOne("Source.Models.FastFood", "FastFood")
+                        .WithMany("Variants")
+                        .HasForeignKey("FastFoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FastFood");
                 });
 
             modelBuilder.Entity("Source.Models.ModifierGroup", b =>
@@ -979,11 +1327,18 @@ namespace Source.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("BranchId");
 
+                    b.HasOne("Source.Models.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Source.Models.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId");
 
                     b.Navigation("Branch");
+
+                    b.Navigation("Driver");
 
                     b.Navigation("User");
                 });
@@ -992,11 +1347,13 @@ namespace Source.Migrations
                 {
                     b.HasOne("Source.Models.Combo", "Combo")
                         .WithMany()
-                        .HasForeignKey("ComboId");
+                        .HasForeignKey("ComboId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Source.Models.FastFood", "FastFood")
                         .WithMany()
-                        .HasForeignKey("FastFoodId");
+                        .HasForeignKey("FastFoodId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Source.Models.Order", "Order")
                         .WithMany("OrderDetails")
@@ -1027,6 +1384,17 @@ namespace Source.Migrations
                     b.Navigation("ModifierOption");
 
                     b.Navigation("OrderDetail");
+                });
+
+            modelBuilder.Entity("Source.Models.OrderTrackingEvent", b =>
+                {
+                    b.HasOne("Source.Models.Order", "Order")
+                        .WithMany("TrackingEvents")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Source.Models.PointTransaction", b =>
@@ -1084,6 +1452,25 @@ namespace Source.Migrations
                     b.Navigation("Review");
                 });
 
+            modelBuilder.Entity("Source.Models.SellerCommission", b =>
+                {
+                    b.HasOne("Source.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Source.Models.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Seller");
+                });
+
             modelBuilder.Entity("Source.Models.Branch", b =>
                 {
                     b.Navigation("Orders");
@@ -1103,9 +1490,13 @@ namespace Source.Migrations
                 {
                     b.Navigation("ComboDetails");
 
+                    b.Navigation("FoodImages");
+
                     b.Navigation("ModifierGroups");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("Source.Models.ModifierGroup", b =>
@@ -1116,6 +1507,8 @@ namespace Source.Migrations
             modelBuilder.Entity("Source.Models.Order", b =>
                 {
                     b.Navigation("OrderDetails");
+
+                    b.Navigation("TrackingEvents");
                 });
 
             modelBuilder.Entity("Source.Models.OrderDetail", b =>

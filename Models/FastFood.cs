@@ -48,9 +48,22 @@ namespace Source.Models
         [Display(Name = "Bán chạy")]
         public bool IsBestSeller { get; set; } = false;
 
-        // Navigation properties
+        [Display(Name = "Người bán")]
+        public int? SellerId { get; set; }
+
+        [ForeignKey("SellerId")]
+        [Display(Name = "Người bán")]
+        public User? Seller { get; set; }
+
+        [Display(Name = "Mã SKU")]
+        [StringLength(50)]
+        public string? Sku { get; set; }
+
+// Navigation properties
         public ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();
         public ICollection<ModifierGroup> ModifierGroups { get; set; } = new List<ModifierGroup>();
+        public ICollection<FoodVariant> Variants { get; set; } = new List<FoodVariant>();
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<FoodImage> FoodImages { get; set; } = new List<FoodImage>();
     }
 }

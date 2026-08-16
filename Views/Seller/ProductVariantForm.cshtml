@@ -1,0 +1,412 @@
+@model Source.Models.FastFood
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject Source.Models.AppDbContext _context
+@using Source.Helpers
+@using Source.Models
+@using Microsoft.EntityFrameworkCore
+@{
+    Layout = "_SellerLayout";
+    ViewData["Title"] = "Phiên Bản Món Ăn - " + Model.Name;
+
+    // Get current user ID via claims helper (static class)
+    var sellerId = UserClaimsHelper.GetUserId(User);
+
+    var categories = await _context.Categories.AsNoTracking().ToListAsync();
+    var currentGroups = Model.ModifierGroups?.ToList() ?? new List<ModifierGroup>();
+}
+
+<div class="polyfood-variant-form">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Phiên Bản Món: @Model.Name</h3>
+            <p class="text-muted small">Quản lý kích cỡ, topping, độ cay...</p>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='/Seller/Foods'">Quay lại</button>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#groupModal">
+                <i class="fa-solid fa-plus me-1"></i> Thêm nhóm
+            </button>
+        </div>
+    </div>
+
+    <!-- Food Image Preview -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="row g-0">
+            <div class="col-md-4">
+                <img src="@(Model.ImageUrl ?? "/images/default_food.svg")" class="img-fluid rounded-start" alt="@Model.Name">
+            </div>
+            <div class="col-md-8">
+                <div class="card-body p-4">
+                    <h5 class="card-title">@Model.Name</h5>
+                    <p class="card-text">@Model.Description</p>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold">Giá: </span> <span class="text-primary fw-bold">@Model.Price.ToString("N0") ₫</span>
+                        <span class="badge bg-success">Còn hàng</span>
+                    </div>
+                    <small class="text-muted">Thể loại: @Model.Category?.Name</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Variants Summary -->
+    @if (currentGroups.Any())
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-dark text-white p-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-sliders me-2"></i> Nhóm Tùy Chọn Hiện Tại</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    @foreach (var group in currentGroups)
+                    {
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="border rounded-3 p-3 bg-light" style="min-height: 120px;">
+                                <div class="fw-bold text-dark small mb-2">@group.Name</div>
+                                <div class="small text-muted">
+                                    @group.Options.Count o => o.Name + (o.Price > 0 ? " (+" + o.Price.ToString("N0") + "₫)" : "") + "; "
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-group" data-group-id="@group.Id">Xóa</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info border-0 shadow-sm rounded-3 py-5 text-center">
+            <i class="fa-solid fa-sliders fa-3x mb-3 text-muted"></i>
+            <p class="small mb-0">Món này chưa có nhóm tùy chọn nào.<br>Bấm "Thêm nhóm" để bắt đầu thiết lập.</p>
+        </div>
+    }
+
+    <!-- Manage Groups -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white p-3">
+            <h6 class="mb-0 fw-bold"><i class="fa-solid fa-sliders me-2"></i> Quản lý Nhóm Tùy Chọn</h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#groupModal">
+                    <i class="fa-solid fa-plus me-1"></i> Thêm Nhóm Mới
+                </button>
+            </div>
+            <p class="text-muted small mb-0">Kích cỡ (Size), topping (Topping), độ cay (Spice level)...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm/Sửa Nhóm -->
+<div class="modal fade" id="groupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4 border-0">
+                <h5 class="modal-title fw-600" id="groupModalTitle"><i class="fa-solid fa-sliders me-2"></i>Thêm nhóm tùy chọn</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="groupEditId">
+                <input type="hidden" id="groupFoodId" value="@Model.Id">
+                <div class="mb-3">
+                    <label class="form-label fw-600 small">Tên nhóm <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="groupName" placeholder="VD: Size, Topping, Độ cay">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-600 small">Mô tả</label>
+                    <input type="text" class="form-control" id="groupDescription" placeholder="VD: Chọn kích thước phần ăn">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-600 small">Cho phép chọn nhiều</label>
+                        <select class="form-select" id="groupIsMultiple">
+                            <option value="false">Chỉ chọn 1 (radio)</option>
+                            <option value="true">Chọn nhiều (checkbox)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-600 small">Số lượng chọn tối đa</label>
+                        <input type="number" class="form-control" id="groupMaxOptions" min="1" value="1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning rounded-pill px-4 fw-600 text-dark" id="btnSaveGroup">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Lưu nhóm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm/Sửa Tùy Chọn -->
+<div class="modal fade" id="optionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning-subtle rounded-top-4 border-0">
+                <h5 class="modal-title fw-600" id="optionModalTitle"><i class="fa-solid fa-list-check me-2"></i>Thêm tùy chọn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="optionEditId">
+                <input type="hidden" id="optionGroupId">
+                <div class="mb-3">
+                    <label class="form-label fw-600 small">Tên tùy chọn <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="optionName" placeholder="VD: Vừa, Lớn, Thêm phô mai">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-600 small">Giá cộng thêm (VNĐ)</label>
+                    <input type="number" class="form-control" id="optionPrice" min="0" step="1000" value="0">
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="optionIsDefault">
+                    <label class="form-check-label small" for="optionIsDefault">Chọn mặc định khi hiển thị</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning rounded-pill px-4 fw-600 text-dark" id="btnSaveOption">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Lưu tùy chọn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            initVariantForm();
+        });
+
+        function initVariantForm() {
+            var csrfToken = $('input[name="__RequestVerificationToken"]').first().val() || '';
+            var currentFoodId = @Model.Id;
+            var currentGroups = []; // Will be populated from server
+
+            // Load current groups from API
+            $.getJSON('/api/modifiers/food/' + currentFoodId)
+                .done(function (groups) {
+                    currentGroups = groups;
+                    renderGroups();
+                })
+                .fail(function () {
+                    showToast('Không thể tải dữ liệu nhóm tùy chọn.', 'danger');
+                });
+
+            // Render groups HTML
+            function renderGroups() {
+                var $c = $('.variant-groups-container');
+                if (!currentGroups.length) {
+                    $c.html('<div class="text-center py-5 text-muted"><i class="fa-solid fa-sliders fa-2x mb-3 text-warning"></i><p class="small mb-4">Món này chưa có nhóm tùy chọn nào.<br>Bấm "Thêm nhóm" để bắt đầu tùy chỉnh món.</p></div>');
+                    return;
+                }
+
+                var html = '';
+                currentGroups.forEach(function (g) {
+                    html += '<div class="border rounded-3 p-3 mb-3 bg-light" data-group-id="' + g.id + '">';
+                    html += '<div class="d-flex justify-content-between align-items-start mb-2">';
+                    html += '<div>';
+                    html += '<div class="fw-bold text-dark small">$('<div>').text(g.name).html() + '</div>';
+                    html += '<div class="small text-muted">' + (g.description ? '$('<div>').text(g.description).html() : 'Không mô tả') +
+                        ' • ' + (g.isMultiple ? 'Chọn nhiều (tối đa ' + g.maxOptions + ')' : 'Chỉ chọn 1') + '</div>';
+                    html += '</div>';
+                    html += '<div class="d-flex gap-1">';
+                    html += '<button type="button" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2 js-edit-group" title="Sửa" data-id="' + g.id + '"><i class="fa-solid fa-pen-to-square"></i></button>';
+                    html += '<button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2 js-delete-group" title="Xóa" data-id="' + g.id + '"><i class="fa-solid fa-trash-can"></i></button>';
+                    html += '</div></div>';
+
+                    if (g.options && g.options.length) {
+                        html += '<div class="ps-3">';
+                        g.options.forEach(function (o) {
+                            html += '<div class="d-flex justify-content-between align-items-center border rounded-3 p-2 px-3 mb-1 bg-white" data-option-id="' + o.id + '">';
+                            html += '<div class="d-flex align-items-center gap-2">';
+                            html += '<span class="small">$('<div>').text(o.name).html() + '</span>';
+                            if (o.isDefault) html += '<span class="badge bg-info text-dark rounded-pill" style="font-size:.6rem;">Mặc định</span>';
+                            html += '</div>';
+                            html += '<div class="d-flex align-items-center gap-2">';
+                            html += '<span class="fw-bold text-danger small">' + (o.price > 0 ? '+' : '') + o.price.toLocaleString('vi-VN') + ' ₫</span>';
+                            html += '<button type="button" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-1 js-edit-option" title="Sửa" data-id="' + o.id + '"><i class="fa-solid fa-pen-to-square" style="font-size:.7rem;"></i></button>';
+                            html += '<button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-1 js-delete-option" title="Xóa" data-id="' + o.id + '"><i class="fa-solid fa-trash-can" style="font-size:.7rem;"></i></button>';
+                            html += '</div></div>';
+                        });
+                        html += '</div>';
+                    }
+
+                    html += '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 js-add-option" data-group-id="' + g.id + '" style="font-size:.78rem;"><i class="fa-solid fa-plus me-1"></i> Thêm tùy chọn</button></div>';
+                    html += '</div>';
+                });
+
+                $c.html(html);
+            }
+
+            // ─── Nhóm: thêm / sửa / xóa ───
+            $('#btnAddGroup').on('click', function () {
+                $('#groupModalTitle').html('<i class="fa-solid fa-sliders me-2"></i>Thêm nhóm tùy chọn');
+                $('#groupEditId').val('');
+                $('#groupFoodId').val(currentFoodId);
+                $('#groupName').val('');
+                $('#groupDescription').val('');
+                $('#groupIsMultiple').val('false');
+                $('#groupMaxOptions').val(1);
+                new bootstrap.Modal(document.getElementById('groupModal')).show();
+            });
+
+            $('#btnSaveGroup').on('click', function () {
+                var $btn = $(this).attr('disabled', true);
+                var editId = $('#groupEditId').val();
+                var name = $('#groupName').val().trim();
+                if (!name) { alert('Vui lòng nhập tên nhóm.'); $btn.attr('disabled', false); return; }
+
+                var payload = {
+                    name: name,
+                    description: $('#groupDescription').val().trim(),
+                    isMultiple: $('#groupIsMultiple').val() === 'true',
+                    maxOptions: parseInt($('#groupMaxOptions').val(), 10) || 1,
+                    fastFoodId: parseInt($('#groupFoodId').val(), 10)
+                };
+
+                var url = editId ? '/api/modifiers/groups/' + editId : '/api/modifiers/groups';
+                var method = editId ? 'PUT' : 'POST';
+
+                $.ajax({
+                    url: url, type: method, contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    headers: { 'RequestVerificationToken': csrfToken }
+                }).done(function () {
+                    var m = bootstrap.Modal.getInstance(document.getElementById('groupModal'));
+                    if (m) m.hide();
+                    loadGroups();
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch (e) { }
+                    alert(msg);
+                }).always(function () { $btn.attr('disabled', false); });
+            });
+
+            // Edit Group
+            $('.js-edit-group').on('click', function () {
+                var id = parseInt($(this).data('id'), 10);
+                var g = currentGroups.find(function (x) { return x.id === id; });
+                if (!g) return;
+                $('#groupModalTitle').html('<i class="fa-solid fa-sliders me-2"></i>Sửa nhóm tùy chọn');
+                $('#groupEditId').val(id);
+                $('#groupFoodId').val(currentFoodId);
+                $('#groupName').val(g.name);
+                $('#groupDescription').val(g.description || '');
+                $('#groupIsMultiple').val(g.isMultiple ? 'true' : 'false');
+                $('#groupMaxOptions').val(g.maxOptions || 1);
+                new bootstrap.Modal(document.getElementById('groupModal')).show();
+            });
+
+            // Delete Group
+            $('.js-delete-group').on('click', function () {
+                var id = parseInt($(this).data('id'), 10);
+                if (!confirm('Xóa nhóm này và toàn bộ tùy chọn bên trong?')) return;
+                $.ajax({
+                    url: '/api/modifiers/groups/' + id, type: 'DELETE',
+                    headers: { 'RequestVerificationToken': csrfToken }
+                }).done(function () {
+                    loadGroups();
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch (e) { }
+                    alert(msg);
+                });
+            });
+
+            // ─── Tùy chọn: thêm / sửa / xóa ───
+            $('.js-add-option').on('click', function () {
+                $('#optionModalTitle').html('<i class="fa-solid fa-list-check me-2"></i>Thêm tùy chọn');
+                $('#optionEditId').val('');
+                $('#optionGroupId').val($(this).data('group-id'));
+                $('#optionName').val('');
+                $('#optionPrice').val(0);
+                $('#optionIsDefault').prop('checked', false);
+                new bootstrap.Modal(document.getElementById('optionModal')).show();
+            });
+
+            // Edit Option
+            $('.js-edit-option').on('click', function () {
+                var id = parseInt($(this).data('id'), 10);
+                var opt = null;
+                currentGroups.some(function (g) {
+                    return (g.options || []).some(function (o) {
+                        if (o.id === id) { opt = o; return true; }
+                        return false;
+                    });
+                });
+                if (!opt) return;
+                $('#optionModalTitle').html('<i class="fa-solid fa-list-check me-2"></i>Sửa tùy chọn');
+                $('#optionEditId').val(id);
+                $('#optionGroupId').val(opt.groupId || $('#optionGroupId').val());
+                $('#optionName').val(opt.name);
+                $('#optionPrice').val(opt.price);
+                $('#optionIsDefault').prop('checked', opt.isDefault);
+                new bootstrap.Modal(document.getElementById('optionModal')).show();
+            });
+
+            $('#btnSaveOption').on('click', function () {
+                var $btn = $(this).attr('disabled', true);
+                var editId = $('#optionEditId').val();
+                var name = $('#optionName').val().trim();
+                if (!name) { alert('Vui lòng nhập tên tùy chọn.'); $btn.attr('disabled', false); return; }
+
+                var payload = {
+                    name: name,
+                    price: parseFloat($('#optionPrice').val()) || 0,
+                    isDefault: $('#optionIsDefault').is(':checked'),
+                    modifierGroupId: parseInt($('#optionGroupId').val(), 10)
+                };
+
+                var url = editId ? '/api/modifiers/options/' + editId : '/api/modifiers/options';
+                var method = editId ? 'PUT' : 'POST';
+
+                $.ajax({
+                    url: url, type: method, contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    headers: { 'RequestVerificationToken': csrfToken }
+                }).done(function () {
+                    var m = bootstrap.Modal.getInstance(document.getElementById('optionModal'));
+                    if (m) m.hide();
+                    loadGroups();
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch (e) { }
+                    alert(msg);
+                }).always(function () { $btn.attr('disabled', false); });
+            });
+
+            // Delete Option
+            $('.js-delete-option').on('click', function () {
+                var id = parseInt($(this).data('id'), 10);
+                if (!confirm('Xóa tùy chọn này?')) return;
+                $.ajax({
+                    url: '/api/modifiers/options/' + id, type: 'DELETE',
+                    headers: { 'RequestVerificationToken': csrfToken }
+                }).done(function () {
+                    loadGroups();
+                }).fail(function (xhr) {
+                    var msg = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                    try { var r = JSON.parse(xhr.responseText); if (r.message) msg = r.message; } catch (e) { }
+                    alert(msg);
+                });
+            });
+
+            function loadGroups() {
+                $.getJSON('/api/modifiers/food/' + currentFoodId)
+                    .done(function (groups) {
+                        currentGroups = groups;
+                        renderGroups();
+                    })
+                    .fail(function () {
+                        showToast('Không thể tải dữ liệu nhóm tùy chọn.', 'danger');
+                    });
+            }
+        });
+    </script>
+}

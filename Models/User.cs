@@ -43,7 +43,7 @@ namespace Source.Models
 
         [Required]
         [Display(Name = "Vai trò")]
-        public string Role { get; set; } = "Customer"; // Admin, Customer
+        public string Role { get; set; } = "Customer"; // Admin, Customer, Kol
 
         public string? GoogleId { get; set; }
 

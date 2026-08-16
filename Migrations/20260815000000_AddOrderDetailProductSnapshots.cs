@@ -1,9 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Source.Models;
 
 #nullable disable
 
 namespace Source.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260815000000_AddOrderDetailProductSnapshots")]
     public partial class AddOrderDetailProductSnapshots : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

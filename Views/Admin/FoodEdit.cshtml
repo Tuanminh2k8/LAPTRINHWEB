@@ -3,84 +3,207 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = "Chỉnh Sửa Món Ăn #" + Model.Id;
     var categories = ViewBag.Categories as IEnumerable<Source.Models.Category> ?? new List<Source.Models.Category>();
+    var isSeller = User.IsInRole("Seller");
+    var controller = isSeller ? "Seller" : "Admin";
+    var variants = Model.Variants?.OrderBy(v => v.SortOrder).ToList() ?? new List<Source.Models.FoodVariant>();
+    ViewData["InitialVariantsJson"] = System.Text.Json.JsonSerializer.Serialize(
+        variants.Select(v => new
+        {
+            name = v.Name,
+            size = v.Size,
+            color = v.Color,
+            price = v.Price,
+            originalPrice = v.OriginalPrice,
+            stock = v.StockQuantity,
+            sku = v.Sku,
+            imageUrl = v.ImageUrl,
+            isAvailable = v.IsAvailable,
+            isDefault = v.IsDefault
+        })
+    );
 }
 
 <div class="mb-4">
-    <h3 class="fw-bold text-dark mb-1">Chỉnh Sửa Món Ăn #@Model.Id</h3>
-    <a asp-action="Foods" class="text-muted small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách</a>
+    <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-utensils me-2 text-danger"></i>Chỉnh Sửa Món Ăn #@Model.Id</h3>
+    <a asp-controller="@controller" asp-action="Foods" class="text-muted small text-decoration-none">
+        <i class="fa-solid fa-arrow-left me-1"></i> Trở về danh sách
+    </a>
 </div>
 
-<div class="card border-0 shadow-sm rounded-4 bg-white p-4 p-md-5">
-    <form asp-action="FoodEdit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="ImageUrl" />
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
+<form asp-controller="@controller" asp-action="FoodEdit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" id="foodForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ImageUrl" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger border-0 rounded-3 py-2 small mb-3"></div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label asp-for="Name" class="form-label fw-bold small text-muted"></label>
-                <input asp-for="Name" class="form-control form-control-custom" />
-                <span asp-validation-for="Name" class="text-danger small"></span>
+    <div class="row g-4">
+        <!-- Cột trái: Thông tin cơ bản -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 rounded-top-4 pt-4 px-4">
+                    <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-circle-info me-2 text-danger"></i>Thông Tin Cơ Bản</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Name" class="form-label fw-bold small text-muted"></label>
+                            <input asp-for="Name" class="form-control form-control-custom" placeholder="Nhập tên món ăn..." />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Price" class="form-label fw-bold small text-muted"></label>
+                            <div class="input-group">
+                                <input asp-for="Price" type="number" step="1000" min="0" class="form-control form-control-custom" placeholder="Nhập giá (₫)..." />
+                                <span class="input-group-text border-0 bg-light"><small class="fw-bold text-muted">₫</small></span>
+                            </div>
+                            <span asp-validation-for="Price" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="CategoryId" class="form-label fw-bold small text-muted"></label>
+                            <select asp-for="CategoryId" class="form-select form-control-custom">
+                                <option value="">-- Chọn Chủng Loại --</option>
+                                @foreach (var cat in categories)
+                                {
+                                    <option value="@cat.Id">@cat.Icon @cat.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Theme" class="form-label fw-bold small text-muted"></label>
+                            <input asp-for="Theme" class="form-control form-control-custom" placeholder="VD: Gia đình, Ăn vặt, Tiệc tùng..." />
+                            <span asp-validation-for="Theme" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Mã SKU</label>
+                            <input asp-for="Sku" class="form-control form-control-custom" placeholder="VD: BF-BURGER-001" />
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsAvailable" class="form-check-input" type="checkbox">
+                                <label asp-for="IsAvailable" class="form-check-label small fw-bold text-muted">Còn hàng</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsBestSeller" class="form-check-input" type="checkbox">
+                                <label asp-for="IsBestSeller" class="form-check-label small fw-bold text-muted">Bán chạy</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-bold small text-muted"></label>
+                        <textarea asp-for="Description" class="form-control form-control-custom" rows="3" placeholder="Nhập mô tả chi tiết..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <label asp-for="Price" class="form-label fw-bold small text-muted"></label>
-                <input asp-for="Price" type="number" step="1000" class="form-control form-control-custom" />
-                <span asp-validation-for="Price" class="text-danger small"></span>
-            </div>
+
+            <!-- Phân Loại Hàng (Variants) -->
+            <partial name="_SalesVariantManager" />
         </div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label asp-for="CategoryId" class="form-label fw-bold small text-muted"></label>
-                <select asp-for="CategoryId" class="form-select form-control-custom">
-                    @foreach (var cat in categories)
-                    {
-                        <option value="@cat.Id">@cat.Name</option>
-                    }
-                </select>
-                <span asp-validation-for="CategoryId" class="text-danger small"></span>
-            </div>
-            <div class="col-md-6">
-                <label asp-for="Theme" class="form-label fw-bold small text-muted"></label>
-                <input asp-for="Theme" class="form-control form-control-custom" />
-                <span asp-validation-for="Theme" class="text-danger small"></span>
-            </div>
-        </div>
+        <!-- Cột phải: Hình ảnh -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 sticky-top" style="top: 100px; z-index: 5;">
+                <div class="card-header bg-white border-0 rounded-top-4 pt-4 px-4">
+                    <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-image me-2 text-danger"></i>Hình Ảnh Món Ăn</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <label class="form-label fw-bold small text-muted">Chọn file ảnh</label>
 
-        <div class="row g-3 mb-3 align-items-center">
-            <div class="col-md-3 text-center">
-                <img src="@Model.ImageUrl" alt="@Model.Name" class="rounded-3 shadow-sm img-fluid" style="max-height: 100px;">
-            </div>
-            <div class="col-md-9">
-                <label class="form-label fw-bold small text-muted">Thay đổi ảnh (bỏ trống nếu giữ nguyên)</label>
-                <input type="file" name="imageFile" class="form-control form-control-custom" accept="image/*" />
-            </div>
-        </div>
+                    <!-- Upload dropzone -->
+                    <div id="imageDropzone" class="border-2 border-dashed rounded-4 p-4 text-center cursor-pointer mb-3"
+                         style="border-style: dashed !important; cursor: pointer; transition: all .2s ease;">
+                        <input type="file" name="imageFile" id="imageFileInput" class="d-none" accept="image/*" />
+                        <img id="imagePreview" src="@Model.ImageUrl" alt="Preview" class="img-fluid rounded-3" style="max-height: 220px; object-fit: cover; width: 100%;">
+                        <div id="imageUploadPlaceholder" class="py-4 d-none">
+                            <i class="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                            <p class="mb-1 fw-bold text-dark small">Kéo thả ảnh vào đây</p>
+                            <p class="mb-0 text-muted small">hoặc <span class="text-danger fw-bold">bấm để chọn file</span></p>
+                            <small class="text-muted d-block mt-2">JPG, PNG, GIF - tối đa 5MB</small>
+                        </div>
+                    </div>
 
-        <div class="mb-4">
-            <label asp-for="Description" class="form-label fw-bold small text-muted"></label>
-            <textarea asp-for="Description" class="form-control form-control-custom" rows="3"></textarea>
-            <span asp-validation-for="Description" class="text-danger small"></span>
-        </div>
-
-        <div class="d-flex align-items-center justify-content-between gap-3 rounded-3 border border-warning-subtle bg-warning-subtle p-3 mb-4">
-            <div>
-                <div class="fw-bold text-dark small"><i class="fa-solid fa-sliders me-2 text-warning-emphasis"></i>Phân loại & tùy chọn món</div>
-                <div class="small text-muted mt-1">Thiết lập Size, topping và giá cộng thêm cho món này.</div>
+                    <div id="imageHelp" class="small text-muted">
+                        <i class="fa-solid fa-circle-info me-1"></i> Ảnh hiển thị trên trang chủ, danh mục và chi tiết món ăn.
+                    </div>
+                </div>
             </div>
-            <a asp-action="Modifiers" asp-route-foodId="@Model.Id" class="btn btn-warning btn-sm rounded-pill px-3 text-dark fw-bold text-nowrap">
-                Thiết lập ngay <i class="fa-solid fa-arrow-right ms-1"></i>
-            </a>
-        </div>
 
-        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-            <a asp-action="Foods" class="btn btn-secondary-custom btn-custom">Hủy bỏ</a>
-            <button type="submit" class="btn btn-primary-custom btn-custom rounded-pill px-4">Lưu Thay Đổi</button>
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body px-4 py-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-muted">Số phân loại</span>
+                        <span class="badge bg-danger rounded-pill" id="variantCountBadge">@variants.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-muted">Khoảng giá</span>
+                        <span class="fw-bold small text-dark" id="priceRangeText">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-muted">Tổng tồn kho</span>
+                        <span class="fw-bold small text-dark" id="stockTotalText">@variants.Sum(v => v.StockQuantity)</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="@controller" asp-action="Foods" class="btn btn-secondary-custom btn-custom flex-fill">Hủy bỏ</a>
+                        <button type="submit" class="btn btn-primary-custom btn-custom rounded-pill px-4 flex-fill">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </form>
-</div>
+    </div>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            'use strict';
+
+            // ─── Image dropzone ───
+            var $dropzone = $('#imageDropzone');
+            var $fileInput = $('#imageFileInput');
+
+            $dropzone.on('click', function (e) {
+                if (e.target === $fileInput[0]) return;
+                $fileInput.trigger('click');
+            });
+            $fileInput.on('change', function () {
+                if (this.files && this.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        $('#imagePreview').attr('src', ev.target.result).removeClass('d-none');
+                        $('#imageUploadPlaceholder').addClass('d-none');
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            $dropzone.on('dragover', function (e) {
+                e.preventDefault();
+                $dropzone.css({ 'border-color': '#dc3545', 'background': '#fff5f5' });
+            });
+            $dropzone.on('dragleave', function () {
+                $dropzone.css({ 'border-color': '', 'background': '' });
+            });
+            $dropzone.on('drop', function (e) {
+                e.preventDefault();
+                $dropzone.css({ 'border-color': '', 'background': '' });
+                if (e.originalEvent.dataTransfer.files.length) {
+                    $fileInput[0].files = e.originalEvent.dataTransfer.files;
+                    $fileInput.trigger('change');
+                }
+            });
+        })();
+    </script>
 }

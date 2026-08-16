@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Source.Helpers;
 using Source.Models;
 
 namespace Source.Controllers.Api
@@ -57,7 +58,7 @@ namespace Source.Controllers.Api
 
         // POST: api/modifiers/groups — tạo nhóm tùy chọn cho món
         [HttpPost("groups")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> CreateGroup(ModifierGroupInput input)
         {
@@ -66,8 +67,18 @@ namespace Source.Controllers.Api
                 return BadRequest(new { message = "Dữ liệu nhóm tùy chọn không hợp lệ." });
             }
 
-            var foodExists = await _context.FastFoods.AnyAsync(f => f.Id == input.FastFoodId);
-            if (!foodExists) return BadRequest(new { message = "Món ăn không tồn tại." });
+            var food = await _context.FastFoods.FirstOrDefaultAsync(f => f.Id == input.FastFoodId);
+            if (food == null) return BadRequest(new { message = "Món ăn không tồn tại." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (food.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             var maxSort = await _context.ModifierGroups
                 .Where(g => g.FastFoodId == input.FastFoodId)
@@ -112,7 +123,7 @@ namespace Source.Controllers.Api
 
         // PUT: api/modifiers/groups/5 — cập nhật nhóm tùy chọn
         [HttpPut("groups/{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateGroup(int id, ModifierGroupInput input)
         {
@@ -121,8 +132,20 @@ namespace Source.Controllers.Api
                 return BadRequest(new { message = "Dữ liệu nhóm tùy chọn không hợp lệ." });
             }
 
-            var group = await _context.ModifierGroups.FindAsync(id);
+            var group = await _context.ModifierGroups
+                .Include(g => g.FastFood)
+                .FirstOrDefaultAsync(g => g.Id == id);
             if (group == null) return NotFound(new { message = "Không tìm thấy nhóm tùy chọn." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (group.FastFood?.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             group.Name = input.Name.Trim();
             group.Description = input.Description?.Trim();
@@ -138,14 +161,25 @@ namespace Source.Controllers.Api
 
         // DELETE: api/modifiers/groups/5 — xóa nhóm và toàn bộ tùy chọn của nó
         [HttpDelete("groups/{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteGroup(int id)
         {
             var group = await _context.ModifierGroups
                 .Include(g => g.Options)
+                .Include(g => g.FastFood)
                 .FirstOrDefaultAsync(g => g.Id == id);
             if (group == null) return NotFound(new { message = "Không tìm thấy nhóm tùy chọn." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (group.FastFood?.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             _context.ModifierOptions.RemoveRange(group.Options);
             _context.ModifierGroups.Remove(group);
@@ -157,7 +191,7 @@ namespace Source.Controllers.Api
 
         // POST: api/modifiers/options — thêm tùy chọn vào nhóm
         [HttpPost("options")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> CreateOption(ModifierOptionInput input)
         {
@@ -166,8 +200,20 @@ namespace Source.Controllers.Api
                 return BadRequest(new { message = "Dữ liệu tùy chọn không hợp lệ." });
             }
 
-            var groupExists = await _context.ModifierGroups.AnyAsync(g => g.Id == input.ModifierGroupId);
-            if (!groupExists) return BadRequest(new { message = "Nhóm tùy chọn không tồn tại." });
+            var group = await _context.ModifierGroups
+                .Include(g => g.FastFood)
+                .FirstOrDefaultAsync(g => g.Id == input.ModifierGroupId);
+            if (group == null) return BadRequest(new { message = "Nhóm tùy chọn không tồn tại." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (group.FastFood?.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             var maxSort = await _context.ModifierOptions
                 .Where(o => o.ModifierGroupId == input.ModifierGroupId)
@@ -192,7 +238,7 @@ namespace Source.Controllers.Api
 
         // PUT: api/modifiers/options/5 — cập nhật tùy chọn
         [HttpPut("options/{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateOption(int id, ModifierOptionInput input)
         {
@@ -201,8 +247,21 @@ namespace Source.Controllers.Api
                 return BadRequest(new { message = "Dữ liệu tùy chọn không hợp lệ." });
             }
 
-            var option = await _context.ModifierOptions.FindAsync(id);
+            var option = await _context.ModifierOptions
+                .Include(o => o.ModifierGroup)
+                .ThenInclude(g => g!.FastFood)
+                .FirstOrDefaultAsync(o => o.Id == id);
             if (option == null) return NotFound(new { message = "Không tìm thấy tùy chọn." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (option.ModifierGroup?.FastFood?.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             option.Name = input.Name.Trim();
             option.Price = input.Price;
@@ -216,12 +275,25 @@ namespace Source.Controllers.Api
 
         // DELETE: api/modifiers/options/5 — xóa tùy chọn
         [HttpDelete("options/{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Seller")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteOption(int id)
         {
-            var option = await _context.ModifierOptions.FindAsync(id);
+            var option = await _context.ModifierOptions
+                .Include(o => o.ModifierGroup)
+                .ThenInclude(g => g!.FastFood)
+                .FirstOrDefaultAsync(o => o.Id == id);
             if (option == null) return NotFound(new { message = "Không tìm thấy tùy chọn." });
+
+            // Kiểm tra bảo mật đối với Seller
+            if (User.IsInRole("Seller"))
+            {
+                var userId = UserClaimsHelper.GetUserId(User);
+                if (option.ModifierGroup?.FastFood?.SellerId != userId)
+                {
+                    return Forbid();
+                }
+            }
 
             _context.ModifierOptions.Remove(option);
             await _context.SaveChangesAsync();

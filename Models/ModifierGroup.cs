@@ -25,6 +25,11 @@ namespace Source.Models
         [Display(Name = "Số tùy chọn tối đa")]
         public int MaxOptions { get; set; } = 1;
 
+        // Số tùy chọn tối thiểu phải chọn (0 = không bắt buộc, 1 = bắt buộc chọn ít nhất 1)
+        [Range(0, 100, ErrorMessage = "Số tùy chọn tối thiểu phải từ 0 đến 100")]
+        [Display(Name = "Số tùy chọn tối thiểu")]
+        public int MinOptions { get; set; } = 0;
+
         [Display(Name = "Sắp xếp")]
         public int SortOrder { get; set; } = 0;
 

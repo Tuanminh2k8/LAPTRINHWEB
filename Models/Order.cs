@@ -83,6 +83,16 @@ namespace Source.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Discount { get; set; } = 0;
 
+        /// <summary>Mã giảm giá đã áp dụng</summary>
+        [StringLength(50)]
+        [Display(Name = "Mã giảm giá")]
+        public string? PromoCode { get; set; }
+
+        /// <summary>Thuế giá trị gia tăng</summary>
+        [Display(Name = "Thuế VAT")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Tax { get; set; } = 0;
+
         [Display(Name = "Ghi chú")]
         [StringLength(500)]
         public string? Note { get; set; }
@@ -97,6 +107,33 @@ namespace Source.Models
         [Display(Name = "Cập nhật lần cuối")]
         public DateTime? UpdatedAt { get; set; }
 
+        // ─── Vận chuyển / Theo dõi thời gian thực ───
+        [Display(Name = "Tài xế")]
+        public int? DriverId { get; set; }
+
+        [ForeignKey("DriverId")]
+        [Display(Name = "Tài xế")]
+        public Driver? Driver { get; set; }
+
+        [Display(Name = "Tài xế nhận đơn lúc")]
+        public DateTime? DriverAcceptedAt { get; set; }
+
+        [Display(Name = "Thời gian giao dự kiến")]
+        public DateTime? EstimatedDeliveryTime { get; set; }
+
+        [Display(Name = "Đã xác nhận lúc")]
+        public DateTime? ConfirmedAt { get; set; }
+
+        [Display(Name = "Đã sẵn sàng lúc")]
+        public DateTime? ReadyAt { get; set; }
+
+        [Display(Name = "Đã lấy hàng lúc")]
+        public DateTime? PickedUpAt { get; set; }
+
+        [Display(Name = "Đã giao lúc")]
+        public DateTime? DeliveredAt { get; set; }
+
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+        public ICollection<OrderTrackingEvent> TrackingEvents { get; set; } = new List<OrderTrackingEvent>();
     }
 }

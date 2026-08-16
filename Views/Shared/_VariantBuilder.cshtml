@@ -1,0 +1,322 @@
+@{
+    var initialVariantsJson = ViewData["InitialVariantsJson"] as string ?? "[]";
+}
+
+<!-- Phân Loại Hàng (Variants) -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 rounded-top-4 pt-4 px-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold text-dark mb-1"><i class="fa-solid fa-layer-group me-2 text-danger"></i>Phân Loại Hàng</h6>
+            <small class="text-muted">Thêm các biến thể (Size, Màu sắc, Giá) cho món ăn. Mỗi phân loại là một tùy chọn riêng biệt.</small>
+        </div>
+        <button type="button" class="btn btn-primary-custom btn-custom btn-sm rounded-pill px-3" id="btnAddVariant">
+            <i class="fa-solid fa-plus me-1"></i> Thêm phân loại
+        </button>
+    </div>
+    <div class="card-body px-4 pb-4">
+        <input type="hidden" id="variantsJson" name="variantsJson" />
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="variantTable">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th class="border-0" style="width: 40px;"></th>
+                        <th class="border-0">Hình ảnh</th>
+                        <th class="border-0">Tên phân loại</th>
+                        <th class="border-0">Size</th>
+                        <th class="border-0">Màu sắc</th>
+                        <th class="border-0 text-end">Giá</th>
+                        <th class="border-0 text-end">Giá gốc</th>
+                        <th class="border-0 text-end">Tồn kho</th>
+                        <th class="border-0 text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="variantTbody">
+                    <tr id="variantEmptyRow">
+                        <td colspan="9" class="text-center py-5">
+                            <i class="fa-solid fa-box-open fa-3x text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-1">Chưa có phân loại nào.</p>
+                            <small class="text-muted">Bấm <strong>"+ Thêm phân loại"</strong> để bắt đầu tạo biến thể (size, màu sắc, giá).</small>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm Phân Loại -->
+<div class="modal fade" id="variantModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4 border-0">
+                <h5 class="modal-title fw-bold" id="variantModalTitle"><i class="fa-solid fa-layer-group me-2"></i>Thêm phân loại</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="variantIndex">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Tên phân loại <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-custom" id="variantName" placeholder="VD: Burger bò cỡ lớn">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Size <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-custom" id="variantSize" placeholder="VD: M, L, XL">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Màu sắc <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-custom" id="variantColor" placeholder="VD: Đỏ, Xanh">
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Giá bán (₫) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-custom" id="variantPrice" min="0" step="1000" placeholder="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Giá gốc (₫)</label>
+                        <input type="number" class="form-control form-control-custom" id="variantOriginalPrice" min="0" step="1000" placeholder="0 (để trống)">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Tồn kho <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-custom" id="variantStock" min="0" step="1" placeholder="0">
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Mã SKU</label>
+                        <input type="text" class="form-control form-control-custom" id="variantSku" placeholder="VD: BF-BURGER-M-DO">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Hình ảnh phân loại (tùy chọn)</label>
+                        <input type="file" class="form-control form-control-custom" id="variantImageFile" accept="image/*">
+                        <input type="hidden" id="variantImageUrl">
+                    </div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="variantAvailable" checked>
+                            <label class="form-check-label small fw-bold text-muted" for="variantAvailable">Còn hàng</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="variantDefault">
+                            <label class="form-check-label small fw-bold text-muted" for="variantDefault">Phân loại mặc định</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <img id="variantImagePreview" src="" class="img-fluid rounded-3 d-none" style="max-height: 120px; object-fit: cover;">
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary-custom btn-custom rounded-pill px-4" id="btnSaveVariant">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Lưu phân loại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+
+        var variants = @Html.Raw(initialVariantsJson);
+        var variantFile = null;
+
+        // ─── Variant modal ───
+        $('#btnAddVariant').on('click', function () {
+            $('#variantModalTitle').html('<i class="fa-solid fa-layer-group me-2"></i>Thêm phân loại');
+            $('#variantIndex').val('');
+            $('#variantName').val('');
+            $('#variantSize').val('');
+            $('#variantColor').val('');
+            $('#variantPrice').val('');
+            $('#variantOriginalPrice').val('');
+            $('#variantStock').val(0);
+            $('#variantSku').val('');
+            $('#variantAvailable').prop('checked', true);
+            $('#variantDefault').prop('checked', variants.length === 0);
+            variantFile = null;
+            $('#variantImageFile').val('');
+            $('#variantImageUrl').val('');
+            $('#variantImagePreview').addClass('d-none').attr('src', '');
+            new bootstrap.Modal(document.getElementById('variantModal')).show();
+        });
+
+        $('#variantImageFile').on('change', function () {
+            if (this.files && this.files[0]) {
+                variantFile = this.files[0];
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                    $('#variantImagePreview').attr('src', ev.target.result).removeClass('d-none');
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        $('#btnSaveVariant').on('click', function () {
+            var name = $('#variantName').val().trim();
+            var size = $('#variantSize').val().trim();
+            var color = $('#variantColor').val().trim();
+            var price = parseFloat($('#variantPrice').val()) || 0;
+            var originalPrice = parseFloat($('#variantOriginalPrice').val());
+            var stock = parseInt($('#variantStock').val(), 10) || 0;
+
+            if (!name) { window.showToast('Vui lòng nhập tên phân loại.', 'warning'); return; }
+            if (!size) { window.showToast('Vui lòng nhập size.', 'warning'); return; }
+            if (!color) { window.showToast('Vui lòng nhập màu sắc.', 'warning'); return; }
+
+            var variant = {
+                name: name,
+                size: size,
+                color: color,
+                price: price,
+                originalPrice: originalPrice && originalPrice > 0 ? originalPrice : null,
+                stock: stock,
+                sku: $('#variantSku').val().trim(),
+                imageUrl: $('#variantImageUrl').val() || '',
+                isAvailable: $('#variantAvailable').is(':checked'),
+                isDefault: $('#variantDefault').is(':checked')
+            };
+
+            var index = $('#variantIndex').val();
+            if (index !== '') {
+                variants[parseInt(index, 10)] = variant;
+            } else {
+                variants.push(variant);
+            }
+
+            if (variant.isDefault) {
+                variants.forEach(function (v, i) {
+                    if (i !== parseInt(index, 10) || index === '') v.isDefault = false;
+                });
+            }
+
+            renderVariants();
+            bootstrap.Modal.getInstance(document.getElementById('variantModal')).hide();
+            window.showToast('Đã lưu phân loại!', 'success');
+        });
+
+        // ─── Render variants table ───
+        function renderVariants() {
+            var $tbody = $('#variantTbody');
+            var $empty = $('#variantEmptyRow');
+            $empty.addClass('d-none');
+            $tbody.find('tr:not(#variantEmptyRow)').remove();
+
+            if (!variants.length) {
+                $empty.removeClass('d-none');
+                $('#variantCountBadge').text('0');
+                $('#priceRangeText').text('—');
+                $('#stockTotalText').text('0');
+                return;
+            }
+
+            var numberFmt = function (n) { return Number(n).toLocaleString('vi-VN'); };
+
+            variants.forEach(function (v, i) {
+                var img = v.imageUrl ? '<img src="' + v.imageUrl + '" class="rounded-3" style="width:48px;height:48px;object-fit:cover;">' : '<div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="fa-solid fa-box text-muted"></i></div>';
+                var price = '<span class="fw-bold text-danger">' + numberFmt(v.price) + ' ₫</span>';
+                if (v.originalPrice > v.price) {
+                    price += '<div><small class="text-muted text-decoration-line-through">' + numberFmt(v.originalPrice) + ' ₫</small></div>';
+                }
+                var badges = '';
+                if (v.isDefault) badges += '<span class="badge bg-primary rounded-pill me-1" style="font-size:.6rem;">Mặc định</span>';
+                if (!v.isAvailable) badges += '<span class="badge bg-secondary rounded-pill" style="font-size:.6rem;">Hết hàng</span>';
+
+                var row = '<tr data-index="' + i + '">' +
+                    '<td class="border-0"><i class="fa-solid fa-grip-vertical text-muted"></i></td>' +
+                    '<td class="border-0">' + img + '</td>' +
+                    '<td class="border-0"><span class="fw-bold text-dark small">' + $('<div>').text(v.name).html() + '</span>' + badges + '</td>' +
+                    '<td class="border-0"><span class="badge bg-light border text-dark">' + $('<div>').text(v.size).html() + '</span></td>' +
+                    '<td class="border-0"><span class="badge bg-light border text-dark"><i class="fa-solid fa-circle me-1" style="color:' + getColorHex(v.color) + ';"></i>' + $('<div>').text(v.color).html() + '</span></td>' +
+                    '<td class="border-0 text-end">' + price + '</td>' +
+                    '<td class="border-0 text-end"><span class="small text-muted">' + (v.originalPrice ? numberFmt(v.originalPrice) + ' ₫' : '—') + '</span></td>' +
+                    '<td class="border-0 text-end"><span class="fw-bold small ' + (v.stock <= 0 ? 'text-danger' : 'text-success') + '">' + v.stock + '</span></td>' +
+                    '<td class="border-0 text-end">' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2 js-edit-variant me-1" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2 js-del-variant" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>' +
+                    '</td></tr>';
+                $tbody.append(row);
+            });
+
+            var totalStock = variants.reduce(function (s, v) { return s + (v.stock || 0); }, 0);
+            var prices = variants.map(function (v) { return v.price; });
+            var min = Math.min.apply(null, prices);
+            var max = Math.max.apply(null, prices);
+            if ($('#variantCountBadge').length) $('#variantCountBadge').text(variants.length);
+            if ($('#priceRangeText').length) $('#priceRangeText').text(min === max ? numberFmt(min) + ' ₫' : numberFmt(min) + ' - ' + numberFmt(max) + ' ₫');
+            if ($('#stockTotalText').length) $('#stockTotalText').text(totalStock.toLocaleString('vi-VN'));
+
+            // Hidden JSON
+            $('#variantsJson').val(JSON.stringify(variants));
+        }
+
+        function getColorHex(colorName) {
+            var map = {
+                'do': '#e74c3c', 'đỏ': '#e74c3c', 'red': '#e74c3c',
+                'xanh': '#3498db', 'blue': '#3498db', 'xanh dương': '#3498db',
+                'xanh la': '#2ecc71', 'xanh lá': '#2ecc71', 'green': '#2ecc71',
+                'den': '#2c3e50', 'đen': '#2c3e50', 'black': '#2c3e50',
+                'trang': '#ecf0f1', 'trắng': '#ecf0f1', 'white': '#ecf0f1',
+                'vang': '#f1c40f', 'vàng': '#f1c40f', 'yellow': '#f1c40f',
+                'tim': '#9b59b6', 'tím': '#9b59b6', 'purple': '#9b59b6',
+                'cam': '#e67e22', 'orange': '#e67e22', 'hong': '#fd79a8', 'hồng': '#fd79a8', 'pink': '#fd79a8',
+                'nau': '#795548', 'nâu': '#795548', 'brown': '#795548',
+                'xam': '#95a5a6', 'xám': '#95a5a6', 'gray': '#95a5a6', 'grey': '#95a5a6'
+            };
+            var key = colorName.toLowerCase().trim();
+            return map[key] || '#6c757d';
+        }
+
+        // ─── Variant actions (edit/delete) ───
+        $('#variantTbody').on('click', '.js-edit-variant', function () {
+            var index = parseInt($(this).closest('tr').data('index'), 10);
+            var v = variants[index];
+            if (!v) return;
+            $('#variantModalTitle').html('<i class="fa-solid fa-layer-group me-2"></i>Sửa phân loại');
+            $('#variantIndex').val(index);
+            $('#variantName').val(v.name);
+            $('#variantSize').val(v.size);
+            $('#variantColor').val(v.color);
+            $('#variantPrice').val(v.price);
+            $('#variantOriginalPrice').val(v.originalPrice || '');
+            $('#variantStock').val(v.stock);
+            $('#variantSku').val(v.sku || '');
+            $('#variantAvailable').prop('checked', v.isAvailable);
+            $('#variantDefault').prop('checked', v.isDefault);
+            $('#variantImageUrl').val(v.imageUrl || '');
+            variantFile = null;
+            $('#variantImageFile').val('');
+            if (v.imageUrl) {
+                $('#variantImagePreview').attr('src', v.imageUrl).removeClass('d-none');
+            } else {
+                $('#variantImagePreview').addClass('d-none').attr('src', '');
+            }
+            new bootstrap.Modal(document.getElementById('variantModal')).show();
+        });
+
+        $('#variantTbody').on('click', '.js-del-variant', function () {
+            var index = parseInt($(this).closest('tr').data('index'), 10);
+            variants.splice(index, 1);
+            renderVariants();
+            window.showToast('Đã xóa phân loại.', 'success');
+        });
+
+        // Auto-fill SKU when typing name
+        $('#variantSku').on('focus', function () {
+            if (!$(this).val() && $('#variantName').val()) {
+                $(this).val($('#variantName').val().toUpperCase().replace(/[^A-Z0-9]/g, '-').replace(/-+/g, '-').slice(0, 20));
+            }
+        });
+
+        // Initial render
+        renderVariants();
+    })();
+</script>

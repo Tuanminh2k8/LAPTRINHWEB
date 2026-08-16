@@ -127,10 +127,10 @@
                                         <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
                                             <i class="fa-solid fa-eye me-1"></i> Xem chi tiết
                                         </a>
-                                        @if (order.Status == "Pending")
+                                        @if (order.Status == "Pending" || order.Status == "Delivered")
                                         {
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#cancelModal@order.Id">
-                                                <i class="fa-solid fa-xmark me-1"></i> Hủy đơn
+                                            <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#rebuyModal@order.Id">
+                                                <i class="fa-solid fa-repeat me-1"></i> Mua lại
                                             </button>
                                         }
                                     </div>
@@ -203,9 +203,55 @@
         </div>
     </div>
 }
-
+@foreach (var order in Model.Where(o => o.Status == "Pending" || o.Status == "Delivered"))
+{
+    <div class="modal fade" id="rebuyModal@order.Id" tabindex="-1" aria-labelledby="rebuyModalLabel@order.Id" aria-hidden="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <form asp-action="Rebuy" asp-route-id="@order.Id" method="post" class="ajax-rebuy-form" data-order-id="@order.Id">
+                    <div class="modal-header bg-success text-white rounded-top-4 border-0">
+                        <h5 class="modal-title fw-600" id="rebuyModalLabel@order.Id"><i class="fa-solid fa-repeat me-2"></i>Mua lại đơn hàng #@order.Id</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <p class="text-muted mb-3">Bạn có chắc chắn muốn mua lại đơn hàng <strong>#@order.Id</strong> không? Các món ăn trong đơn sẽ được thêm vào giỏ hàng.</p>
+                        <div class="order-snapshot">
+                            <h6>Sản phẩm trong đơn:</h6>
+                            <div class="row g-3">
+                                @foreach (var detail in order.OrderDetails.Take(5))
+                                {
+                                    <div class="col-12 col-sm-6">
+                                        <div class="card border-0 p-3">
+                                            <img src="@(detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? "/images/default_food.svg")" class="rounded" style="width: 50px; height: 50px; object-fit: cover;" alt="@detail.FastFoodName">
+                                            <div class="mt-2 small">
+                                                <strong>@detail.FastFoodName ?? "Sản phẩm"</strong><br>
+                                                <span>x@detail.Quantity</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                @if (order.OrderDetails.Count > 5)
+                                {
+                                    <div class="col-12 text-center small text-muted">
+                                        + @(order.OrderDetails.Count - 5) món khác
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <input type="hidden" name="rebuyNote" value="Mua lại đơn #@order.Id">
+                    </div>
+                    <div class="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4">
+                            <i class="fa-solid fa-check me-1"></i> Thêm vào giỏ hàng
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
 @section Scripts {
-    <script>
         $(function () {
             document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
                 btn.addEventListener('click', function () {
@@ -236,6 +282,39 @@
                             var modal = bootstrap.Modal.getInstance(document.querySelector(modalId));
                             if (modal) modal.hide();
                             PolyFood.showToast('Hủy đơn hàng thành công!', 'success');
+                            setTimeout(function () { window.location.reload(); }, 1000);
+                        } else {
+                            PolyFood.showToast(res.message || 'Có lỗi xảy ra.', 'danger');
+                        }
+                    },
+                    error: function (xhr) {
+                        var msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        PolyFood.showToast(msg, 'danger');
+                    },
+                    complete: function () {
+                        $submitBtn.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            });
+
+            // Handle rebuy form submit
+            $(document).on('submit', '.ajax-rebuy-form', function (e) {
+                e.preventDefault();
+                var $form = $(this);
+                var $submitBtn = $form.find('button[type="submit"]');
+                var originalHtml = $submitBtn.html();
+                $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...');
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: $form.serialize(),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    success: function (res) {
+                        if (res.success) {
+                            var modalId = '#rebuyModal' + $form.data('order-id');
+                            var modal = bootstrap.Modal.getInstance(document.querySelector(modalId));
+                            if (modal) modal.hide();
+                            PolyFood.showToast('Đã thêm món ăn vào giỏ hàng!', 'success');
                             setTimeout(function () { window.location.reload(); }, 1000);
                         } else {
                             PolyFood.showToast(res.message || 'Có lỗi xảy ra.', 'danger');

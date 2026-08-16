@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Source.Helpers;
 using Source.Models;
+using Source.Services;
 
 namespace Source.Controllers
 {
@@ -11,11 +12,13 @@ namespace Source.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<OrdersController> _logger;
+        private readonly IOrderTrackingService _tracking;
 
-        public OrdersController(AppDbContext context, ILogger<OrdersController> logger)
+        public OrdersController(AppDbContext context, ILogger<OrdersController> logger, IOrderTrackingService tracking)
         {
             _context = context;
             _logger = logger;
+            _tracking = tracking;
         }
 
         public async Task<IActionResult> Index(int page = 1)
@@ -167,11 +170,14 @@ namespace Source.Controllers
 
             try
             {
-                order.Status = OrderStatus.Cancelled;
+                var result = await _tracking.TransitionAsync(order, OrderStatus.Cancelled, "Customer", cancelReason);
+                if (!result.ok)
+                {
+                    if (isAjax) return Json(new { success = false, message = result.error });
+                    TempData["ErrorMessage"] = result.error;
+                    return RedirectToAction("Details", new { id });
+                }
                 order.CancelReason = cancelReason;
-                order.UpdatedAt = DateTime.Now;
-                _context.Update(order);
-
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Customer cancelled order #{OrderId}. Reason: {Reason}", id, cancelReason);

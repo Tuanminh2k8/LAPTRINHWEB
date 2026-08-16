@@ -1563,6 +1563,24 @@ small { font-size: 0.85rem; }
 .card-food { transition: transform .2s ease, box-shadow .2s ease; }
 .card-food:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
 
+/* ─── Auto-Slider Banner ─── */
+.polyfood-hero-banner { position: relative; color: white; }
+.polyfood-hero-banner .carousel-slider { position: relative; height: 450px; overflow: hidden; }
+.polyfood-hero-banner .slider-item { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1s ease-in-out; }
+.polyfood-hero-banner .slider-item.active { opacity: 1; }
+.polyfood-hero-banner .slider-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.polyfood-hero-banner .slider-img img { width: 100%; height: 100%; object-fit: cover; }
+.polyfood-hero-banner .slider-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 30px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.8)); color: white; flex: 1; }
+.polyfood-hero-banner .slider-caption h4 { margin: 0 0 8px; font-size: 1.5rem; font-weight: bold; }
+.polyfood-hero-banner .slider-caption p { margin: 0; font-size: 1rem; opacity: 0.8; }
+.polyfood-hero-banner .slider-control { position: absolute; top: 50%; transform: translateY(-50%); width: 45px; height: 45px; background: rgba(0, 0, 0, 0.6); color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; z-index: 10; transition: background 0.3s; }
+.polyfood-hero-banner .slider-control.prev { left: 20px; }
+.polyfood-hero-banner .slider-control.next { right: 20px; }
+.polyfood-hero-banner .slider-control:hover { background: rgba(0, 0, 0, 0.8); }
+.polyfood-hero-banner .slider-dots { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+.polyfood-hero-banner .slider-dot { height: 12px; width: 12px; background-color: rgba(255, 255, 255, 0.5); border-radius: 50%; cursor: pointer; transition: background 0.3s ease; border: 2px solid rgba(255, 255, 255, 0.5); }
+.polyfood-hero-banner .slider-dot.active { background-color: #fff; border-color: #fff; }
+
 /* ─── Focus states (accessibility) ─── */
 .form-control-custom:focus { border-color: #dc3545; box-shadow: 0 0 0 .2rem rgba(220,53,69,.12); }
 
@@ -1589,3 +1607,52 @@ small { font-size: 0.85rem; }
 .cm-group:last-child { border-bottom: none; padding-bottom: 0; }
 #cm-add-btn { font-size: 0.92rem; }
 #cm-add-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ─── Food Variant Builder ─── */
+#imageDropzone { border-color: var(--gray-200) !important; background: var(--gray-50); }
+#imageDropzone:hover { border-color: var(--primary) !important; background: var(--primary-light); }
+#variantTbody tr { transition: background var(--transition-fast); }
+#variantTbody tr:hover { background: var(--gray-50); }
+#variantTbody .badge { font-weight: 600; }
+.sticky-top { z-index: 5; }
+
+/* ─── Shopee-style Product Page ─── */
+#galleryMain { transition: transform 0.35s ease; }
+.gallery-main:hover #galleryMain { transform: scale(1.05); }
+.gallery-thumb {
+  padding: 0; border: 2px solid var(--gray-200); border-radius: var(--radius-md);
+  overflow: hidden; background: var(--white); flex-shrink: 0;
+  transition: border-color var(--transition-fast);
+}
+.gallery-thumb.active { border-color: var(--primary); }
+.gallery-thumb:hover { border-color: var(--primary-light); }
+
+.variant-chip { cursor: pointer; }
+.variant-chip-inner {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-width: 72px; padding: 10px 16px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+  background: var(--white); transition: all var(--transition-fast);
+  font-weight: 600; color: var(--gray-800);
+}
+.variant-chip:hover .variant-chip-inner { border-color: var(--primary-light); background: var(--primary-light); }
+.variant-chip input:checked + .variant-chip-inner {
+  border-color: var(--primary); background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(255, 56, 56, 0.12); color: var(--primary);
+}
+.variant-chip-stock { font-size: 0.7rem; font-weight: 600; }
+
+.mod-option-chip { cursor: pointer; }
+.mod-option-inner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+  background: var(--white); transition: all var(--transition-fast);
+}
+.mod-option-chip:hover .mod-option-inner { border-color: var(--primary-light); background: var(--primary-light); }
+.mod-option-chip input:checked + .mod-option-inner {
+  border-color: var(--primary); background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(255, 56, 56, 0.12);
+}
+.mod-option-name { font-size: 0.82rem; font-weight: 600; color: var(--gray-800); }
+.mod-option-price { font-size: 0.75rem; font-weight: 600; color: var(--primary); }

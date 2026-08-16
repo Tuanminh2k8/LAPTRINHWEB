@@ -1,0 +1,106 @@
+@model List<Source.Models.Driver>
+@{
+    ViewData["Title"] = "Quản Lý Tài Xế";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fa-solid fa-motorcycle me-2 text-danger"></i>Quản Lý Tài Xế</h4>
+    <span class="badge bg-danger rounded-pill px-3 py-2">@Model.Count(d => d.IsActive) tài xế hoạt động</span>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Tài xế</th>
+                        <th>SĐT</th>
+                        <th>Phương tiện</th>
+                        <th class="text-center">Đánh giá</th>
+                        <th class="text-center">Số chuyến</th>
+                        <th class="text-center">Trực tuyến</th>
+                        <th class="text-center">Hoạt động</th>
+                        <th class="pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="@(d.AvatarUrl ?? "/images/default_avatar.svg")" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+                                    <div>
+                                        <div class="fw-bold">@d.FullName</div>
+                                        <div class="small text-muted">@(d.User?.Username ?? "-")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@d.PhoneNumber</td>
+                            <td>
+                                <div>@d.VehicleType</div>
+                                <div class="small text-muted">@d.LicensePlate</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="text-warning"><i class="fa-solid fa-star"></i> @d.Rating.ToString("F1")</span>
+                            </td>
+                            <td class="text-center">@d.TotalDeliveries</td>
+                            <td class="text-center">
+                                @if (d.IsOnline)
+                                {
+                                    <span class="badge bg-success"><i class="fa-solid fa-circle me-1"></i>Online</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="fa-solid fa-circle me-1"></i>Offline</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (d.IsActive)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Vô hiệu</span>
+                                }
+                            </td>
+                            <td class="pe-3">
+                                <div class="d-flex gap-1">
+                                    <a asp-action="DriverEdit" asp-route-id="@d.Id" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form asp-action="DriverToggle" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-@(d.IsActive ? "danger" : "success") rounded-pill">
+                                            @if (d.IsActive)
+                                            {
+                                                <i class="fa-solid fa-ban"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-solid fa-check"></i>
+                                            }
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

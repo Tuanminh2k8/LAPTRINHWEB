@@ -1,0 +1,55 @@
+@model Source.Models.Driver
+@{
+    ViewData["Title"] = "Sửa Tài Xế";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fa-solid fa-motorcycle me-2 text-danger"></i>Sửa Tài Xế</h4>
+    <a asp-action="Drivers" class="btn btn-outline-secondary rounded-pill"><i class="fa-solid fa-arrow-left me-1"></i>Quay lại</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4" style="max-width:640px;">
+    <div class="card-body p-4">
+        <form asp-action="DriverEdit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="UserId" />
+            <input type="hidden" asp-for="FullName" />
+            <input type="hidden" asp-for="PhoneNumber" />
+
+            <div class="mb-3">
+                <label class="form-label fw-bold small text-muted">Họ và tên</label>
+                <div class="form-control form-control-custom bg-light">@Model.FullName</div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="VehicleType" class="form-label fw-bold small text-muted"></label>
+                <select asp-for="VehicleType" class="form-select form-control-custom">
+                    <option>Xe máy</option>
+                    <option>Ô tô</option>
+                    <option>Xe đạp</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="LicensePlate" class="form-label fw-bold small text-muted"></label>
+                <input asp-for="LicensePlate" class="form-control form-control-custom" placeholder="VD: 29A-12345" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="AvatarUrl" class="form-label fw-bold small text-muted"></label>
+                <input asp-for="AvatarUrl" class="form-control form-control-custom" placeholder="URL ảnh đại diện (tùy chọn)" />
+            </div>
+
+            <div class="form-check form-switch mb-4">
+                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                <label asp-for="IsActive" class="form-check-label fw-bold small text-muted">Đang hoạt động</label>
+            </div>
+
+            <button type="submit" class="btn btn-danger btn-custom rounded-pill px-4">
+                <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thay đổi
+            </button>
+        </form>
+    </div>
+</div>

@@ -120,6 +120,11 @@
                                     <li><hr class="dropdown-divider my-1"></li>
                                     <li><a class="dropdown-item py-2 fw-bold text-danger" asp-controller="Admin" asp-action="Index"><i class="fa-solid fa-shield-hooded me-2"></i> Trang quản trị</a></li>
                                     }
+                                    @if (role == "Seller" || role == "Admin")
+                                    {
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <li><a class="dropdown-item py-2 fw-bold text-warning" asp-controller="Seller" asp-action="Index"><i class="fa-solid fa-store me-2"></i> Kênh người bán</a></li>
+                                    }
                                     <li><hr class="dropdown-divider my-1"></li>
                                     <li><a class="dropdown-item py-2 text-danger fw-bold" asp-controller="Account" asp-action="Logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a></li>
                                 </ul>
@@ -137,16 +142,7 @@
         </nav>
     </header>
 
-    @if (isAuthenticated && role == "Admin")
-    {
-    <div class="admin-return-bar" id="adminReturnBar">
-        <a asp-controller="Admin" asp-action="Index" class="admin-return-btn">
-            <i class="fa-solid fa-shield-hooded"></i> Quay lại Quản trị
-        </a>
-    </div>
-    }
-
-    <div class="main-wrapper animate-fadeIn @(isAuthenticated && role == "Admin" ? "has-admin-bar" : "")" style="margin-top: var(--nav-height);">
+    <div class="main-wrapper animate-fadeIn" style="margin-top: var(--nav-height);">
         @if (TempData["SuccessMessage"] != null)
         {
             <div class="container mt-3">

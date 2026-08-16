@@ -1,0 +1,278 @@
+@model IEnumerable<Source.Models.Order>
+@{
+    Layout = "_SellerLayout";
+    ViewData["Title"] = "Seller Dashboard";
+}
+
+<div class="row g-4 mb-4">
+    <!-- Thống kê doanh thu -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-primary border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-600 text-uppercase mb-1">Tổng Doanh Thu</h6>
+                    <h3 class="fw-800 text-primary mb-0">@(((decimal)ViewBag.TotalRevenue).ToString("N0")) ₫</h3>
+                </div>
+                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-money-bill-trend-up fs-4"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Từ đơn hoàn thành</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê đơn hàng -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-warning border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-600 text-uppercase mb-1">Đơn Chờ Xác Nhận</h6>
+                    <h3 class="fw-800 text-warning mb-0">@ViewBag.PendingOrders</h3>
+                </div>
+                <div class="bg-warning-subtle text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-hourglass-start fs-4"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Cần xử lý gấp</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Đơn đang chuẩn bị -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-info border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-600 text-uppercase mb-1">Đang Chuẩn Bị / Giao</h6>
+                    <h3 class="fw-800 text-info mb-0">@(ViewBag.PreparingOrders + ViewBag.ShippingOrders)</h3>
+                </div>
+                <div class="bg-info-subtle text-info rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-motorcycle fs-4"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <span class="text-info fw-bold"><i class="fa-solid fa-spinner fa-spin me-1"></i>Đang trong tiến trình</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tổng số sản phẩm -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-success border-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted small fw-600 text-uppercase mb-1">Tổng Món Ăn</h6>
+                    <h3 class="fw-800 text-success mb-0">@ViewBag.TotalFoods</h3>
+                </div>
+                <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-burger fs-4"></i>
+                </div>
+            </div>
+            <div class="mt-3 small text-muted">
+                <a asp-action="Foods" class="text-success text-decoration-none fw-bold">Quản lý món ăn <i class="fa-solid fa-angle-right ms-1"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Biểu đồ doanh thu tuần -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-line me-2 text-danger"></i> Phân Tích Doanh Thu</h5>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill small">7 ngày gần nhất</span>
+            </div>
+            <div style="position: relative; height: 320px;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hướng dẫn bán hàng Shopee -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+            <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-bullhorn me-2 text-danger"></i> Cẩm Nang Người Bán</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-start gap-3 p-2 rounded-3 hover-bg-light transition-all" style="cursor: pointer;">
+                    <span class="fs-4 text-warning"><i class="fa-solid fa-star"></i></span>
+                    <div>
+                        <h6 class="fw-bold mb-1 small text-dark">Tối ưu hóa Đánh giá sao</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Phản hồi bình luận kèm hình ảnh nhanh chóng giúp tăng uy tín cho cửa hàng của bạn.</p>
+                    </div>
+                </div>
+<div class="d-flex align-items-start gap-3 p-2 rounded-3 hover-bg-light transition-all" style="cursor: pointer;" onclick="window.location.href='/Seller/ProductVariantForm'">
+                        <span class="fs-4 text-info"><i class="fa-solid fa-sliders"></i></span>
+                        <div>
+                            <h6 class="fw-bold mb-1 small text-dark">Sử dụng Tùy chọn Món (Variant)</h6>
+                            <p class="text-muted mb-0" style="font-size: 0.75rem;">Cài đặt các nhóm Size, Topping khác nhau để khách dễ dàng tùy chỉnh món ăn và tăng giá trị đơn hàng.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-3 p-2 rounded-3 hover-bg-light transition-all" style="cursor: pointer;" onclick="window.location.href='/Seller/ProductVariantForm'">
+                        <span class="fs-4 text-success"><i class="fa-solid fa-bowl-food"></i></span>
+                        <div>
+                            <h6 class="fw-bold mb-1 small text-dark">Quản lý Phiên Bản Món</h6>
+                            <p class="text-muted mb-0" style="font-size: 0.75rem;">Thiết lập kích cỡ, topping, độ cay cho từng món ăn của cửa hàng.</p>
+                        </div>
+                    </div>
+                <div class="d-flex align-items-start gap-3 p-2 rounded-3 hover-bg-light transition-all" style="cursor: pointer;">
+                    <span class="fs-4 text-success"><i class="fa-solid fa-truck-fast"></i></span>
+                    <div>
+                        <h6 class="fw-bold mb-1 small text-dark">Chuẩn bị đơn hàng siêu tốc</h6>
+                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Xác nhận đơn ngay khi nhận thông báo giúp shipper đến lấy hàng nhanh hơn, hạn chế hủy đơn.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách đơn hàng mới -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-receipt me-2 text-danger"></i> Đơn Hàng Mới Nhận</h5>
+                <a asp-action="Orders" class="btn btn-outline-danger btn-sm rounded-pill px-3">Xem tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="small text-muted text-uppercase">
+                            <th class="ps-4">Mã đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Khách hàng</th>
+                            <th>Hình thức</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th class="pe-4 text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fa-solid fa-box-open fa-3x mb-3 text-muted"></i>
+                                    <p class="small mb-0">Chưa có đơn hàng nào cần xử lý.</p>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var order in Model)
+                            {
+                                var badgeClass = Source.Models.OrderStatus.GetBadgeClass(order.Status);
+                                var label = Source.Models.OrderStatus.GetLabel(order.Status);
+                                <tr>
+                                    <td class="ps-4 fw-bold text-dark">#@order.Id</td>
+                                    <td class="small text-muted">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="fw-600">@order.ReceiverName</div>
+                                        <div class="small text-muted">@order.ReceiverPhone</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border rounded-pill">@(order.OrderType == "Pickup" ? "Tới lấy" : "Giao tận nơi")</span>
+                                    </td>
+                                    <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") ₫</td>
+                                    <td>
+                                        <span class="badge @badgeClass px-2 py-1">@label</span>
+                                    </td>
+                                    <td class="pe-4 text-end">
+                                        <a asp-action="OrderDetail" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="fa-solid fa-eye"></i> Xử lý đơn
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js"></script>
+    <script>
+        $(function () {
+            var ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Random dữ liệu tuần để demo đẹp như Shopee
+            var days = [];
+            for (var i = 6; i >= 0; i--) {
+                var d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }));
+            }
+            
+            var baseRevenue = @(ViewBag.TotalRevenue > 0 ? ViewBag.TotalRevenue : 500000);
+            var dataPoints = [
+                Math.round(baseRevenue * 0.6),
+                Math.round(baseRevenue * 0.8),
+                Math.round(baseRevenue * 0.5),
+                Math.round(baseRevenue * 1.2),
+                Math.round(baseRevenue * 0.9),
+                Math.round(baseRevenue * 1.1),
+                baseRevenue
+            ];
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Doanh thu (₫)',
+                        data: dataPoints,
+                        borderColor: '#ee4d2d',
+                        backgroundColor: 'rgba(238, 77, 45, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#ee4d2d',
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#f0f0f0'
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Plus Jakarta Sans'
+                                },
+                                callback: function(value) {
+                                    return value.toLocaleString('vi-VN') + ' ₫';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: 'Plus Jakarta Sans'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

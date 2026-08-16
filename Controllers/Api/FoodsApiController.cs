@@ -128,9 +128,39 @@ namespace Source.Controllers.Api
                     f.SoldCount,
                     f.IsAvailable,
                     f.IsBestSeller,
+                    f.Sku,
                     avgRating = f.Reviews.Any() ? f.Reviews.Average(r => (double)r.Rating) : 0,
                     reviewCount = f.Reviews.Count,
                     CategoryName = f.Category != null ? f.Category.Name : "",
+                    // Phân loại (FoodVariant) — size/SKU kèm tồn kho thật
+                    variants = f.Variants
+                        .Where(v => v.IsAvailable && v.StockQuantity > 0)
+                        .OrderBy(v => v.SortOrder)
+                        .Select(v => new
+                        {
+                            v.Id,
+                            v.Name,
+                            v.Size,
+                            v.Color,
+                            v.Price,
+                            v.OriginalPrice,
+                            v.StockQuantity,
+                            v.IsAvailable,
+                            v.IsDefault,
+                            v.ImageUrl,
+                            displayName = v.DisplayName
+                        })
+                        .ToList(),
+                    // Shop / người bán
+                    seller = f.Seller != null ? new
+                    {
+                        f.Seller.Id,
+                        f.Seller.FullName,
+                        f.Seller.Email,
+                        productCount = f.SellerId.HasValue
+                            ? _context.FastFoods.Count(sf => sf.SellerId == f.Seller!.Id)
+                            : 0
+                    } : null,
                     modifierGroups = f.ModifierGroups
                         .OrderBy(g => g.SortOrder)
                         .Select(g => new
@@ -140,6 +170,7 @@ namespace Source.Controllers.Api
                             g.Description,
                             g.IsMultiple,
                             g.MaxOptions,
+                            g.MinOptions,
                             options = g.Options
                                 .OrderBy(o => o.SortOrder)
                                 .Select(o => new
@@ -159,7 +190,70 @@ namespace Source.Controllers.Api
                 return NotFound(new { message = "Không tìm thấy món ăn." });
             }
 
-            return Ok(food);
+            // Thư viện ảnh (gallery) — ưu tiên FoodImage, fallback ảnh chính
+            var images = await _context.FoodImages
+                .AsNoTracking()
+                .Where(fi => fi.FastFoodId == id)
+                .OrderBy(fi => fi.SortOrder)
+                .Select(fi => new { fi.ImageUrl, fi.IsPrimary, fi.AltText })
+                .ToListAsync();
+
+            if (images.Count == 0)
+            {
+                images.Add(new { ImageUrl = food.ImageUrl, IsPrimary = true, AltText = food.Name });
+            }
+
+            return Ok(new
+            {
+                food.Id,
+                food.Name,
+                food.Price,
+                food.Description,
+                food.ImageUrl,
+                food.CategoryId,
+                food.Theme,
+                food.SoldCount,
+                food.IsAvailable,
+                food.IsBestSeller,
+                food.Sku,
+                food.avgRating,
+                food.reviewCount,
+                food.CategoryName,
+                food.variants,
+                food.seller,
+                food.modifierGroups,
+                images
+            });
+        }
+
+        // GET: api/foods/5/variants — danh sách phân loại kèm tồn kho thật
+        [HttpGet("{id:int}/variants")]
+        public async Task<ActionResult> GetFoodVariants(int id)
+        {
+            var exists = await _context.FastFoods.AnyAsync(f => f.Id == id);
+            if (!exists) return NotFound(new { message = "Không tìm thấy món ăn." });
+
+            var variants = await _context.FoodVariants
+                .AsNoTracking()
+                .Where(v => v.FastFoodId == id)
+                .OrderBy(v => v.SortOrder)
+                .Select(v => new
+                {
+                    v.Id,
+                    v.Name,
+                    v.Size,
+                    v.Color,
+                    v.Price,
+                    v.OriginalPrice,
+                    v.StockQuantity,
+                    v.IsAvailable,
+                    v.IsDefault,
+                    v.ImageUrl,
+                    displayName = v.DisplayName
+                })
+                .ToListAsync();
+
+            return Ok(new { foodId = id, variants });
         }
 
         // POST: api/foods

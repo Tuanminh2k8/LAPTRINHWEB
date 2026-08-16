@@ -50,6 +50,8 @@
                 <label asp-for="Role" class="form-label fw-bold small text-muted"></label>
                 <select asp-for="Role" class="form-select form-control-custom">
                     <option value="Customer">Customer (Khách hàng)</option>
+                    <option value="Seller">Seller (Người bán)</option>
+                    <option value="Driver">Driver (Tài xế)</option>
                     <option value="Admin">Admin (Quản trị viên)</option>
                 </select>
                 <span asp-validation-for="Role" class="text-danger small"></span>

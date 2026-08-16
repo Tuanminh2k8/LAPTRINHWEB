@@ -26,12 +26,25 @@ namespace Source.Models
             {
                 SeedCategories(context);
                 SeedUsers(context);
-                SeedOrders(context);
                 SeedFoods(context);
+                SeedOrders(context);
                 SeedModifiers(context);
                 SeedCombos(context);
                 SeedBranches(context);
                 SeedPromoCodes(context);
+
+                // Cập nhật các món ăn chưa có SellerId để dễ demo phân quyền
+                var anonymousFoods = context.FastFoods.Where(f => f.SellerId == null).ToList();
+                if (anonymousFoods.Any())
+                {
+                    var random = new Random();
+                    foreach (var f in anonymousFoods)
+                    {
+                        f.SellerId = (random.Next(2) == 0) ? 3 : 1;
+                    }
+                    context.SaveChanges();
+                    Console.WriteLine($"[DbInitializer] Assigned SellerId to {anonymousFoods.Count} anonymous foods.");
+                }
             }
             catch (Exception ex)
             {
@@ -96,6 +109,16 @@ namespace Source.Models
                     PhoneNumber = "0912345678",
                     Address = "456 Đường Quang Trung, Gò Vấp, TP.HCM",
                     Role = "Customer"
+                },
+                new User
+                {
+                    Username = "seller",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("seller123", workFactor: 11),
+                    FullName = "Người Bán Hàng Shopee",
+                    Email = "seller@fastfood.com",
+                    PhoneNumber = "0909090909",
+                    Address = "789 Đường Lê Lợi, Quận 1, TP.HCM",
+                    Role = "Seller"
                 }
             );
             context.SaveChanges();

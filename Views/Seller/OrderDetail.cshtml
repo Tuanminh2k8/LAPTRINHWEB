@@ -1,0 +1,194 @@
+@model Source.Models.Order
+@{
+    Layout = "_SellerLayout";
+    ViewData["Title"] = "Chi tiết Đơn hàng #" + Model.Id;
+    var sellerFoodIds = (List<int>)ViewBag.SellerFoodIds;
+
+    // Lọc ra các chi tiết đơn hàng thuộc về món ăn của Seller hiện tại
+    var sellerDetails = Model.OrderDetails
+        .Where(d => d.FastFoodId != null && sellerFoodIds.Contains(d.FastFoodId.Value))
+        .ToList();
+
+    int activeStep = Model.Status switch
+    {
+        "Delivered" => 4,
+        "Shipping" => 3,
+        "Preparing" => 2,
+        "Cancelled" => 0,
+        "Refunded" => 0,
+        _ => 1
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold text-dark mb-1">Chi Tiết Đơn Hàng #@Model.Id</h4>
+        <p class="text-muted small mb-0">Ngày đặt hàng: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    <a asp-action="Orders" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
+        <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Cột bên trái: Chi tiết món ăn và trạng thái -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+            <h5 class="fw-bold text-dark mb-4">Trạng Thái Đơn Hàng Hiện Tại</h5>
+            
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+                <span class="text-muted small fw-500">Trạng thái:</span>
+                <span class="badge @Source.Models.OrderStatus.GetBadgeClass(Model.Status) px-3 py-2 rounded-pill small">
+                    @Source.Models.OrderStatus.GetLabel(Model.Status)
+                </span>
+            </div>
+
+            <!-- Quy trình xử lý đơn hàng giống shopee -->
+            <div class="row g-2 border-top pt-3">
+                <div class="col-md-3">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="Preparing" />
+                        <button type="submit" class="btn btn-warning text-dark w-100 rounded-pill px-3 fw-bold btn-sm @(Model.Status == "Pending" ? "" : "disabled")" @(Model.Status == "Pending" ? "" : "disabled")>
+                            <i class="fa-solid fa-utensils me-1"></i> 1. Xác nhận & Chuẩn bị
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-3">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="Shipping" />
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill px-3 fw-bold btn-sm @(Model.Status == "Preparing" ? "" : "disabled")" @(Model.Status == "Preparing" ? "" : "disabled")>
+                            <i class="fa-solid fa-motorcycle me-1"></i> 2. Giao cho Shipper
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-3">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="Delivered" />
+                        <button type="submit" class="btn btn-success w-100 rounded-pill px-3 fw-bold btn-sm @(Model.Status == "Shipping" ? "" : "disabled")" @(Model.Status == "Shipping" ? "" : "disabled")>
+                            <i class="fa-solid fa-circle-check me-1"></i> 3. Giao thành công
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-3">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="Cancelled" />
+                        <button type="submit" class="btn btn-outline-danger w-100 rounded-pill px-3 fw-bold btn-sm @(Model.Status == "Pending" ? "" : "disabled")" @(Model.Status == "Pending" ? "" : "disabled") onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')">
+                            <i class="fa-solid fa-xmark me-1"></i> Hủy đơn
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            @if (Model.Status == "Cancelled")
+            {
+                <div class="alert alert-danger border-0 rounded-3 p-3 mt-3 d-flex align-items-start gap-3">
+                    <i class="fa-solid fa-circle-exclamation fs-4 text-danger mt-1"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Đơn hàng đã bị hủy</h6>
+                        <p class="text-muted small mb-0">@(string.IsNullOrEmpty(Model.CancelReason) ? "Hủy bởi người bán hoặc khách hàng." : Model.CancelReason)</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Danh sách món ăn thuộc về Seller này -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-bowl-food text-danger me-2"></i> Món Ăn Của Bạn Cần Chuẩn Bị</h5>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Món ăn</th>
+                            <th class="text-center">Đơn giá</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detail in sellerDetails)
+                        {
+                            var name = detail.FastFoodName ?? detail.FastFood?.Name ?? "Sản phẩm";
+                            var img = detail.ProductImageUrl ?? detail.FastFood?.ImageUrl ?? "/images/default_food.svg";
+                            var modifierTotal = detail.Modifiers.Sum(m => m.OptionPrice);
+
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@img" alt="@name" class="rounded-3" style="width: 42px; height: 42px; object-fit: cover;">
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size:.85rem;">@name</div>
+                                            @if (detail.Modifiers.Any())
+                                            {
+                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                    @foreach (var m in detail.Modifiers)
+                                                    {
+                                                        <span class="badge bg-light border text-muted rounded-pill" style="font-size:.65rem;">
+                                                            @m.OptionName @(m.OptionPrice > 0 ? "+" + m.OptionPrice.ToString("N0") + "₫" : "")
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center small">@((detail.Price + modifierTotal).ToString("N0")) ₫</td>
+                                <td class="text-center fw-bold">x @detail.Quantity</td>
+                                <td class="text-end fw-bold text-danger small">@(((detail.Price + modifierTotal) * detail.Quantity).ToString("N0")) ₫</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                <span class="fw-bold text-dark" style="font-size:1rem;">Tổng cộng phần ăn của bạn:</span>
+                <span class="fw-800 text-danger" style="font-size:1.4rem;">
+                    @(sellerDetails.Sum(d => (d.Price + d.Modifiers.Sum(m => m.OptionPrice)) * d.Quantity).ToString("N0")) ₫
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột bên phải: Thông tin giao hàng -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 sticky-top" style="top: 100px;">
+            <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-truck text-danger me-2"></i> Thông Tin Giao Hàng</h5>
+            
+            <div class="mb-3 p-3 bg-light rounded-3">
+                <div class="text-muted small mb-1"><i class="fa-solid fa-user me-2"></i>Khách hàng</div>
+                <div class="fw-bold text-dark">@Model.ReceiverName</div>
+            </div>
+            
+            <div class="mb-3 p-3 bg-light rounded-3">
+                <div class="text-muted small mb-1"><i class="fa-solid fa-phone me-2"></i>Số điện thoại</div>
+                <div class="fw-bold text-dark">@Model.ReceiverPhone</div>
+            </div>
+
+            <div class="mb-3 p-3 bg-light rounded-3">
+                <div class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2"></i>Địa chỉ nhận hàng</div>
+                <div class="fw-bold text-dark">@Model.ReceiverAddress</div>
+            </div>
+
+            <div class="mb-3 p-3 bg-light rounded-3">
+                <div class="text-muted small mb-1"><i class="fa-solid fa-credit-card me-2"></i>Phương thức thanh toán</div>
+                <div class="fw-bold text-dark">@(Model.PaymentMethod == "Bank" ? "Chuyển khoản" : "Thanh toán khi nhận hàng (COD)")</div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <div class="p-3 bg-warning-subtle rounded-3">
+                    <div class="text-muted small mb-1"><i class="fa-solid fa-note-sticky me-2"></i>Ghi chú của khách</div>
+                    <div class="fw-bold text-dark">@Model.Note</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

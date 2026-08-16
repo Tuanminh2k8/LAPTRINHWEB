@@ -56,6 +56,30 @@
     </div>
 </template>
 
+<template id="cm-variant-group-template">
+    <div class="cm-group">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold text-dark mb-0">Phân loại (Size / Màu)</h6>
+            <small class="text-muted">Chọn 1</small>
+        </div>
+        <div class="d-flex flex-wrap gap-2 cm-variants"></div>
+    </div>
+</template>
+
+<template id="cm-variant-option">
+    <label class="cm-option-chip">
+        <input type="radio" class="cm-var-input d-none" name="cm-variant" value="__ID__" data-price="__PRICE__" data-stock="__STOCK__" data-default="__DEFAULT__">
+        <span class="cm-option-chip-inner">
+            <span class="cm-option-name cm-var-name">__NAME__</span>
+            <span class="cm-option-tail">
+                <span class="cm-option-price cm-var-price"></span>
+                <span class="small text-muted cm-var-stock ms-1"></span>
+                <i class="fa-solid fa-check cm-option-check"></i>
+            </span>
+        </span>
+    </label>
+</template>
+
 <template id="cm-multi-group-template">
     <div class="cm-group">
         <div class="d-flex align-items-center justify-content-between mb-2">
