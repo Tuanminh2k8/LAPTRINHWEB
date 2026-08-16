@@ -208,7 +208,7 @@
                 days.push(d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' }));
             }
             
-            var baseRevenue = @(ViewBag.TotalRevenue > 0 ? ViewBag.TotalRevenue : 500000);
+            var baseRevenue = @((ViewBag.TotalRevenue > 0 ? (decimal)ViewBag.TotalRevenue : 500000m).ToString(System.Globalization.CultureInfo.InvariantCulture));
             var dataPoints = [
                 Math.round(baseRevenue * 0.6),
                 Math.round(baseRevenue * 0.8),
