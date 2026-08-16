@@ -241,8 +241,17 @@ var sellerName = "";
                     _loyalty.ApplyRedeem(userId.Value, pointsUsed, pointsDiscount);
                 }
 
-                // Khởi tạo thanh toán online (VNPAY/MoMo) trước khi commit
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _cartService.ClearCart();
+                HttpContext.Session.Remove(PromoSessionKey);
+
+                _logger.LogInformation("API order #{OrderId} placed. Type={Type}, Payment={Pay}, Total={Total}", order.Id, order.OrderType, order.PaymentMethod, order.TotalAmount);
+
+                // Gọi cổng thanh toán NGOÀI transaction (tránh giữ transaction DB lâu khi chờ HTTP).
                 string? paymentUrl = null;
+                string? paymentWarning = null;
                 if (order.PaymentMethod == "VNPay")
                 {
                     var returnUrl = $"{Request.Scheme}://{Request.Host}{_config["Payment:Vnpay:ReturnPath"]}";
@@ -254,21 +263,16 @@ var sellerName = "";
                     var returnUrl = $"{Request.Scheme}://{Request.Host}{_config["Payment:Momo:ReturnPath"]}";
                     var ipnUrl = $"{Request.Scheme}://{Request.Host}{_config["Payment:Momo:IpnPath"]}";
                     var momo = await _payment.CreateMomoPaymentAsync(order.Id, order.TotalAmount, returnUrl, ipnUrl);
-                    if (!momo.success || string.IsNullOrEmpty(momo.payUrl))
+                    if (momo.success && !string.IsNullOrEmpty(momo.payUrl))
                     {
-                        await transaction.RollbackAsync();
-                        return StatusCode(502, new { message = "Không thể khởi tạo thanh toán MoMo: " + (momo.message ?? "lỗi không xác định") });
+                        paymentUrl = momo.payUrl;
                     }
-                    paymentUrl = momo.payUrl;
+                    else
+                    {
+                        paymentWarning = "Đơn hàng đã được tạo nhưng không khởi tạo được thanh toán MoMo. Vui lòng thanh toán lại hoặc dùng COD.";
+                        _logger.LogWarning("MoMo init failed for order #{OrderId}: {Message}", order.Id, momo.message);
+                    }
                 }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                _cartService.ClearCart();
-                HttpContext.Session.Remove(PromoSessionKey);
-
-                _logger.LogInformation("API order #{OrderId} placed. Type={Type}, Payment={Pay}, Total={Total}", order.Id, order.OrderType, order.PaymentMethod, order.TotalAmount);
 
                 var successMessage = order.PaymentMethod switch
                 {
@@ -291,7 +295,8 @@ var sellerName = "";
                     pointsUsed = pointsUsed,
                     pointsDiscount = pointsDiscount,
                     paymentUrl = paymentUrl,
-                    message = successMessage
+                    paymentWarning = paymentWarning,
+                    message = paymentWarning ?? successMessage
                 });
             }
             catch (Exception ex)

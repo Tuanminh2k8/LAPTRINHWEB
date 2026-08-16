@@ -48,6 +48,12 @@ builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ILoyaltyService, LoyaltyService>();
     builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 
+// HTTP client dùng chung cho cổng thanh toán (MoMo) — pooling qua IHttpClientFactory
+builder.Services.AddHttpClient("PaymentGateway", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+});
+
 // Demo DI lifetimes
 builder.Services.AddSingleton<ISingletonOperation, OperationService>();
 builder.Services.AddScoped<IScopedOperation, OperationService>();

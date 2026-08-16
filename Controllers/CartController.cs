@@ -13,13 +13,17 @@ namespace Source.Controllers
         private readonly AppDbContext _context;
         private readonly ICartSessionService _cartService;
         private readonly IPromoCodeService _promoService;
+        private readonly IPaymentService _payment;
+        private readonly IConfiguration _config;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, ILogger<CartController> logger)
+        public CartController(AppDbContext context, ICartSessionService cartService, IPromoCodeService promoService, IPaymentService payment, IConfiguration config, ILogger<CartController> logger)
         {
             _context = context;
             _cartService = cartService;
             _promoService = promoService;
+            _payment = payment;
+            _config = config;
             _logger = logger;
         }
 
@@ -249,7 +253,7 @@ namespace Source.Controllers
             return View(order);
         }
 
-        private static readonly string[] AllowedPaymentMethods = { "COD", "Bank" };
+        private static readonly string[] AllowedPaymentMethods = { "COD", "Bank", "VNPay", "MoMo" };
 
         [HttpPost]
         [Authorize]
@@ -374,6 +378,34 @@ var sellerName = "";
                     {
                         TempData["SuccessMessage"] = "Đặt hàng thành công! Vui lòng chuyển khoản theo hướng dẫn bên dưới.";
                         return RedirectToAction("BankTransfer", "Orders", new { id = model.Id });
+                    }
+
+                    if (model.PaymentMethod == "VNPay" || model.PaymentMethod == "MoMo")
+                    {
+                        // Gọi cổng thanh toán NGOÀI transaction (tránh giữ transaction DB lâu khi chờ HTTP).
+                        var returnUrl = $"{Request.Scheme}://{Request.Host}{_config["Payment:Vnpay:ReturnPath"]}";
+                        string? paymentUrl = null;
+                        if (model.PaymentMethod == "VNPay")
+                        {
+                            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                            paymentUrl = _payment.CreateVnpayPaymentUrl(model.Id, model.TotalAmount, returnUrl, ip);
+                        }
+                        else
+                        {
+                            var ipnUrl = $"{Request.Scheme}://{Request.Host}{_config["Payment:Momo:IpnPath"]}";
+                            var momo = await _payment.CreateMomoPaymentAsync(model.Id, model.TotalAmount, returnUrl, ipnUrl);
+                            if (!momo.success || string.IsNullOrEmpty(momo.payUrl))
+                            {
+                                TempData["ErrorMessage"] = "Đặt hàng thành công nhưng không khởi tạo được thanh toán online. Vui lòng thử lại hoặc thanh toán COD.";
+                                return RedirectToAction("Tracking", "Orders", new { id = model.Id });
+                            }
+                            paymentUrl = momo.payUrl;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(paymentUrl))
+                        {
+                            return Redirect(paymentUrl);
+                        }
                     }
 
                     TempData["SuccessMessage"] = "Đặt hàng thành công! Đơn hàng của bạn đang được xử lý.";

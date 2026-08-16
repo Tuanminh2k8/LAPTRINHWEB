@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -19,10 +20,12 @@ namespace Source.Services
     public class PaymentService : IPaymentService
     {
         private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public PaymentService(IConfiguration config)
+        public PaymentService(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
             _config = config;
+            _httpClientFactory = httpClientFactory;
         }
 
         // ───────────────────────── VNPAY ─────────────────────────
@@ -138,7 +141,8 @@ namespace Source.Services
 
             try
             {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+                var client = _httpClientFactory.CreateClient("PaymentGateway");
+                client.Timeout = TimeSpan.FromSeconds(20);
                 var response = await client.PostAsJsonAsync(endpoint, payload);
                 if (!response.IsSuccessStatusCode)
                     return (false, null, "Cổng MoMo không phản hồi.");
